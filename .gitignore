@@ -4,6 +4,7 @@ CLAUDE.md
 
 # Go build artifacts
 /bin/
+/bc-radio
 *.test
 *.out
 *.o
