@@ -1,0 +1,6932 @@
+{
+ "recaptcha_public_key": "6LfhSPgSAAAAAPwto_qzHuwSmjgfrkg35xXXu_8K",
+ "invisible_recaptcha_public_key": "6Ld7hz4UAAAAANlndw60vAheGUwN0Mb-qeWD_LHr",
+ "localize_page": true,
+ "locale": "en",
+ "languages": {
+  "en": "English",
+  "de": "Deutsch",
+  "es": "Espa\u00f1ol",
+  "fr": "Fran\u00e7ais",
+  "pt": "Portugu\u00eas",
+  "ja": "\u65e5\u672c\u8a9e"
+ },
+ "help_center_url": "https://get.bandcamp.help/hc/en-us",
+ "templglobals": {
+  "endpoint_mobilized": true,
+  "is_phone": false
+ },
+ "signup_querystrings": {
+  "a252222937": "?action_sig=2fac65350b44ecb98e227f35b13b51d3&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=1925094950&item_id=252222937&item_type=a",
+  "a1360408186": "?action_sig=620987aa3cca03900ffe2d66219f4917&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=2831727005&item_id=1360408186&item_type=a",
+  "a3926906271": "?action_sig=2831ef14804102de95dd6fa15e970f93&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=1069868962&item_id=3926906271&item_type=a",
+  "a264179153": "?action_sig=eb85412fa3a3ba6dc3adedf33e47696d&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=3118039996&item_id=264179153&item_type=a",
+  "a212220859": "?action_sig=9741fbee49bdb0c3f87004a08103585a&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=10312360&item_id=212220859&item_type=a",
+  "a2557349554": "?action_sig=a1cc0e0306f91238ef03e6a4863eea97&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=3917826897&item_id=2557349554&item_type=a",
+  "a4163546699": "?action_sig=50a1fae49cd79bbeeb8755b2ff4ea792&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=3940398213&item_id=4163546699&item_type=a",
+  "a197777527": "?action_sig=942f5f79c3813e4791a85b0d93964a94&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=347035232&item_id=197777527&item_type=a",
+  "a247973342": "?action_sig=6381d069d7ac1b73c4ba16e0b47c56a0&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=982632003&item_id=247973342&item_type=a",
+  "a730614507": "?action_sig=6ecf58feb194a461a6dbd39984efa188&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=709836905&item_id=730614507&item_type=a",
+  "a2358643400": "?action_sig=d5a76c116e07c7cb0c2ab952eade0e7a&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=350305301&item_id=2358643400&item_type=a",
+  "a609527152": "?action_sig=87133c401ef490bb48d58380b0d17b49&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=1242119004&item_id=609527152&item_type=a",
+  "a4010709569": "?action_sig=ff4d56c6fbec8b74785a5480fad06537&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=1242119004&item_id=4010709569&item_type=a",
+  "a141888809": "?action_sig=000f6efd92dadc614f1e4d4ff2437a01&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=1014705723&item_id=141888809&item_type=a",
+  "a1803195507": "?action_sig=5694b987aad48cf625f319f86e89bbb6&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=785877430&item_id=1803195507&item_type=a",
+  "a2354567944": "?action_sig=b2491ef63a0239a0c8d677b894bf9825&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=785877430&item_id=2354567944&item_type=a",
+  "a2518243628": "?action_sig=03864d5b766f923a49839b5c0d42500f&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=2678428111&item_id=2518243628&item_type=a",
+  "a2425357717": "?action_sig=8730fbcb4abca9752599d6e9155a2c82&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=3940398213&item_id=2425357717&item_type=a",
+  "a3557538685": "?action_sig=e2c43371bdfaf580d3b283db24f6777f&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=3940398213&item_id=3557538685&item_type=a",
+  "a2597466512": "?action_sig=e7442869cb7c6e4353352d6dc6e630b4&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=1014705723&item_id=2597466512&item_type=a",
+  "f9916": "?action_sig=fe6cf6dd7f093b4def58faa2632c6c23&action_url=https%3A%2F%2Fbandcamp.com%2Fdeerhoof%2Ffollowing%2Fartists_and_labels&band_id=0&item_id=9916&item_type=f"
+ },
+ "cfg": {
+  "menubar_autocomplete_enabled": true,
+  "use_elasticsearch_backed_search": true,
+  "new_search_api_service": true,
+  "search_tracking": true,
+  "single_sign_up": true,
+  "fan_signup_use_captcha": true,
+  "gift_cards": true,
+  "order_history": true,
+  "header_rework_2018": true,
+  "search_discovery_one_filter_desktop_only": true,
+  "search_discovery_one_filter_rollout": true,
+  "community": true,
+  "login_use_captcha": true,
+  "mobile_onboarding": true,
+  "gifting": true,
+  "artist_subscriptions": true,
+  "open_signup": true,
+  "fan_page_2017": true,
+  "genre_management": true,
+  "fan_collection_also_collected_expand": true,
+  "fan_collection_also_collected_counts": true
+ },
+ "identities": {
+  "user": null,
+  "ip_country_code": "US",
+  "fan": null,
+  "is_page_band_member": null,
+  "subscribed_to_page_band": null,
+  "bands": [],
+  "partner": false,
+  "is_admin": null,
+  "labels": []
+ },
+ "signup_params": {
+  "save_card": false,
+  "genres": [
+   {
+    "id": 10,
+    "name": "electronic",
+    "norm_name": "electronic",
+    "value": "electronic"
+   },
+   {
+    "id": 23,
+    "name": "rock",
+    "norm_name": "rock",
+    "value": "rock"
+   },
+   {
+    "id": 18,
+    "name": "metal",
+    "norm_name": "metal",
+    "value": "metal"
+   },
+   {
+    "id": 2,
+    "name": "alternative",
+    "norm_name": "alternative",
+    "value": "alternative"
+   },
+   {
+    "id": 14,
+    "name": "hip-hop/rap",
+    "norm_name": "hip-hop-rap",
+    "value": "hip-hop-rap"
+   },
+   {
+    "id": 11,
+    "name": "experimental",
+    "norm_name": "experimental",
+    "value": "experimental"
+   },
+   {
+    "id": 20,
+    "name": "punk",
+    "norm_name": "punk",
+    "value": "punk"
+   },
+   {
+    "id": 12,
+    "name": "folk",
+    "norm_name": "folk",
+    "value": "folk"
+   },
+   {
+    "id": 19,
+    "name": "pop",
+    "norm_name": "pop",
+    "value": "pop"
+   },
+   {
+    "id": 3,
+    "name": "ambient",
+    "norm_name": "ambient",
+    "value": "ambient"
+   },
+   {
+    "id": 24,
+    "name": "soundtrack",
+    "norm_name": "soundtrack",
+    "value": "soundtrack"
+   },
+   {
+    "id": 26,
+    "name": "world",
+    "norm_name": "world",
+    "value": "world"
+   },
+   {
+    "id": 15,
+    "name": "jazz",
+    "norm_name": "jazz",
+    "value": "jazz"
+   },
+   {
+    "id": 1,
+    "name": "acoustic",
+    "norm_name": "acoustic",
+    "value": "acoustic"
+   },
+   {
+    "id": 13,
+    "name": "funk",
+    "norm_name": "funk",
+    "value": "funk"
+   },
+   {
+    "id": 21,
+    "name": "r&b/soul",
+    "norm_name": "r-b-soul",
+    "value": "r-b-soul"
+   },
+   {
+    "id": 9,
+    "name": "devotional",
+    "norm_name": "devotional",
+    "value": "devotional"
+   },
+   {
+    "id": 5,
+    "name": "classical",
+    "norm_name": "classical",
+    "value": "classical"
+   },
+   {
+    "id": 22,
+    "name": "reggae",
+    "norm_name": "reggae",
+    "value": "reggae"
+   },
+   {
+    "id": 27,
+    "name": "podcasts",
+    "norm_name": "podcasts",
+    "value": "podcasts"
+   },
+   {
+    "id": 7,
+    "name": "country",
+    "norm_name": "country",
+    "value": "country"
+   },
+   {
+    "id": 25,
+    "name": "spoken word",
+    "norm_name": "spoken-word",
+    "value": "spoken-word"
+   },
+   {
+    "id": 6,
+    "name": "comedy",
+    "norm_name": "comedy",
+    "value": "comedy"
+   },
+   {
+    "id": 4,
+    "name": "blues",
+    "norm_name": "blues",
+    "value": "blues"
+   },
+   {
+    "id": 28,
+    "name": "audiobooks",
+    "norm_name": "audiobooks",
+    "value": "audiobooks"
+   },
+   {
+    "id": 17,
+    "name": "latin",
+    "norm_name": "latin",
+    "value": "latin"
+   }
+  ],
+  "subgenres": {
+   "acoustic": [
+    {
+     "name": "folk",
+     "value": "folk",
+     "norm_name": "folk"
+    },
+    {
+     "name": "singer-songwriter",
+     "value": "singer-songwriter",
+     "norm_name": "singer-songwriter"
+    },
+    {
+     "name": "rock",
+     "value": "rock",
+     "norm_name": "rock"
+    },
+    {
+     "name": "pop",
+     "value": "pop",
+     "norm_name": "pop"
+    },
+    {
+     "name": "guitar",
+     "value": "guitar",
+     "norm_name": "guitar"
+    },
+    {
+     "name": "americana",
+     "value": "americana",
+     "norm_name": "americana"
+    },
+    {
+     "name": "electro-acoustic",
+     "value": "electro-acoustic",
+     "norm_name": "electro-acoustic"
+    },
+    {
+     "name": "instrumental",
+     "value": "instrumental",
+     "norm_name": "instrumental"
+    },
+    {
+     "name": "piano",
+     "value": "piano",
+     "norm_name": "piano"
+    },
+    {
+     "name": "bluegrass",
+     "value": "bluegrass",
+     "norm_name": "bluegrass"
+    },
+    {
+     "name": "roots",
+     "value": "roots",
+     "norm_name": "roots"
+    }
+   ],
+   "alternative": [
+    {
+     "name": "indie rock",
+     "value": "indie-rock",
+     "norm_name": "indie-rock"
+    },
+    {
+     "name": "industrial",
+     "value": "industrial",
+     "norm_name": "industrial"
+    },
+    {
+     "name": "shoegaze",
+     "value": "shoegaze",
+     "norm_name": "shoegaze"
+    },
+    {
+     "name": "grunge",
+     "value": "grunge",
+     "norm_name": "grunge"
+    },
+    {
+     "name": "goth",
+     "value": "goth",
+     "norm_name": "goth"
+    },
+    {
+     "name": "dream pop",
+     "value": "dream-pop",
+     "norm_name": "dream-pop"
+    },
+    {
+     "name": "emo",
+     "value": "emo",
+     "norm_name": "emo"
+    },
+    {
+     "name": "math rock",
+     "value": "math-rock",
+     "norm_name": "math-rock"
+    },
+    {
+     "name": "britpop",
+     "value": "britpop",
+     "norm_name": "britpop"
+    },
+    {
+     "name": "jangle pop",
+     "value": "jangle-pop",
+     "norm_name": "jangle-pop"
+    }
+   ],
+   "ambient": [
+    {
+     "name": "chill-out",
+     "value": "chill-out",
+     "norm_name": "chill-out"
+    },
+    {
+     "name": "drone",
+     "value": "drone",
+     "norm_name": "drone"
+    },
+    {
+     "name": "dark ambient",
+     "value": "dark-ambient",
+     "norm_name": "dark-ambient"
+    },
+    {
+     "name": "electronic",
+     "value": "electronic",
+     "norm_name": "electronic"
+    },
+    {
+     "name": "soundscapes",
+     "value": "soundscapes",
+     "norm_name": "soundscapes"
+    },
+    {
+     "name": "field recordings",
+     "value": "field-recordings",
+     "norm_name": "field-recordings"
+    },
+    {
+     "name": "atmospheric",
+     "value": "atmospheric",
+     "norm_name": "atmospheric"
+    },
+    {
+     "name": "meditation",
+     "value": "meditation",
+     "norm_name": "meditation"
+    },
+    {
+     "name": "noise",
+     "value": "noise",
+     "norm_name": "noise"
+    },
+    {
+     "name": "new age",
+     "value": "new-age",
+     "norm_name": "new-age"
+    },
+    {
+     "name": "idm",
+     "value": "idm",
+     "norm_name": "idm"
+    },
+    {
+     "name": "industrial",
+     "value": "industrial",
+     "norm_name": "industrial"
+    }
+   ],
+   "blues": [
+    {
+     "name": "rhythm & blues",
+     "value": "rhythm-blues",
+     "norm_name": "rhythm-blues"
+    },
+    {
+     "name": "blues rock",
+     "value": "blues-rock",
+     "norm_name": "blues-rock"
+    },
+    {
+     "name": "country blues",
+     "value": "country-blues",
+     "norm_name": "country-blues"
+    },
+    {
+     "name": "boogie-woogie",
+     "value": "boogie-woogie",
+     "norm_name": "boogie-woogie"
+    },
+    {
+     "name": "delta blues",
+     "value": "delta-blues",
+     "norm_name": "delta-blues"
+    },
+    {
+     "name": "americana",
+     "value": "americana",
+     "norm_name": "americana"
+    },
+    {
+     "name": "electric blues",
+     "value": "electric-blues",
+     "norm_name": "electric-blues"
+    },
+    {
+     "name": "gospel",
+     "value": "gospel",
+     "norm_name": "gospel"
+    },
+    {
+     "name": "bluegrass",
+     "value": "bluegrass",
+     "norm_name": "bluegrass"
+    }
+   ],
+   "classical": [
+    {
+     "name": "orchestral",
+     "value": "orchestral",
+     "norm_name": "orchestral"
+    },
+    {
+     "name": "neo-classical",
+     "value": "neo-classical",
+     "norm_name": "neo-classical"
+    },
+    {
+     "name": "chamber music",
+     "value": "chamber-music",
+     "norm_name": "chamber-music"
+    },
+    {
+     "name": "classical piano",
+     "value": "classical-piano",
+     "norm_name": "classical-piano"
+    },
+    {
+     "name": "contemporary classical",
+     "value": "contemporary-classical",
+     "norm_name": "contemporary-classical"
+    },
+    {
+     "name": "baroque",
+     "value": "baroque",
+     "norm_name": "baroque"
+    },
+    {
+     "name": "opera",
+     "value": "opera",
+     "norm_name": "opera"
+    },
+    {
+     "name": "choral",
+     "value": "choral",
+     "norm_name": "choral"
+    },
+    {
+     "name": "modern classical",
+     "value": "modern-classical",
+     "norm_name": "modern-classical"
+    },
+    {
+     "name": "avant garde",
+     "value": "avant-garde",
+     "norm_name": "avant-garde"
+    }
+   ],
+   "comedy": [
+    {
+     "name": "improv",
+     "value": "improv",
+     "norm_name": "improv"
+    },
+    {
+     "name": "stand-up",
+     "value": "stand-up",
+     "norm_name": "stand-up"
+    }
+   ],
+   "country": [
+    {
+     "name": "bluegrass",
+     "value": "bluegrass",
+     "norm_name": "bluegrass"
+    },
+    {
+     "name": "country rock",
+     "value": "country-rock",
+     "norm_name": "country-rock"
+    },
+    {
+     "name": "americana",
+     "value": "americana",
+     "norm_name": "americana"
+    },
+    {
+     "name": "country folk",
+     "value": "country-folk",
+     "norm_name": "country-folk"
+    },
+    {
+     "name": "alt-country",
+     "value": "alt-country",
+     "norm_name": "alt-country"
+    },
+    {
+     "name": "country blues",
+     "value": "country-blues",
+     "norm_name": "country-blues"
+    },
+    {
+     "name": "western",
+     "value": "western",
+     "norm_name": "western"
+    },
+    {
+     "name": "singer-songwriter",
+     "value": "singer-songwriter",
+     "norm_name": "singer-songwriter"
+    },
+    {
+     "name": "outlaw",
+     "value": "outlaw",
+     "norm_name": "outlaw"
+    },
+    {
+     "name": "honky-tonk",
+     "value": "honky-tonk",
+     "norm_name": "honky-tonk"
+    },
+    {
+     "name": "roots",
+     "value": "roots",
+     "norm_name": "roots"
+    },
+    {
+     "name": "hillbilly",
+     "value": "hillbilly",
+     "norm_name": "hillbilly"
+    }
+   ],
+   "devotional": [
+    {
+     "name": "christian",
+     "value": "christian",
+     "norm_name": "christian"
+    },
+    {
+     "name": "gospel",
+     "value": "gospel",
+     "norm_name": "gospel"
+    },
+    {
+     "name": "meditation",
+     "value": "meditation",
+     "norm_name": "meditation"
+    },
+    {
+     "name": "spiritual",
+     "value": "spiritual",
+     "norm_name": "spiritual"
+    },
+    {
+     "name": "worship",
+     "value": "worship",
+     "norm_name": "worship"
+    },
+    {
+     "name": "inspirational",
+     "value": "inspirational",
+     "norm_name": "inspirational"
+    }
+   ],
+   "electronic": [
+    {
+     "name": "house",
+     "value": "house",
+     "norm_name": "house"
+    },
+    {
+     "name": "electronica",
+     "value": "electronica",
+     "norm_name": "electronica"
+    },
+    {
+     "name": "downtempo",
+     "value": "downtempo",
+     "norm_name": "downtempo"
+    },
+    {
+     "name": "techno",
+     "value": "techno",
+     "norm_name": "techno"
+    },
+    {
+     "name": "electro",
+     "value": "electro",
+     "norm_name": "electro"
+    },
+    {
+     "name": "dubstep",
+     "value": "dubstep",
+     "norm_name": "dubstep"
+    },
+    {
+     "name": "beats",
+     "value": "beats",
+     "norm_name": "beats"
+    },
+    {
+     "name": "dance",
+     "value": "dance",
+     "norm_name": "dance"
+    },
+    {
+     "name": "idm",
+     "value": "idm",
+     "norm_name": "idm"
+    },
+    {
+     "name": "drum & bass",
+     "value": "drum-bass",
+     "norm_name": "drum-bass"
+    },
+    {
+     "name": "breaks",
+     "value": "breaks",
+     "norm_name": "breaks"
+    },
+    {
+     "name": "trance",
+     "value": "trance",
+     "norm_name": "trance"
+    },
+    {
+     "name": "glitch",
+     "value": "glitch",
+     "norm_name": "glitch"
+    },
+    {
+     "name": "chiptune",
+     "value": "chiptune",
+     "norm_name": "chiptune"
+    },
+    {
+     "name": "chillwave",
+     "value": "chillwave",
+     "norm_name": "chillwave"
+    },
+    {
+     "name": "dub",
+     "value": "dub",
+     "norm_name": "dub"
+    },
+    {
+     "name": "edm",
+     "value": "edm",
+     "norm_name": "edm"
+    },
+    {
+     "name": "instrumental",
+     "value": "instrumental",
+     "norm_name": "instrumental"
+    },
+    {
+     "name": "witch house",
+     "value": "witch-house",
+     "norm_name": "witch-house"
+    },
+    {
+     "name": "garage",
+     "value": "garage",
+     "norm_name": "garage"
+    },
+    {
+     "name": "juke",
+     "value": "juke",
+     "norm_name": "juke"
+    },
+    {
+     "name": "footwork",
+     "value": "footwork",
+     "norm_name": "footwork"
+    },
+    {
+     "name": "vaporwave",
+     "value": "vaporwave",
+     "norm_name": "vaporwave"
+    },
+    {
+     "name": "synthwave",
+     "value": "synthwave",
+     "norm_name": "synthwave"
+    }
+   ],
+   "experimental": [
+    {
+     "name": "noise",
+     "value": "noise",
+     "norm_name": "noise"
+    },
+    {
+     "name": "drone",
+     "value": "drone",
+     "norm_name": "drone"
+    },
+    {
+     "name": "avant garde",
+     "value": "avant-garde",
+     "norm_name": "avant-garde"
+    },
+    {
+     "name": "experimental rock",
+     "value": "experimental-rock",
+     "norm_name": "experimental-rock"
+    },
+    {
+     "name": "improvisation",
+     "value": "improvisation",
+     "norm_name": "improvisation"
+    },
+    {
+     "name": "sound art",
+     "value": "sound-art",
+     "norm_name": "sound-art"
+    },
+    {
+     "name": "musique concrete",
+     "value": "musique-concrete",
+     "norm_name": "musique-concrete"
+    }
+   ],
+   "folk": [
+    {
+     "name": "singer-songwriter",
+     "value": "singer-songwriter",
+     "norm_name": "singer-songwriter"
+    },
+    {
+     "name": "folk rock",
+     "value": "folk-rock",
+     "norm_name": "folk-rock"
+    },
+    {
+     "name": "indie folk",
+     "value": "indie-folk",
+     "norm_name": "indie-folk"
+    },
+    {
+     "name": "pop folk",
+     "value": "pop-folk",
+     "norm_name": "pop-folk"
+    },
+    {
+     "name": "traditional",
+     "value": "traditional",
+     "norm_name": "traditional"
+    },
+    {
+     "name": "experimental folk",
+     "value": "experimental-folk",
+     "norm_name": "experimental-folk"
+    },
+    {
+     "name": "roots",
+     "value": "roots",
+     "norm_name": "roots"
+    }
+   ],
+   "funk": [
+    {
+     "name": "funk jam",
+     "value": "funk-jam",
+     "norm_name": "funk-jam"
+    },
+    {
+     "name": "deep funk",
+     "value": "deep-funk",
+     "norm_name": "deep-funk"
+    },
+    {
+     "name": "funk rock",
+     "value": "funk-rock",
+     "norm_name": "funk-rock"
+    },
+    {
+     "name": "jazz funk",
+     "value": "jazz-funk",
+     "norm_name": "jazz-funk"
+    },
+    {
+     "name": "boogie",
+     "value": "boogie",
+     "norm_name": "boogie"
+    },
+    {
+     "name": "g-funk",
+     "value": "g-funk",
+     "norm_name": "g-funk"
+    },
+    {
+     "name": "rare groove",
+     "value": "rare-groove",
+     "norm_name": "rare-groove"
+    },
+    {
+     "name": "electro",
+     "value": "electro",
+     "norm_name": "electro"
+    },
+    {
+     "name": "go-go",
+     "value": "go-go",
+     "norm_name": "go-go"
+    }
+   ],
+   "hip-hop-rap": [
+    {
+     "name": "rap",
+     "value": "rap",
+     "norm_name": "rap"
+    },
+    {
+     "name": "underground hip-hop",
+     "value": "underground-hip-hop",
+     "norm_name": "underground-hip-hop"
+    },
+    {
+     "name": "instrumental hip-hop",
+     "value": "instrumental-hip-hop",
+     "norm_name": "instrumental-hip-hop"
+    },
+    {
+     "name": "trap",
+     "value": "trap",
+     "norm_name": "trap"
+    },
+    {
+     "name": "conscious hip-hop",
+     "value": "conscious-hip-hop",
+     "norm_name": "conscious-hip-hop"
+    },
+    {
+     "name": "boom-bap",
+     "value": "boom-bap",
+     "norm_name": "boom-bap"
+    },
+    {
+     "name": "beat-tape",
+     "value": "beat-tape",
+     "norm_name": "beat-tape"
+    },
+    {
+     "name": "hardcore",
+     "value": "hardcore",
+     "norm_name": "hardcore"
+    },
+    {
+     "name": "grime",
+     "value": "grime",
+     "norm_name": "grime"
+    }
+   ],
+   "jazz": [
+    {
+     "name": "fusion",
+     "value": "fusion",
+     "norm_name": "fusion"
+    },
+    {
+     "name": "big band",
+     "value": "big-band",
+     "norm_name": "big-band"
+    },
+    {
+     "name": "nu jazz",
+     "value": "nu-jazz",
+     "norm_name": "nu-jazz"
+    },
+    {
+     "name": "modern jazz",
+     "value": "modern-jazz",
+     "norm_name": "modern-jazz"
+    },
+    {
+     "name": "swing",
+     "value": "swing",
+     "norm_name": "swing"
+    },
+    {
+     "name": "free jazz",
+     "value": "free-jazz",
+     "norm_name": "free-jazz"
+    },
+    {
+     "name": "soul jazz",
+     "value": "soul-jazz",
+     "norm_name": "soul-jazz"
+    },
+    {
+     "name": "latin jazz",
+     "value": "latin-jazz",
+     "norm_name": "latin-jazz"
+    },
+    {
+     "name": "vocal jazz",
+     "value": "vocal-jazz",
+     "norm_name": "vocal-jazz"
+    },
+    {
+     "name": "bebop",
+     "value": "bebop",
+     "norm_name": "bebop"
+    },
+    {
+     "name": "spiritual jazz",
+     "value": "spiritual-jazz",
+     "norm_name": "spiritual-jazz"
+    }
+   ],
+   "kids": [
+    {
+     "name": "family music",
+     "value": "family-music",
+     "norm_name": "family-music"
+    },
+    {
+     "name": "educational",
+     "value": "educational",
+     "norm_name": "educational"
+    },
+    {
+     "name": "music therapy",
+     "value": "music-therapy",
+     "norm_name": "music-therapy"
+    },
+    {
+     "name": "lullaby",
+     "value": "lullaby",
+     "norm_name": "lullaby"
+    },
+    {
+     "name": "baby",
+     "value": "baby",
+     "norm_name": "baby"
+    }
+   ],
+   "latin": [
+    {
+     "name": "brazilian",
+     "value": "brazilian",
+     "norm_name": "brazilian"
+    },
+    {
+     "name": "cumbia",
+     "value": "cumbia",
+     "norm_name": "cumbia"
+    },
+    {
+     "name": "tango",
+     "value": "tango",
+     "norm_name": "tango"
+    },
+    {
+     "name": "latin rock",
+     "value": "latin-rock",
+     "norm_name": "latin-rock"
+    },
+    {
+     "name": "flamenco",
+     "value": "flamenco",
+     "norm_name": "flamenco"
+    },
+    {
+     "name": "salsa",
+     "value": "salsa",
+     "norm_name": "salsa"
+    },
+    {
+     "name": "reggaeton",
+     "value": "reggaeton",
+     "norm_name": "reggaeton"
+    },
+    {
+     "name": "merengue",
+     "value": "merengue",
+     "norm_name": "merengue"
+    },
+    {
+     "name": "bolero",
+     "value": "bolero",
+     "norm_name": "bolero"
+    },
+    {
+     "name": "m\u00e9xico d.f.",
+     "value": "m\u00e9xico-d.f.",
+     "norm_name": "m\u00e9xico-d.f."
+    },
+    {
+     "name": "bachata",
+     "value": "bachata",
+     "norm_name": "bachata"
+    }
+   ],
+   "metal": [
+    {
+     "name": "hardcore",
+     "value": "hardcore",
+     "norm_name": "hardcore"
+    },
+    {
+     "name": "black metal",
+     "value": "black-metal",
+     "norm_name": "black-metal"
+    },
+    {
+     "name": "death metal",
+     "value": "death-metal",
+     "norm_name": "death-metal"
+    },
+    {
+     "name": "thrash metal",
+     "value": "thrash-metal",
+     "norm_name": "thrash-metal"
+    },
+    {
+     "name": "grindcore",
+     "value": "grindcore",
+     "norm_name": "grindcore"
+    },
+    {
+     "name": "doom",
+     "value": "doom",
+     "norm_name": "doom"
+    },
+    {
+     "name": "post hardcore",
+     "value": "post-hardcore",
+     "norm_name": "post-hardcore"
+    },
+    {
+     "name": "progressive metal",
+     "value": "progressive-metal",
+     "norm_name": "progressive-metal"
+    },
+    {
+     "name": "metalcore",
+     "value": "metalcore",
+     "norm_name": "metalcore"
+    },
+    {
+     "name": "sludge metal",
+     "value": "sludge-metal",
+     "norm_name": "sludge-metal"
+    },
+    {
+     "name": "heavy metal",
+     "value": "heavy-metal",
+     "norm_name": "heavy-metal"
+    },
+    {
+     "name": "deathcore",
+     "value": "deathcore",
+     "norm_name": "deathcore"
+    },
+    {
+     "name": "noise",
+     "value": "noise",
+     "norm_name": "noise"
+    }
+   ],
+   "pop": [
+    {
+     "name": "indie pop",
+     "value": "indie-pop",
+     "norm_name": "indie-pop"
+    },
+    {
+     "name": "synth pop",
+     "value": "synth-pop",
+     "norm_name": "synth-pop"
+    },
+    {
+     "name": "power pop",
+     "value": "power-pop",
+     "norm_name": "power-pop"
+    },
+    {
+     "name": "new wave",
+     "value": "new-wave",
+     "norm_name": "new-wave"
+    },
+    {
+     "name": "dream pop",
+     "value": "dream-pop",
+     "norm_name": "dream-pop"
+    },
+    {
+     "name": "noise pop",
+     "value": "noise-pop",
+     "norm_name": "noise-pop"
+    },
+    {
+     "name": "experimental pop",
+     "value": "experimental-pop",
+     "norm_name": "experimental-pop"
+    },
+    {
+     "name": "electro pop",
+     "value": "electro-pop",
+     "norm_name": "electro-pop"
+    },
+    {
+     "name": "adult contemporary",
+     "value": "adult-contemporary",
+     "norm_name": "adult-contemporary"
+    },
+    {
+     "name": "jangle pop",
+     "value": "jangle-pop",
+     "norm_name": "jangle-pop"
+    },
+    {
+     "name": "j-pop",
+     "value": "j-pop",
+     "norm_name": "j-pop"
+    }
+   ],
+   "punk": [
+    {
+     "name": "hardcore punk",
+     "value": "hardcore-punk",
+     "norm_name": "hardcore-punk"
+    },
+    {
+     "name": "garage",
+     "value": "garage",
+     "norm_name": "garage"
+    },
+    {
+     "name": "pop punk",
+     "value": "pop-punk",
+     "norm_name": "pop-punk"
+    },
+    {
+     "name": "punk rock",
+     "value": "punk-rock",
+     "norm_name": "punk-rock"
+    },
+    {
+     "name": "post-punk",
+     "value": "post-punk",
+     "norm_name": "post-punk"
+    },
+    {
+     "name": "post-hardcore",
+     "value": "post-hardcore",
+     "norm_name": "post-hardcore"
+    },
+    {
+     "name": "thrash",
+     "value": "thrash",
+     "norm_name": "thrash"
+    },
+    {
+     "name": "crust punk",
+     "value": "crust-punk",
+     "norm_name": "crust-punk"
+    },
+    {
+     "name": "folk punk",
+     "value": "folk-punk",
+     "norm_name": "folk-punk"
+    },
+    {
+     "name": "emo",
+     "value": "emo",
+     "norm_name": "emo"
+    },
+    {
+     "name": "ska",
+     "value": "ska",
+     "norm_name": "ska"
+    },
+    {
+     "name": "no wave",
+     "value": "no-wave",
+     "norm_name": "no-wave"
+    }
+   ],
+   "r-b-soul": [
+    {
+     "name": "soul",
+     "value": "soul",
+     "norm_name": "soul"
+    },
+    {
+     "name": "r&b",
+     "value": "r-b",
+     "norm_name": "r-b"
+    },
+    {
+     "name": "neo-soul",
+     "value": "neo-soul",
+     "norm_name": "neo-soul"
+    },
+    {
+     "name": "gospel",
+     "value": "gospel",
+     "norm_name": "gospel"
+    },
+    {
+     "name": "contemporary r&b",
+     "value": "contemporary-r-b",
+     "norm_name": "contemporary-r-b"
+    },
+    {
+     "name": "motown",
+     "value": "motown",
+     "norm_name": "motown"
+    },
+    {
+     "name": "urban",
+     "value": "urban",
+     "norm_name": "urban"
+    }
+   ],
+   "reggae": [
+    {
+     "name": "dub",
+     "value": "dub",
+     "norm_name": "dub"
+    },
+    {
+     "name": "ska",
+     "value": "ska",
+     "norm_name": "ska"
+    },
+    {
+     "name": "roots",
+     "value": "roots",
+     "norm_name": "roots"
+    },
+    {
+     "name": "dancehall",
+     "value": "dancehall",
+     "norm_name": "dancehall"
+    },
+    {
+     "name": "rocksteady",
+     "value": "rocksteady",
+     "norm_name": "rocksteady"
+    },
+    {
+     "name": "ragga",
+     "value": "ragga",
+     "norm_name": "ragga"
+    },
+    {
+     "name": "lovers rock",
+     "value": "lovers-rock",
+     "norm_name": "lovers-rock"
+    }
+   ],
+   "rock": [
+    {
+     "name": "indie",
+     "value": "indie",
+     "norm_name": "indie"
+    },
+    {
+     "name": "prog rock",
+     "value": "prog-rock",
+     "norm_name": "prog-rock"
+    },
+    {
+     "name": "post-rock",
+     "value": "post-rock",
+     "norm_name": "post-rock"
+    },
+    {
+     "name": "rock & roll",
+     "value": "rock-roll",
+     "norm_name": "rock-roll"
+    },
+    {
+     "name": "psychedelic rock",
+     "value": "psychedelic-rock",
+     "norm_name": "psychedelic-rock"
+    },
+    {
+     "name": "hard rock",
+     "value": "hard-rock",
+     "norm_name": "hard-rock"
+    },
+    {
+     "name": "garage rock",
+     "value": "garage-rock",
+     "norm_name": "garage-rock"
+    },
+    {
+     "name": "surf rock",
+     "value": "surf-rock",
+     "norm_name": "surf-rock"
+    },
+    {
+     "name": "instrumental",
+     "value": "instrumental",
+     "norm_name": "instrumental"
+    },
+    {
+     "name": "math rock",
+     "value": "math-rock",
+     "norm_name": "math-rock"
+    },
+    {
+     "name": "rockabilly",
+     "value": "rockabilly",
+     "norm_name": "rockabilly"
+    }
+   ],
+   "soundtrack": [
+    {
+     "name": "film music",
+     "value": "film-music",
+     "norm_name": "film-music"
+    },
+    {
+     "name": "video game music",
+     "value": "video-game-music",
+     "norm_name": "video-game-music"
+    }
+   ],
+   "spoken-word": [
+    {
+     "name": "poetry",
+     "value": "poetry",
+     "norm_name": "poetry"
+    },
+    {
+     "name": "inspirational",
+     "value": "inspirational",
+     "norm_name": "inspirational"
+    },
+    {
+     "name": "storytelling",
+     "value": "storytelling",
+     "norm_name": "storytelling"
+    },
+    {
+     "name": "self-help",
+     "value": "self-help",
+     "norm_name": "self-help"
+    }
+   ],
+   "world": [
+    {
+     "name": "latin",
+     "value": "latin",
+     "norm_name": "latin"
+    },
+    {
+     "name": "roots",
+     "value": "roots",
+     "norm_name": "roots"
+    },
+    {
+     "name": "african",
+     "value": "african",
+     "norm_name": "african"
+    },
+    {
+     "name": "tropical",
+     "value": "tropical",
+     "norm_name": "tropical"
+    },
+    {
+     "name": "tribal",
+     "value": "tribal",
+     "norm_name": "tribal"
+    },
+    {
+     "name": "brazilian",
+     "value": "brazilian",
+     "norm_name": "brazilian"
+    },
+    {
+     "name": "celtic",
+     "value": "celtic",
+     "norm_name": "celtic"
+    },
+    {
+     "name": "world fusion",
+     "value": "world-fusion",
+     "norm_name": "world-fusion"
+    },
+    {
+     "name": "cumbia",
+     "value": "cumbia",
+     "norm_name": "cumbia"
+    },
+    {
+     "name": "gypsy",
+     "value": "gypsy",
+     "norm_name": "gypsy"
+    },
+    {
+     "name": "new age",
+     "value": "new-age",
+     "norm_name": "new-age"
+    },
+    {
+     "name": "balkan",
+     "value": "balkan",
+     "norm_name": "balkan"
+    },
+    {
+     "name": "reggaeton",
+     "value": "reggaeton",
+     "norm_name": "reggaeton"
+    }
+   ]
+  },
+  "activation_url": "https://bandcamp.com/deerhoof/following/artists_and_labels",
+  "activation_sig": "fg2nJ3c5bj1LOpGKpXAnz8vsQ84=",
+  "is_phone": false,
+  "isMobile": false
+ },
+ "mobile_app_url": "https://bandcamp.com/redirect_to_app?fallback_url=https%3A%2F%2Fbandcamp.com%2Fthis_is_an_appstore_url%3Fapp%3Dfan_app&url=x-bandcamp%3A%2F%2Fopen&sig=abc9beeca2f85cc3c3910991b77ae161",
+ "platform_app_url": null,
+ "app_store_url": "https://itunes.apple.com/us/app/bandcamp/id706408639?mt=8",
+ "play_store_url": "https://play.google.com/store/apps/details?id=com.bandcamp.android",
+ "unsupported_device": true,
+ "utc_for_new_banner": "08 Nov 2026 20:13:14 GMT",
+ "social_prefs": null,
+ "media_mode_test": false,
+ "currency_data": {
+  "info": {
+   "USD": {
+    "symbol": "USD",
+    "long": "US Dollar",
+    "plural": "US Dollars",
+    "prefix_utf8": "$",
+    "prefix": "$",
+    "prefix_informal_utf8": "$",
+    "prefix_informal": "$",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.0,
+    "small_min_price": 0.5,
+    "medium_min_price": 1.0,
+    "fixed_rate": 1,
+    "slang": [
+     "bucks",
+     "bones",
+     "clams",
+     "smackers"
+    ],
+    "paypal": true,
+    "payflow": true
+   },
+   "AUD": {
+    "symbol": "AUD",
+    "long": "Australian Dollar",
+    "plural": "Australian Dollars",
+    "prefix_utf8": "$",
+    "prefix": "$",
+    "prefix_informal_utf8": "$",
+    "prefix_informal": "$",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.5,
+    "small_min_price": 0.5,
+    "medium_min_price": 1.0,
+    "fixed_rate": 1,
+    "paypal": true,
+    "payflow": true
+   },
+   "GBP": {
+    "symbol": "GBP",
+    "long": "British Pound Sterling",
+    "plural": "British Pounds Sterling",
+    "prefix_utf8": "\u00a3",
+    "prefix": "&#xA3;",
+    "prefix_informal_utf8": "\u00a3",
+    "prefix_informal": "&#xA3;",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.0,
+    "small_min_price": 0.25,
+    "medium_min_price": 0.5,
+    "fixed_rate": 1,
+    "slang": [
+     "quid",
+     "nicker"
+    ],
+    "paypal": true,
+    "payflow": true
+   },
+   "CAD": {
+    "symbol": "CAD",
+    "long": "Canadian Dollar",
+    "plural": "Canadian Dollars",
+    "prefix_utf8": "$",
+    "prefix": "$",
+    "prefix_informal_utf8": "$",
+    "prefix_informal": "$",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.0,
+    "small_min_price": 0.5,
+    "medium_min_price": 1.0,
+    "fixed_rate": 1,
+    "paypal": true,
+    "payflow": true
+   },
+   "CZK": {
+    "symbol": "CZK",
+    "long": "Czech Koruna",
+    "plural": "Czech Koruna",
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": " Kc",
+    "places": 2,
+    "a_dollar": 20.0,
+    "small_min_price": 10.0,
+    "medium_min_price": 20.0,
+    "fixed_rate": 20,
+    "paypal": true,
+    "payflow": false
+   },
+   "DKK": {
+    "symbol": "DKK",
+    "long": "Danish Krone",
+    "plural": "Danish Kroner",
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "kr.",
+    "prefix_informal": "kr.",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 6.0,
+    "small_min_price": 2.5,
+    "medium_min_price": 5.0,
+    "fixed_rate": 5,
+    "paypal": true,
+    "payflow": false
+   },
+   "EUR": {
+    "symbol": "EUR",
+    "long": "Euro",
+    "plural": "Euros",
+    "prefix_utf8": "\u20ac",
+    "prefix": "&#x20AC;",
+    "prefix_informal_utf8": "\u20ac",
+    "prefix_informal": "&#x20AC;",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.0,
+    "small_min_price": 0.25,
+    "medium_min_price": 0.5,
+    "fixed_rate": 1,
+    "paypal": true,
+    "payflow": true
+   },
+   "HKD": {
+    "symbol": "HKD",
+    "long": "Hong Kong Dollar",
+    "plural": "Hong Kong Dollars",
+    "prefix_utf8": "$",
+    "prefix": "$",
+    "prefix_informal_utf8": "$",
+    "prefix_informal": "$",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 8.0,
+    "small_min_price": 2.5,
+    "medium_min_price": 5.0,
+    "fixed_rate": 8,
+    "paypal": true,
+    "payflow": false
+   },
+   "HUF": {
+    "symbol": "HUF",
+    "long": "Hungarian Forint",
+    "plural": "Hungarian Forint",
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": " Ft",
+    "places": 0,
+    "a_dollar": 200.0,
+    "small_min_price": 100.0,
+    "medium_min_price": 200.0,
+    "fixed_rate": 200,
+    "paypal": true,
+    "payflow": false
+   },
+   "ILS": {
+    "symbol": "ILS",
+    "long": "Israeli New Sheqel",
+    "plural": "Israeli New Sheqalim",
+    "prefix_utf8": "\u20aa",
+    "prefix": "&#x20AA;",
+    "prefix_informal_utf8": "\u20aa",
+    "prefix_informal": "&#x20AA;",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 4.0,
+    "small_min_price": 1.5,
+    "medium_min_price": 3.0,
+    "fixed_rate": 5,
+    "paypal": true,
+    "payflow": false
+   },
+   "JPY": {
+    "symbol": "JPY",
+    "long": "Japanese Yen",
+    "plural": "Japanese Yen",
+    "prefix_utf8": "\u00a5",
+    "prefix": "&#x00A5;",
+    "prefix_informal_utf8": "\u00a5",
+    "prefix_informal": "&#x00A5;",
+    "suffix_informal": "",
+    "places": 0,
+    "a_dollar": 140.0,
+    "small_min_price": 70.0,
+    "medium_min_price": 140.0,
+    "fixed_rate": 140,
+    "paypal": true,
+    "payflow": true
+   },
+   "MXN": {
+    "symbol": "MXN",
+    "long": "Mexican Peso",
+    "plural": "Mexican Pesos",
+    "prefix_utf8": "$",
+    "prefix": "$",
+    "prefix_informal_utf8": "$",
+    "prefix_informal": "$",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 12.0,
+    "small_min_price": 5.0,
+    "medium_min_price": 10.0,
+    "fixed_rate": 10,
+    "paypal": true,
+    "payflow": false
+   },
+   "NZD": {
+    "symbol": "NZD",
+    "long": "New Zealand Dollar",
+    "plural": "New Zealand Dollars",
+    "prefix_utf8": "$",
+    "prefix": "$",
+    "prefix_informal_utf8": "$",
+    "prefix_informal": "$",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.0,
+    "small_min_price": 0.5,
+    "medium_min_price": 1.0,
+    "fixed_rate": 1,
+    "paypal": true,
+    "payflow": false
+   },
+   "NOK": {
+    "symbol": "NOK",
+    "long": "Norwegian Krone",
+    "plural": "Norwegian Kroner",
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "kr ",
+    "prefix_informal": "kr ",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 7.0,
+    "small_min_price": 3.0,
+    "medium_min_price": 6.0,
+    "fixed_rate": 6,
+    "paypal": true,
+    "payflow": false
+   },
+   "PLN": {
+    "symbol": "PLN",
+    "long": "Polish Zloty",
+    "plural": "Polish Zlotych",
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": " zl",
+    "places": 2,
+    "a_dollar": 3.0,
+    "small_min_price": 1.5,
+    "medium_min_price": 3.0,
+    "fixed_rate": 3,
+    "paypal": true,
+    "payflow": false
+   },
+   "SGD": {
+    "symbol": "SGD",
+    "long": "Singapore Dollar",
+    "plural": "Singapore Dollars",
+    "prefix_utf8": "$",
+    "prefix": "$",
+    "prefix_informal_utf8": "$",
+    "prefix_informal": "$",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.0,
+    "small_min_price": 0.5,
+    "medium_min_price": 1.0,
+    "fixed_rate": 1,
+    "paypal": true,
+    "payflow": false
+   },
+   "SEK": {
+    "symbol": "SEK",
+    "long": "Swedish Krona",
+    "plural": "Swedish Kronor",
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": " kr",
+    "places": 2,
+    "a_dollar": 8.0,
+    "small_min_price": 3.0,
+    "medium_min_price": 6.0,
+    "fixed_rate": 7,
+    "paypal": true,
+    "payflow": false
+   },
+   "CHF": {
+    "symbol": "CHF",
+    "long": "Swiss Franc",
+    "plural": "Swiss Francs",
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "Sfr. ",
+    "prefix_informal": "Sfr. ",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1.0,
+    "small_min_price": 0.5,
+    "medium_min_price": 1.0,
+    "fixed_rate": 1,
+    "paypal": true,
+    "payflow": false
+   },
+   "ALL": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Lek",
+    "long": "Lek",
+    "symbol": "ALL",
+    "paypal": false,
+    "payflow": false
+   },
+   "DZD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dinar",
+    "long": "Dinar",
+    "symbol": "DZD",
+    "paypal": false,
+    "payflow": false
+   },
+   "XCD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "XCD",
+    "paypal": false,
+    "payflow": false
+   },
+   "ARS": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Peso",
+    "long": "Peso",
+    "symbol": "ARS",
+    "paypal": false,
+    "payflow": false
+   },
+   "AWG": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Guilder",
+    "long": "Guilder",
+    "symbol": "AWG",
+    "paypal": false,
+    "payflow": false
+   },
+   "SHP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pound",
+    "long": "Pound",
+    "symbol": "SHP",
+    "paypal": false,
+    "payflow": false
+   },
+   "BSD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "BSD",
+    "paypal": false,
+    "payflow": false
+   },
+   "BHD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dinar",
+    "long": "Dinar",
+    "symbol": "BHD",
+    "paypal": false,
+    "payflow": false
+   },
+   "BDT": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Taka",
+    "long": "Taka",
+    "symbol": "BDT",
+    "paypal": false,
+    "payflow": false
+   },
+   "BBD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "BBD",
+    "paypal": false,
+    "payflow": false
+   },
+   "BZD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "BZD",
+    "paypal": false,
+    "payflow": false
+   },
+   "XOF": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Franc",
+    "long": "Franc",
+    "symbol": "XOF",
+    "paypal": false,
+    "payflow": false
+   },
+   "BMD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "BMD",
+    "paypal": false,
+    "payflow": false
+   },
+   "BTN": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Ngultrum",
+    "long": "Ngultrum",
+    "symbol": "BTN",
+    "paypal": false,
+    "payflow": false
+   },
+   "BOB": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Boliviano",
+    "long": "Boliviano",
+    "symbol": "BOB",
+    "paypal": false,
+    "payflow": false
+   },
+   "BWP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pula",
+    "long": "Pula",
+    "symbol": "BWP",
+    "paypal": false,
+    "payflow": false
+   },
+   "BRL": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Real",
+    "long": "Real",
+    "symbol": "BRL",
+    "paypal": false,
+    "payflow": false
+   },
+   "BND": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "BND",
+    "paypal": false,
+    "payflow": false
+   },
+   "BIF": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Franc",
+    "long": "Franc",
+    "symbol": "BIF",
+    "paypal": false,
+    "payflow": false
+   },
+   "KHR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Riels",
+    "long": "Riels",
+    "symbol": "KHR",
+    "paypal": false,
+    "payflow": false
+   },
+   "XAF": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Franc",
+    "long": "Franc",
+    "symbol": "XAF",
+    "paypal": false,
+    "payflow": false
+   },
+   "CVE": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Escudo",
+    "long": "Escudo",
+    "symbol": "CVE",
+    "paypal": false,
+    "payflow": false
+   },
+   "KYD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "KYD",
+    "paypal": false,
+    "payflow": false
+   },
+   "CLP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Peso",
+    "long": "Peso",
+    "symbol": "CLP",
+    "paypal": false,
+    "payflow": false
+   },
+   "CNY": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Yuan Renminbi",
+    "long": "Yuan Renminbi",
+    "symbol": "CNY",
+    "paypal": false,
+    "payflow": false
+   },
+   "COP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Peso",
+    "long": "Peso",
+    "symbol": "COP",
+    "paypal": false,
+    "payflow": false
+   },
+   "KMF": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Franc",
+    "long": "Franc",
+    "symbol": "KMF",
+    "paypal": false,
+    "payflow": false
+   },
+   "CRC": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Colon",
+    "long": "Colon",
+    "symbol": "CRC",
+    "paypal": false,
+    "payflow": false
+   },
+   "ANG": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Guilder",
+    "long": "Guilder",
+    "symbol": "ANG",
+    "paypal": false,
+    "payflow": false
+   },
+   "DJF": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Franc",
+    "long": "Franc",
+    "symbol": "DJF",
+    "paypal": false,
+    "payflow": false
+   },
+   "DOP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Peso",
+    "long": "Peso",
+    "symbol": "DOP",
+    "paypal": false,
+    "payflow": false
+   },
+   "EGP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pound",
+    "long": "Pound",
+    "symbol": "EGP",
+    "paypal": false,
+    "payflow": false
+   },
+   "ETB": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Birr",
+    "long": "Birr",
+    "symbol": "ETB",
+    "paypal": false,
+    "payflow": false
+   },
+   "FKP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pound",
+    "long": "Pound",
+    "symbol": "FKP",
+    "paypal": false,
+    "payflow": false
+   },
+   "XPF": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Franc",
+    "long": "Franc",
+    "symbol": "XPF",
+    "paypal": false,
+    "payflow": false
+   },
+   "GMD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dalasi",
+    "long": "Dalasi",
+    "symbol": "GMD",
+    "paypal": false,
+    "payflow": false
+   },
+   "GIP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pound",
+    "long": "Pound",
+    "symbol": "GIP",
+    "paypal": false,
+    "payflow": false
+   },
+   "GTQ": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Quetzal",
+    "long": "Quetzal",
+    "symbol": "GTQ",
+    "paypal": false,
+    "payflow": false
+   },
+   "GNF": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Franc",
+    "long": "Franc",
+    "symbol": "GNF",
+    "paypal": false,
+    "payflow": false
+   },
+   "GYD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "GYD",
+    "paypal": false,
+    "payflow": false
+   },
+   "HTG": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Gourde",
+    "long": "Gourde",
+    "symbol": "HTG",
+    "paypal": false,
+    "payflow": false
+   },
+   "HNL": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Lempira",
+    "long": "Lempira",
+    "symbol": "HNL",
+    "paypal": false,
+    "payflow": false
+   },
+   "RUP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupee",
+    "long": "Rupee",
+    "symbol": "RUP",
+    "paypal": false,
+    "payflow": false
+   },
+   "ISK": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Krona",
+    "long": "Krona",
+    "symbol": "ISK",
+    "paypal": false,
+    "payflow": false
+   },
+   "INR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupee",
+    "long": "Rupee",
+    "symbol": "INR",
+    "paypal": false,
+    "payflow": false
+   },
+   "IDR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupiah",
+    "long": "Rupiah",
+    "symbol": "IDR",
+    "paypal": false,
+    "payflow": false
+   },
+   "IQD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dinar",
+    "long": "Dinar",
+    "symbol": "IQD",
+    "paypal": false,
+    "payflow": false
+   },
+   "JMD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "JMD",
+    "paypal": false,
+    "payflow": false
+   },
+   "JOD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dinar",
+    "long": "Dinar",
+    "symbol": "JOD",
+    "paypal": false,
+    "payflow": false
+   },
+   "KZT": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Tenge",
+    "long": "Tenge",
+    "symbol": "KZT",
+    "paypal": false,
+    "payflow": false
+   },
+   "KES": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Shilling",
+    "long": "Shilling",
+    "symbol": "KES",
+    "paypal": false,
+    "payflow": false
+   },
+   "KWD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dinar",
+    "long": "Dinar",
+    "symbol": "KWD",
+    "paypal": false,
+    "payflow": false
+   },
+   "LAK": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Kip",
+    "long": "Kip",
+    "symbol": "LAK",
+    "paypal": false,
+    "payflow": false
+   },
+   "LBP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pound",
+    "long": "Pound",
+    "symbol": "LBP",
+    "paypal": false,
+    "payflow": false
+   },
+   "LSL": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Loti",
+    "long": "Loti",
+    "symbol": "LSL",
+    "paypal": false,
+    "payflow": false
+   },
+   "LRD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "LRD",
+    "paypal": false,
+    "payflow": false
+   },
+   "LYD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dinar",
+    "long": "Dinar",
+    "symbol": "LYD",
+    "paypal": false,
+    "payflow": false
+   },
+   "MOP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pataca",
+    "long": "Pataca",
+    "symbol": "MOP",
+    "paypal": false,
+    "payflow": false
+   },
+   "MKD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Denar",
+    "long": "Denar",
+    "symbol": "MKD",
+    "paypal": false,
+    "payflow": false
+   },
+   "MWK": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Kwacha",
+    "long": "Kwacha",
+    "symbol": "MWK",
+    "paypal": false,
+    "payflow": false
+   },
+   "MYR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Ringgit",
+    "long": "Ringgit",
+    "symbol": "MYR",
+    "paypal": false,
+    "payflow": false
+   },
+   "MVR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rufiyaa",
+    "long": "Rufiyaa",
+    "symbol": "MVR",
+    "paypal": false,
+    "payflow": false
+   },
+   "MRU": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Ouguiya",
+    "long": "Ouguiya",
+    "symbol": "MRU",
+    "paypal": false,
+    "payflow": false
+   },
+   "MUR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupee",
+    "long": "Rupee",
+    "symbol": "MUR",
+    "paypal": false,
+    "payflow": false
+   },
+   "MDL": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Leu",
+    "long": "Leu",
+    "symbol": "MDL",
+    "paypal": false,
+    "payflow": false
+   },
+   "MNT": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Tugrik",
+    "long": "Tugrik",
+    "symbol": "MNT",
+    "paypal": false,
+    "payflow": false
+   },
+   "MAD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dirham",
+    "long": "Dirham",
+    "symbol": "MAD",
+    "paypal": false,
+    "payflow": false
+   },
+   "MMK": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Kyat",
+    "long": "Kyat",
+    "symbol": "MMK",
+    "paypal": false,
+    "payflow": false
+   },
+   "NAD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "NAD",
+    "paypal": false,
+    "payflow": false
+   },
+   "NPR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupee",
+    "long": "Rupee",
+    "symbol": "NPR",
+    "paypal": false,
+    "payflow": false
+   },
+   "NIO": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Cordoba",
+    "long": "Cordoba",
+    "symbol": "NIO",
+    "paypal": false,
+    "payflow": false
+   },
+   "NGN": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Naira",
+    "long": "Naira",
+    "symbol": "NGN",
+    "paypal": false,
+    "payflow": false
+   },
+   "KPW": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Won",
+    "long": "Won",
+    "symbol": "KPW",
+    "paypal": false,
+    "payflow": false
+   },
+   "OMR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rial",
+    "long": "Rial",
+    "symbol": "OMR",
+    "paypal": false,
+    "payflow": false
+   },
+   "PKR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupee",
+    "long": "Rupee",
+    "symbol": "PKR",
+    "paypal": false,
+    "payflow": false
+   },
+   "PAB": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Balboa",
+    "long": "Balboa",
+    "symbol": "PAB",
+    "paypal": false,
+    "payflow": false
+   },
+   "PGK": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Kina",
+    "long": "Kina",
+    "symbol": "PGK",
+    "paypal": false,
+    "payflow": false
+   },
+   "PYG": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Guarani",
+    "long": "Guarani",
+    "symbol": "PYG",
+    "paypal": false,
+    "payflow": false
+   },
+   "PEN": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Sol",
+    "long": "Sol",
+    "symbol": "PEN",
+    "paypal": false,
+    "payflow": false
+   },
+   "PHP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Peso",
+    "long": "Peso",
+    "symbol": "PHP",
+    "paypal": false,
+    "payflow": false
+   },
+   "QAR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rial",
+    "long": "Rial",
+    "symbol": "QAR",
+    "paypal": false,
+    "payflow": false
+   },
+   "RUB": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Ruble",
+    "long": "Ruble",
+    "symbol": "RUB",
+    "paypal": false,
+    "payflow": false
+   },
+   "WST": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Tala",
+    "long": "Tala",
+    "symbol": "WST",
+    "paypal": false,
+    "payflow": false
+   },
+   "STD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dobra",
+    "long": "Dobra",
+    "symbol": "STD",
+    "paypal": false,
+    "payflow": false
+   },
+   "SAR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rial",
+    "long": "Rial",
+    "symbol": "SAR",
+    "paypal": false,
+    "payflow": false
+   },
+   "SCR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupee",
+    "long": "Rupee",
+    "symbol": "SCR",
+    "paypal": false,
+    "payflow": false
+   },
+   "SLL": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Leone",
+    "long": "Leone",
+    "symbol": "SLL",
+    "paypal": false,
+    "payflow": false
+   },
+   "SBD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "SBD",
+    "paypal": false,
+    "payflow": false
+   },
+   "SOS": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Shilling",
+    "long": "Shilling",
+    "symbol": "SOS",
+    "paypal": false,
+    "payflow": false
+   },
+   "ZAR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rand",
+    "long": "Rand",
+    "symbol": "ZAR",
+    "paypal": false,
+    "payflow": false
+   },
+   "KRW": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Won",
+    "long": "Won",
+    "symbol": "KRW",
+    "paypal": false,
+    "payflow": false
+   },
+   "LKR": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rupee",
+    "long": "Rupee",
+    "symbol": "LKR",
+    "paypal": false,
+    "payflow": false
+   },
+   "SZL": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Lilangeni",
+    "long": "Lilangeni",
+    "symbol": "SZL",
+    "paypal": false,
+    "payflow": false
+   },
+   "SYP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pound",
+    "long": "Pound",
+    "symbol": "SYP",
+    "paypal": false,
+    "payflow": false
+   },
+   "TWD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "TWD",
+    "paypal": false,
+    "payflow": false
+   },
+   "TZS": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Shilling",
+    "long": "Shilling",
+    "symbol": "TZS",
+    "paypal": false,
+    "payflow": false
+   },
+   "THB": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Baht",
+    "long": "Baht",
+    "symbol": "THB",
+    "paypal": false,
+    "payflow": false
+   },
+   "TOP": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Pa'anga",
+    "long": "Pa'anga",
+    "symbol": "TOP",
+    "paypal": false,
+    "payflow": false
+   },
+   "TTD": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dollar",
+    "long": "Dollar",
+    "symbol": "TTD",
+    "paypal": false,
+    "payflow": false
+   },
+   "TND": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dinar",
+    "long": "Dinar",
+    "symbol": "TND",
+    "paypal": false,
+    "payflow": false
+   },
+   "TRY": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Lira",
+    "long": "Lira",
+    "symbol": "TRY",
+    "paypal": false,
+    "payflow": false
+   },
+   "UGX": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Shilling",
+    "long": "Shilling",
+    "symbol": "UGX",
+    "paypal": false,
+    "payflow": false
+   },
+   "UAH": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Hryvnia",
+    "long": "Hryvnia",
+    "symbol": "UAH",
+    "paypal": false,
+    "payflow": false
+   },
+   "AED": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Dirham",
+    "long": "Dirham",
+    "symbol": "AED",
+    "paypal": false,
+    "payflow": false
+   },
+   "UYU": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Peso",
+    "long": "Peso",
+    "symbol": "UYU",
+    "paypal": false,
+    "payflow": false
+   },
+   "VUV": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Vatu",
+    "long": "Vatu",
+    "symbol": "VUV",
+    "paypal": false,
+    "payflow": false
+   },
+   "YER": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Rial",
+    "long": "Rial",
+    "symbol": "YER",
+    "paypal": false,
+    "payflow": false
+   },
+   "ZMW": {
+    "prefix_utf8": "",
+    "prefix": "",
+    "prefix_informal_utf8": "",
+    "prefix_informal": "",
+    "suffix_informal": "",
+    "places": 2,
+    "a_dollar": 1,
+    "small_min_price": 1,
+    "medium_min_price": 1,
+    "fixed_rate": 1,
+    "plural": "Kwacha",
+    "long": "Kwacha",
+    "symbol": "ZMW",
+    "paypal": false,
+    "payflow": false
+   }
+  },
+  "list": [
+   "USD",
+   "AUD",
+   "THB",
+   "PAB",
+   "ETB",
+   "BOB",
+   "GBP",
+   "CAD",
+   "CRC",
+   "NIO",
+   "CZK",
+   "GMD",
+   "DKK",
+   "MKD",
+   "DZD",
+   "BHD",
+   "IQD",
+   "JOD",
+   "KWD",
+   "LYD",
+   "TND",
+   "MAD",
+   "AED",
+   "STD",
+   "XCD",
+   "BSD",
+   "BBD",
+   "BZD",
+   "BMD",
+   "BND",
+   "KYD",
+   "GYD",
+   "JMD",
+   "LRD",
+   "NAD",
+   "SBD",
+   "TWD",
+   "TTD",
+   "CVE",
+   "EUR",
+   "XOF",
+   "BIF",
+   "XAF",
+   "KMF",
+   "DJF",
+   "XPF",
+   "GNF",
+   "HTG",
+   "PYG",
+   "AWG",
+   "ANG",
+   "HKD",
+   "UAH",
+   "HUF",
+   "ILS",
+   "JPY",
+   "PGK",
+   "LAK",
+   "ISK",
+   "MWK",
+   "ZMW",
+   "MMK",
+   "ALL",
+   "HNL",
+   "SLL",
+   "MDL",
+   "SZL",
+   "TRY",
+   "LSL",
+   "MXN",
+   "NGN",
+   "NZD",
+   "BTN",
+   "NOK",
+   "MRU",
+   "TOP",
+   "MOP",
+   "ARS",
+   "CLP",
+   "COP",
+   "DOP",
+   "PHP",
+   "UYU",
+   "PLN",
+   "SHP",
+   "EGP",
+   "FKP",
+   "GIP",
+   "LBP",
+   "SYP",
+   "BWP",
+   "GTQ",
+   "ZAR",
+   "BRL",
+   "OMR",
+   "QAR",
+   "SAR",
+   "YER",
+   "KHR",
+   "MYR",
+   "RUB",
+   "MVR",
+   "RUP",
+   "INR",
+   "MUR",
+   "NPR",
+   "PKR",
+   "SCR",
+   "LKR",
+   "IDR",
+   "KES",
+   "SOS",
+   "TZS",
+   "UGX",
+   "SGD",
+   "PEN",
+   "SEK",
+   "CHF",
+   "BDT",
+   "WST",
+   "KZT",
+   "MNT",
+   "VUV",
+   "KPW",
+   "KRW",
+   "CNY"
+  ],
+  "rates": {
+   "USD": 1.0,
+   "AUD": 0.684925,
+   "THB": 0.0295946,
+   "PAB": 1.0,
+   "ETB": 0.00607438,
+   "BOB": 0.0843145,
+   "GBP": 1.32753,
+   "CAD": 0.701934,
+   "CRC": 0.00219491,
+   "NIO": 0.0268668,
+   "CZK": 0.0454833,
+   "GMD": 0.0135135,
+   "DKK": 0.14834,
+   "MKD": 0.0180441,
+   "DZD": 0.00730826,
+   "BHD": 2.62069,
+   "IQD": 0.000652122,
+   "JOD": 1.41044,
+   "KWD": 3.21158,
+   "LYD": 0.154873,
+   "TND": 0.33171,
+   "MAD": 0.101347,
+   "AED": 0.272294,
+   "STD": 4.48797e-05,
+   "XCD": 0.370021,
+   "BSD": 1.0,
+   "BBD": 0.5,
+   "BZD": 0.493637,
+   "BMD": 1.0,
+   "BND": 0.77655,
+   "KYD": 1.19132,
+   "GYD": 0.004738,
+   "JMD": 0.00625531,
+   "LRD": 0.00585679,
+   "NAD": 0.0603055,
+   "SBD": 0.123598,
+   "TWD": 0.0304024,
+   "TTD": 0.146385,
+   "CVE": 0.0100576,
+   "EUR": 1.10896,
+   "XOF": 0.00169059,
+   "BIF": 0.000331872,
+   "XAF": 0.00169059,
+   "KMF": 0.00226244,
+   "DJF": 0.00555196,
+   "XPF": 0.00929306,
+   "GNF": 0.000112065,
+   "HTG": 0.00757379,
+   "PYG": 0.000160153,
+   "AWG": 0.555556,
+   "ANG": 0.558659,
+   "HKD": 0.12747,
+   "UAH": 0.0218277,
+   "HUF": 0.00303955,
+   "ILS": 0.314971,
+   "JPY": 0.00625492,
+   "PGK": 0.220142,
+   "LAK": 4.39229e-05,
+   "ISK": 0.00811754,
+   "MWK": 0.000572534,
+   "ZMW": 0.0487266,
+   "MMK": 0.000476202,
+   "ALL": 0.0122145,
+   "HNL": 0.0367804,
+   "SLL": 4.76883e-05,
+   "MDL": 0.0550184,
+   "SZL": 0.0602889,
+   "TRY": 0.0199067,
+   "LSL": 0.0603055,
+   "MXN": 0.0536814,
+   "NGN": 0.000742964,
+   "NZD": 0.556417,
+   "BTN": 0.0105639,
+   "NOK": 0.104689,
+   "MRU": 0.0245083,
+   "TOP": 0.415324,
+   "MOP": 0.122867,
+   "ARS": 0.000647459,
+   "CLP": 0.00101602,
+   "COP": 0.000301803,
+   "DOP": 0.0163003,
+   "PHP": 0.0157735,
+   "UYU": 0.0244328,
+   "PLN": 0.251271,
+   "SHP": 1.32753,
+   "EGP": 0.0186759,
+   "FKP": 1.32753,
+   "GIP": 1.32753,
+   "LBP": 1.10857e-05,
+   "SYP": 7.69112e-05,
+   "BWP": 0.0723661,
+   "GTQ": 0.129921,
+   "ZAR": 0.0602411,
+   "BRL": 0.179775,
+   "OMR": 2.60079,
+   "QAR": 0.271203,
+   "SAR": 0.26602,
+   "YER": 0.00422855,
+   "KHR": 0.000242416,
+   "MYR": 0.245543,
+   "RUB": 0.0120376,
+   "MVR": 0.0649351,
+   "RUP": 1.0,
+   "INR": 0.0106655,
+   "MUR": 0.0211999,
+   "NPR": 0.00660253,
+   "PKR": 0.00360076,
+   "SCR": 0.0714338,
+   "LKR": 0.0029873,
+   "IDR": 5.49859e-05,
+   "KES": 0.00760861,
+   "SOS": 0.00172996,
+   "TZS": 0.000375744,
+   "UGX": 0.000243324,
+   "SGD": 0.778257,
+   "PEN": 0.290094,
+   "SEK": 0.100199,
+   "CHF": 1.19991,
+   "BDT": 0.00796293,
+   "WST": 0.363517,
+   "KZT": 0.0022237,
+   "MNT": 0.000277855,
+   "VUV": 0.00844381,
+   "KPW": 0.00111111,
+   "KRW": 0.00074773,
+   "CNY": 0.149909
+  },
+  "setting": null,
+  "current": null
+ },
+ "fan_read_only": false,
+ "from_fansuggest": null,
+ "fan_stats": null,
+ "tracklists": {
+  "collection": {
+   "p2218630545": [
+    {
+     "id": 1808922859,
+     "title": "Lady Daydream",
+     "artist": "Mr Twin Sister",
+     "track_number": 2,
+     "duration": 201.565,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1808922859&ts=1794427994&t=5a21113414ed4a33ccfc677d1f2a0726cba78066"
+     }
+    }
+   ],
+   "p4269455097": [
+    {
+     "id": 3389760367,
+     "title": "Disco Dancer",
+     "artist": "Kiki Gyan",
+     "track_number": 1,
+     "duration": 416.8,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3389760367&ts=1794427994&t=a7e173277bbead0540a063c6292003c3527df205"
+     }
+    }
+   ],
+   "p2399561569": [
+    {
+     "id": 3782374192,
+     "title": "POINT NINE",
+     "artist": "QUARTERBACKS",
+     "track_number": 1,
+     "duration": 109.0,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3782374192&ts=1794427994&t=69cdc650e1c7e4b486c1b5a777b05c7481ccc91f"
+     }
+    }
+   ],
+   "a264179153": [
+    {
+     "id": 1784244094,
+     "title": "We Were Blowin' Shit Up For Days",
+     "artist": "Girl Scouts",
+     "track_number": 1,
+     "duration": 181.185,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1784244094&ts=1794427994&t=214b1d2d4b671e86a60c130fdd4402c53261c14d"
+     }
+    }
+   ],
+   "a212220859": [
+    {
+     "id": 1680472058,
+     "title": "Last Dance For Napkin Lad",
+     "artist": "oddlogic",
+     "track_number": 1,
+     "duration": 182.857,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1680472058&ts=1794427994&t=00f41f50786dddebc1f40da1bcc7a79bd1cca15a"
+     }
+    }
+   ],
+   "p3456658356": [
+    {
+     "id": 199206384,
+     "title": "Dragon Queens (Skeletron Mix) (STRFKR)",
+     "artist": "STRFKR",
+     "track_number": 1,
+     "duration": 203.587,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=199206384&ts=1794427994&t=ad89a233014dcec42eec5e49d41264c27188da3d"
+     }
+    }
+   ],
+   "a4163546699": [
+    {
+     "id": 1727559489,
+     "title": "285",
+     "artist": "iLLmont",
+     "track_number": 14,
+     "duration": 244.947,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1727559489&ts=1794427994&t=4a618cd8672e65cb28b49fd190b0676a38b7b316"
+     }
+    }
+   ],
+   "a197777527": [
+    {
+     "id": 798468742,
+     "title": "How to Make Love Stay",
+     "artist": "Empire! Empire! (I Was a Lonely Estate)",
+     "track_number": 1,
+     "duration": 264.76,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=798468742&ts=1794427994&t=c1395ce3316215daa4351ef1b45dbe3b74b915ba"
+     }
+    }
+   ],
+   "a247973342": [
+    {
+     "id": 3726760154,
+     "title": "Back In Line",
+     "artist": "Brendan Losch",
+     "track_number": 1,
+     "duration": 140.24,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3726760154&ts=1794427994&t=f0a281c34a7ad101ed9227f58a180bb03ce148c9"
+     }
+    }
+   ],
+   "a730614507": [
+    {
+     "id": 1366854574,
+     "title": "Numero 7",
+     "artist": "Sirs",
+     "track_number": 1,
+     "duration": 158.5,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1366854574&ts=1794427994&t=d4854e4f2f1469b2ce9b021c5f714ce6aca86c58"
+     }
+    }
+   ],
+   "a2358643400": [
+    {
+     "id": 3629456948,
+     "title": "Champagne Life",
+     "artist": "Ricky Eat Acid + Arrange",
+     "track_number": 1,
+     "duration": 193.398,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3629456948&ts=1794427994&t=2e9c5f4996007bfa9622d867bbb632b0ce684586"
+     }
+    }
+   ],
+   "a609527152": [
+    {
+     "id": 3593433715,
+     "title": "So So So",
+     "artist": "Bad Sound",
+     "track_number": 3,
+     "duration": 185.165,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3593433715&ts=1794427994&t=39ef4b506a6ae922f0e77cdc1e418a91f8c7f1f3"
+     }
+    }
+   ],
+   "a4010709569": [
+    {
+     "id": 363707467,
+     "title": "Beautica",
+     "artist": "Bad Sound",
+     "track_number": 1,
+     "duration": 206.0,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=363707467&ts=1794427994&t=ccbab3316a37de02f5c75a8627166c322e7d97b2"
+     }
+    }
+   ],
+   "p1888711944": [
+    {
+     "id": 1910288107,
+     "title": "Try Pt. 1 / Pt. 2",
+     "artist": "SPOOK HOUSES",
+     "track_number": 1,
+     "duration": 304.56,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1910288107&ts=1794427994&t=75c64c39670a09d7181abd68901fb060a85a65ff"
+     }
+    }
+   ],
+   "a1803195507": [
+    {
+     "id": 1428464249,
+     "title": "Living Together",
+     "artist": "XXYYXX",
+     "track_number": 1,
+     "duration": 185.27,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1428464249&ts=1794427994&t=d9da95401f0f6dc463d6cb46a039ee923a9fa7a1"
+     }
+    }
+   ],
+   "a2354567944": [
+    {
+     "id": 2876144982,
+     "title": "About You",
+     "artist": "XXYYXX",
+     "track_number": 1,
+     "duration": 247.772,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2876144982&ts=1794427994&t=93fa88a3a4e4bd0c02ae9062cc1c6ecd0d58aa95"
+     }
+    }
+   ],
+   "p781733050": [
+    {
+     "id": 3143869553,
+     "title": "CHEEP THRILLS",
+     "artist": "WK/SH",
+     "track_number": 1,
+     "duration": 178.445,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3143869553&ts=1794427994&t=acd8e21ebcade96c1fdb4599e4e5736d14c4ee99"
+     }
+    }
+   ],
+   "a2425357717": [
+    {
+     "id": 962041425,
+     "title": "Untitled (Yes!)",
+     "artist": "Allen Thomas",
+     "track_number": 2,
+     "duration": 133.31,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=962041425&ts=1794427994&t=19623f4ef6ed18aaf5b8060351589c980dc4b4f2"
+     }
+    }
+   ],
+   "a3557538685": [
+    {
+     "id": 2036773781,
+     "title": "Green Slurpee",
+     "artist": "iLLmont",
+     "track_number": 10,
+     "duration": 201.615,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2036773781&ts=1794427994&t=a7b5f96238deacae7452a766d857ff7aeef17b69"
+     }
+    }
+   ],
+   "p1318145991": [
+    {
+     "id": 3100906826,
+     "title": "Turn Twice",
+     "artist": "SPOOK HOUSES",
+     "track_number": 2,
+     "duration": 70.6815,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3100906826&ts=1794427994&t=cb67235b48136d6876f11d2e496c4e58d51f300c"
+     }
+    }
+   ]
+  },
+  "wishlist": {
+   "a444858048": [
+    {
+     "id": 3268125665,
+     "title": "Flutter",
+     "artist": "Maston",
+     "track_number": 8,
+     "duration": 181.248,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3268125665&ts=1794427994&t=53ba940e7245a25c081ddca941c0abf4d4816bb4"
+     }
+    }
+   ],
+   "t3268125665": [
+    {
+     "id": 3268125665,
+     "title": "Flutter",
+     "artist": "Maston",
+     "track_number": 8,
+     "duration": 181.248,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3268125665&ts=1794427994&t=53ba940e7245a25c081ddca941c0abf4d4816bb4"
+     }
+    }
+   ],
+   "a1028150269": [
+    {
+     "id": 913047620,
+     "title": "Y\u00da",
+     "artist": "Dreamdecay",
+     "track_number": 1,
+     "duration": 211.356,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=913047620&ts=1794427994&t=d3acd8991f13f831347c2d4103fce99170c70d1f"
+     }
+    }
+   ],
+   "a1001012097": [
+    {
+     "id": 1690695812,
+     "title": "Ojo",
+     "artist": "Tunji Oyelana",
+     "track_number": 1,
+     "duration": 374.96,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1690695812&ts=1794427994&t=799c30b0e9ad3d00cfaf9e003ab5e1640cc167af"
+     }
+    }
+   ],
+   "a3445221655": [
+    {
+     "id": 95379503,
+     "title": "Loose Up Yourself",
+     "artist": "Rob",
+     "track_number": 1,
+     "duration": 206.813,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=95379503&ts=1794427994&t=cbfc44c1bdd3070f325a803f72aa4fac4be7a94c"
+     }
+    }
+   ],
+   "a821960319": [
+    {
+     "id": 2930917920,
+     "title": "Got to Move, Got to Get Out! (Ana Nkpong ana Nwuoro",
+     "artist": "Ibibio Sound Machine",
+     "track_number": 9,
+     "duration": 271.853,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2930917920&ts=1794427994&t=19a4b07030a2c7da17e03dc8bdf1de1dca20ff8a"
+     }
+    }
+   ],
+   "a1744385092": [
+    {
+     "id": 4118708023,
+     "title": "Fela's Special",
+     "artist": "Fela Ransome-Kuti & His Highlife Rakers",
+     "track_number": 1,
+     "duration": 224.488,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=4118708023&ts=1794427994&t=184ebe11dab69bddd5e3b88997f2ffde194345c0"
+     }
+    }
+   ],
+   "a399115634": [
+    {
+     "id": 1715972904,
+     "title": "I Can Feel It",
+     "artist": "Various Artists",
+     "track_number": 1,
+     "duration": 298.68,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1715972904&ts=1794427994&t=6333a87b912368cbebd6682b3c7b1e93f5b30698"
+     }
+    }
+   ],
+   "a2646456500": [
+    {
+     "id": 263498074,
+     "title": "Hummingbird",
+     "artist": "Ondatr\u00f3pica",
+     "track_number": 3,
+     "duration": 271.613,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=263498074&ts=1794427994&t=caad954570597499ae505c77011f19d0b9e697e3"
+     }
+    }
+   ],
+   "a1368576689": [
+    {
+     "id": 2452809991,
+     "title": "Jute",
+     "artist": "Various Artists",
+     "track_number": 2,
+     "duration": 349.875,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2452809991&ts=1794427994&t=c851fd12587f4ae822406dccb66993eeb379b6e4"
+     }
+    }
+   ],
+   "a3187206995": [
+    {
+     "id": 2643939483,
+     "title": "NR 1",
+     "artist": "KWC 92",
+     "track_number": 1,
+     "duration": 266.725,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2643939483&ts=1794427994&t=c3b720eed70f8f48172ea64a10f8660a5de0cd1c"
+     }
+    }
+   ],
+   "a3068595163": [
+    {
+     "id": 2066516574,
+     "title": "Lies & Movement",
+     "artist": "Health Problems",
+     "track_number": 1,
+     "duration": 139.947,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2066516574&ts=1794427994&t=ffd5d8a6c011969c1a6ccf2bc676ef36c52318c4"
+     }
+    }
+   ],
+   "a2884205964": [
+    {
+     "id": 4112786081,
+     "title": "Lost in Motion",
+     "artist": "sloslylove",
+     "track_number": 1,
+     "duration": 180.0,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=4112786081&ts=1794427994&t=d25f548b2202b059691aa6aeca9c772b5ac83db1"
+     }
+    }
+   ],
+   "a812883016": [
+    {
+     "id": 334541236,
+     "title": "Onuinu",
+     "artist": "Mirror Gazer",
+     "track_number": 1,
+     "duration": 343.52,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=334541236&ts=1794427994&t=ba064946988bde0f11c459dc3574f147af1919c4"
+     }
+    }
+   ],
+   "t2634791310": [
+    {
+     "id": 2634791310,
+     "title": "Poor Relations",
+     "artist": "Mr Twin Sister",
+     "track_number": null,
+     "duration": 261.363,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2634791310&ts=1794427994&t=196a7bcec85b87265e6d0e497104c550cf5be4a1"
+     }
+    }
+   ],
+   "a3164149835": [
+    {
+     "id": 359176409,
+     "title": "astro logic",
+     "artist": "sleepyeyes",
+     "track_number": 1,
+     "duration": 76.5024,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=359176409&ts=1794427994&t=7adc48cbae1b8d5dba50c77e01afd53285d153d9"
+     }
+    }
+   ],
+   "a134435640": [
+    {
+     "id": 4169204571,
+     "title": "laundry",
+     "artist": "sleepyeyes",
+     "track_number": 1,
+     "duration": 89.5795,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=4169204571&ts=1794427994&t=625a63fd1b6943e41e6fd758aa1c808f0aaca345"
+     }
+    }
+   ],
+   "a2782518794": [
+    {
+     "id": 3668066106,
+     "title": "have you been eating that sandwich again",
+     "artist": "teen suicide",
+     "track_number": 3,
+     "duration": 73.1431,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3668066106&ts=1794427994&t=54ec427fbc2e6f88ff78c756807c144d2baa9f89"
+     }
+    }
+   ],
+   "a1443972995": [
+    {
+     "id": 636127893,
+     "title": "When You're Around",
+     "artist": "Pity Sex",
+     "track_number": 1,
+     "duration": 236.68,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=636127893&ts=1794427994&t=8802a50f35988f1c5a45746a4c1d59c900dd8462"
+     }
+    }
+   ],
+   "a1342890709": [
+    {
+     "id": 2263592641,
+     "title": "Huron River Drive",
+     "artist": "SHIGETO",
+     "track_number": 6,
+     "duration": 159.964,
+     "file": {
+      "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2263592641&ts=1794427994&t=1f8defd001366dc85c133afca31dea8d7b8a4b9e"
+     }
+    }
+   ]
+  },
+  "gifts_given": {},
+  "hidden": {}
+ },
+ "platform": "mac",
+ "active_tab": "following",
+ "mobile_app_compatible": false,
+ "fan_data": {
+  "trackpipe_url": "https://bandcamp.com/deerhoof",
+  "username": "deerhoof",
+  "name": "kkg",
+  "fan_id": 9916,
+  "location": "Sacramento, California",
+  "raw_location": "pnw",
+  "bio": "",
+  "photo": {
+   "image_id": 25908982,
+   "width": 661,
+   "height": 661
+  },
+  "website_url": "",
+  "is_own_page": null,
+  "followers_count": 11,
+  "following_bands_count": 12,
+  "following_fans_count": 3,
+  "following_genres_count": 0,
+  "subscriptions_count": 0,
+  "fav_genre": "Electronic"
+ },
+ "current_fan": {
+  "fan_id": null,
+  "username": null,
+  "item_lookup": {},
+  "trackpipe_url": null,
+  "collection_count": 22,
+  "is_following": null,
+  "is_following_any": null,
+  "is_own_collection": null,
+  "subscriptions_count": 0
+ },
+ "collection_data": {
+  "redownload_urls": {},
+  "last_token": "1345923891:1318145991:p::",
+  "item_count": 22,
+  "batch_size": 20,
+  "hidden_items_count": 0,
+  "small_collection": false,
+  "small_wishlist": false,
+  "purchase_infos": {},
+  "collectors": {},
+  "sequence": [],
+  "pending_sequence": [
+   "p2218630545",
+   "p4269455097",
+   "p2399561569",
+   "a264179153",
+   "a212220859",
+   "p3456658356",
+   "a4163546699",
+   "a197777527",
+   "a247973342",
+   "a730614507",
+   "a2358643400",
+   "a609527152",
+   "a4010709569",
+   "p1888711944",
+   "a1803195507",
+   "a2354567944",
+   "p781733050",
+   "a2425357717",
+   "a3557538685",
+   "p1318145991"
+  ]
+ },
+ "wishlist_data": {
+  "last_token": "1357279013:1342890709:a::",
+  "item_count": 22,
+  "batch_size": 20,
+  "hidden": false,
+  "sequence": [],
+  "pending_sequence": [
+   "a444858048",
+   "t3268125665",
+   "a1028150269",
+   "a1001012097",
+   "a3445221655",
+   "a821960319",
+   "a1744385092",
+   "a399115634",
+   "a2646456500",
+   "a1368576689",
+   "a3187206995",
+   "a3068595163",
+   "a2884205964",
+   "a812883016",
+   "t2634791310",
+   "a3164149835",
+   "a134435640",
+   "a2782518794",
+   "a1443972995",
+   "a1342890709"
+  ]
+ },
+ "hidden_data": {
+  "last_token": null,
+  "last_token_is_gift_given": null,
+  "item_count": null,
+  "batch_size": 20,
+  "sequence": [],
+  "pending_sequence": []
+ },
+ "gifts_given_data": {
+  "visible_count": 0,
+  "hidden_count": 0,
+  "similar": {},
+  "last_token": null,
+  "item_count": 0,
+  "batch_size": 20,
+  "sequence": [],
+  "pending_sequence": []
+ },
+ "followers_data": {
+  "last_token": "1360749267:10530",
+  "batch_size": 20,
+  "item_count": 11,
+  "sequence": [],
+  "pending_sequence": [
+   "3787024",
+   "148105",
+   "584639",
+   "324485",
+   "572680",
+   "96337",
+   "116180",
+   "6064",
+   "41860",
+   "5682",
+   "10530"
+  ]
+ },
+ "following_bands_data": {
+  "last_token": "1357273335:10312360",
+  "batch_size": 20,
+  "item_count": 12,
+  "sequence": [
+   "1199846473",
+   "1925094950",
+   "2831727005",
+   "3915112459",
+   "2789805108",
+   "2678428111",
+   "1484982518",
+   "1014705723",
+   "982632003",
+   "785877430",
+   "542854636",
+   "10312360"
+  ],
+  "pending_sequence": []
+ },
+ "following_fans_data": {
+  "last_token": "1357273437:50",
+  "batch_size": 20,
+  "item_count": 3,
+  "sequence": [
+   "945019",
+   "41860",
+   "50"
+  ],
+  "pending_sequence": []
+ },
+ "following_genres_data": {
+  "last_token": null,
+  "batch_size": 20,
+  "item_count": 0,
+  "hidden": false,
+  "sequence": [],
+  "pending_sequence": []
+ },
+ "embed_data": {
+  "linkback": "http://bandcamp.com/deerhoof"
+ },
+ "item_cache": {
+  "collection": {
+   "p2218630545": {
+    "item_id": 2218630545,
+    "item_type": "package",
+    "tralbum_id": 252222937,
+    "tralbum_type": "a",
+    "album_id": 252222937,
+    "item_title": "Color Your Life",
+    "band_id": 1925094950,
+    "band_name": "Mr Twin Sister",
+    "featured_track": 1808922859,
+    "featured_track_title": "Lady Daydream",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 472,
+    "why": null,
+    "url_hints": {
+     "subdomain": "mrtwinsister",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "color-your-life",
+     "item_type": "a"
+    },
+    "item_art_id": 1497472458,
+    "item_url": "https://mrtwinsister.bandcamp.com/album/color-your-life",
+    "package_details": null,
+    "num_streamable_tracks": 14,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 169623379,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "25 Aug 2021 16:31:47 GMT"
+   },
+   "p4269455097": {
+    "item_id": 4269455097,
+    "item_type": "package",
+    "tralbum_id": 1360408186,
+    "tralbum_type": "a",
+    "album_id": 1360408186,
+    "item_title": "24 Hours In A Disco 1978-82",
+    "band_id": 2831727005,
+    "band_name": "Kiki Gyan",
+    "featured_track": 3389760367,
+    "featured_track_title": "Disco Dancer",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 752,
+    "why": null,
+    "url_hints": {
+     "subdomain": "soundwayrecords",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "24-hours-in-a-disco-1978-82",
+     "item_type": "a"
+    },
+    "item_art_id": 275121638,
+    "item_url": "https://soundwayrecords.bandcamp.com/album/24-hours-in-a-disco-1978-82",
+    "package_details": {
+     "title": "180g Double Vinyl",
+     "description": "***FOR EU ORDERS PLEASE ORDER HERE***\nhttps://miniwax.club/en/products/24-hours-in-a-disco-1978-82-cd?variant=48448661455173\n\nVinyl tracklist:\n\n1.Disco Dancer\n2.24 Hours In A Disco \n3.Keep On Dancing\n4.Disco Train\n5.Pretty Pretty Girls\n6.Sexy Dancer\n7.Loving You",
+     "private": null,
+     "killed": null,
+     "band_id": 2831727005,
+     "label_id": null,
+     "is_subscriber_only": false,
+     "is_live_event": false,
+     "live_event_type": null,
+     "images": [
+      {
+       "image_id": 10775008,
+       "width": 2400,
+       "height": 1700
+      }
+     ],
+     "band_name": "Kiki Gyan",
+     "url_hints": {
+      "subdomain": "soundwayrecords",
+      "custom_domain": null,
+      "custom_domain_verified": null,
+      "slug": "/album/24-hours-in-a-disco-1978-82",
+      "item_type": "a"
+     },
+     "item_url": "https://soundwayrecords.bandcamp.com/album/24-hours-in-a-disco-1978-82"
+    },
+    "num_streamable_tracks": 8,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 169619127,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "25 Aug 2021 16:31:08 GMT"
+   },
+   "p2399561569": {
+    "item_id": 2399561569,
+    "item_type": "package",
+    "tralbum_id": 3926906271,
+    "tralbum_type": "a",
+    "album_id": 3926906271,
+    "item_title": "LOVESEAT",
+    "band_id": 1069868962,
+    "band_name": "QUARTERBACKS",
+    "featured_track": 3782374192,
+    "featured_track_title": "POINT NINE",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 125,
+    "why": null,
+    "url_hints": {
+     "subdomain": "quarterbacks",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "loveseat",
+     "item_type": "a"
+    },
+    "item_art_id": 3669562184,
+    "item_url": "https://quarterbacks.bandcamp.com/album/loveseat",
+    "package_details": {
+     "title": "\"LOVESEAT\" CASSETTE",
+     "description": "SECOND RUN OF 100 // VIA DOUBLE DOUBLE WHAMMY /// CLEAR CASSETTE /// FULL COLOR INSERT",
+     "private": null,
+     "killed": null,
+     "band_id": 1069868962,
+     "label_id": null,
+     "is_subscriber_only": false,
+     "is_live_event": false,
+     "live_event_type": null,
+     "images": [
+      {
+       "image_id": 1850607,
+       "width": 3008,
+       "height": 2000
+      },
+      {
+       "image_id": 1850611,
+       "width": 3008,
+       "height": 2000
+      }
+     ],
+     "band_name": "QUARTERBACKS",
+     "url_hints": {
+      "subdomain": "quarterbacks",
+      "custom_domain": null,
+      "custom_domain_verified": null,
+      "slug": "/album/loveseat",
+      "item_type": "a"
+     },
+     "item_url": "https://quarterbacks.bandcamp.com/album/loveseat"
+    },
+    "num_streamable_tracks": 12,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4955178,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "09 Oct 2012 22:40:18 GMT"
+   },
+   "a264179153": {
+    "item_id": 264179153,
+    "item_type": "album",
+    "tralbum_id": 264179153,
+    "tralbum_type": "a",
+    "album_id": 264179153,
+    "item_title": "thanksalot",
+    "band_id": 3118039996,
+    "band_name": "Girl Scouts",
+    "featured_track": 1784244094,
+    "featured_track_title": "We Were Blowin' Shit Up For Days",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 126,
+    "why": null,
+    "url_hints": {
+     "subdomain": "girlscouts",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "thanksalot",
+     "item_type": "a"
+    },
+    "item_art_id": 1673571433,
+    "item_url": "https://girlscouts.bandcamp.com/album/thanksalot",
+    "package_details": null,
+    "num_streamable_tracks": 2,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4945629,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "09 Oct 2012 03:25:23 GMT"
+   },
+   "a212220859": {
+    "item_id": 212220859,
+    "item_type": "album",
+    "tralbum_id": 212220859,
+    "tralbum_type": "a",
+    "album_id": 212220859,
+    "item_title": "[OUT_27] Autumn Wilt",
+    "band_id": 10312360,
+    "band_name": "oddlogic",
+    "featured_track": 1680472058,
+    "featured_track_title": "Last Dance For Napkin Lad",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 18,
+    "why": null,
+    "url_hints": {
+     "subdomain": "outlierrecordings",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "out-27-autumn-wilt",
+     "item_type": "a"
+    },
+    "item_art_id": 3016189304,
+    "item_url": "https://outlierrecordings.bandcamp.com/album/out-27-autumn-wilt",
+    "package_details": null,
+    "num_streamable_tracks": 9,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4853144,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "01 Oct 2012 07:26:57 GMT"
+   },
+   "p3456658356": {
+    "item_id": 3456658356,
+    "item_type": "package",
+    "tralbum_id": 2557349554,
+    "tralbum_type": "a",
+    "album_id": 2557349554,
+    "item_title": "STRFKR/Champagne Champagne",
+    "band_id": 3917826897,
+    "band_name": "STRFKR",
+    "featured_track": 199206384,
+    "featured_track_title": "Dragon Queens (Skeletron Mix) (STRFKR)",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 105,
+    "why": null,
+    "url_hints": {
+     "subdomain": "starfucker",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "strfkr-champagne-champagne",
+     "item_type": "a"
+    },
+    "item_art_id": 2590158287,
+    "item_url": "https://starfucker.bandcamp.com/album/strfkr-champagne-champagne",
+    "package_details": null,
+    "num_streamable_tracks": 2,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4841823,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "30 Sep 2012 07:30:16 GMT"
+   },
+   "a4163546699": {
+    "item_id": 4163546699,
+    "item_type": "album",
+    "tralbum_id": 4163546699,
+    "tralbum_type": "a",
+    "album_id": 4163546699,
+    "item_title": "Shawty",
+    "band_id": 3940398213,
+    "band_name": "iLLmont",
+    "featured_track": 1727559489,
+    "featured_track_title": "285",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 30,
+    "why": null,
+    "url_hints": {
+     "subdomain": "illmont",
+     "custom_domain": "illmontforrealmont.com",
+     "custom_domain_verified": null,
+     "slug": "shawty-2",
+     "item_type": "a"
+    },
+    "item_art_id": 4210579565,
+    "item_url": "https://illmont.bandcamp.com/album/shawty-2",
+    "package_details": null,
+    "num_streamable_tracks": 25,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4818886,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "28 Sep 2012 04:02:00 GMT"
+   },
+   "a197777527": {
+    "item_id": 197777527,
+    "item_type": "album",
+    "tralbum_id": 197777527,
+    "tralbum_type": "a",
+    "album_id": 197777527,
+    "item_title": "What It Takes to Move Forward",
+    "band_id": 347035232,
+    "band_name": "Empire! Empire! (I Was a Lonely Estate)",
+    "featured_track": 798468742,
+    "featured_track_title": "How to Make Love Stay",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 460,
+    "why": null,
+    "url_hints": {
+     "subdomain": "empireempire",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "what-it-takes-to-move-forward",
+     "item_type": "a"
+    },
+    "item_art_id": 936451195,
+    "item_url": "https://empireempire.bandcamp.com/album/what-it-takes-to-move-forward",
+    "package_details": null,
+    "num_streamable_tracks": 13,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4817948,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "28 Sep 2012 02:13:54 GMT"
+   },
+   "a247973342": {
+    "item_id": 247973342,
+    "item_type": "album",
+    "tralbum_id": 247973342,
+    "tralbum_type": "a",
+    "album_id": 247973342,
+    "item_title": "''Song A Week'' Mixtape",
+    "band_id": 982632003,
+    "band_name": "Brendan Losch",
+    "featured_track": 3726760154,
+    "featured_track_title": "Back In Line",
+    "featured_track_url": "https://brendanlosch.bandcamp.com/album/song-a-week-mixtape?t=1",
+    "featured_track_is_custom": true,
+    "also_collected_count": 0,
+    "why": "i discovered this half my life ago (13 years ago!) and loved it then and love it now. folksy blues for fall days.",
+    "url_hints": {
+     "subdomain": "brendanlosch",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "song-a-week-mixtape",
+     "item_type": "a"
+    },
+    "item_art_id": 4093155349,
+    "item_url": "https://brendanlosch.bandcamp.com/album/song-a-week-mixtape",
+    "package_details": null,
+    "num_streamable_tracks": 11,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4794725,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "26 Sep 2012 02:28:08 GMT"
+   },
+   "a730614507": {
+    "item_id": 730614507,
+    "item_type": "album",
+    "tralbum_id": 730614507,
+    "tralbum_type": "a",
+    "album_id": 730614507,
+    "item_title": "Bvvvvvvv",
+    "band_id": 709836905,
+    "band_name": "Sirs",
+    "featured_track": 1366854574,
+    "featured_track_title": "Numero 7",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 15,
+    "why": null,
+    "url_hints": {
+     "subdomain": "sirsmusic",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "bvvvvvvv",
+     "item_type": "a"
+    },
+    "item_art_id": 587417527,
+    "item_url": "https://sirsmusic.bandcamp.com/album/bvvvvvvv",
+    "package_details": null,
+    "num_streamable_tracks": 2,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4771977,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "24 Sep 2012 05:09:16 GMT"
+   },
+   "a2358643400": {
+    "item_id": 2358643400,
+    "item_type": "album",
+    "tralbum_id": 2358643400,
+    "tralbum_type": "a",
+    "album_id": 2358643400,
+    "item_title": "Sketches",
+    "band_id": 350305301,
+    "band_name": "Ricky Eat Acid + Arrange",
+    "featured_track": 3629456948,
+    "featured_track_title": "Champagne Life",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 473,
+    "why": null,
+    "url_hints": {
+     "subdomain": "rickyeatacid",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "sketches",
+     "item_type": "a"
+    },
+    "item_art_id": 4210869820,
+    "item_url": "https://rickyeatacid.bandcamp.com/album/sketches",
+    "package_details": null,
+    "num_streamable_tracks": 4,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4751634,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "22 Sep 2012 09:04:27 GMT"
+   },
+   "a609527152": {
+    "item_id": 609527152,
+    "item_type": "album",
+    "tralbum_id": 609527152,
+    "tralbum_type": "a",
+    "album_id": 609527152,
+    "item_title": "SO SO SO",
+    "band_id": 1242119004,
+    "band_name": "Bad Sound",
+    "featured_track": 3593433715,
+    "featured_track_title": "So So So",
+    "featured_track_url": "https://badsound.bandcamp.com/album/so-so-so?t=3",
+    "featured_track_is_custom": true,
+    "also_collected_count": 21,
+    "why": "one of the happiest accessible albums i've ever had the joy of jammin to",
+    "url_hints": {
+     "subdomain": "badsound",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "so-so-so",
+     "item_type": "a"
+    },
+    "item_art_id": 2528607133,
+    "item_url": "https://badsound.bandcamp.com/album/so-so-so",
+    "package_details": null,
+    "num_streamable_tracks": 3,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4722912,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "19 Sep 2012 22:15:35 GMT"
+   },
+   "a4010709569": {
+    "item_id": 4010709569,
+    "item_type": "album",
+    "tralbum_id": 4010709569,
+    "tralbum_type": "a",
+    "album_id": 4010709569,
+    "item_title": "Bad Sound",
+    "band_id": 1242119004,
+    "band_name": "Bad Sound",
+    "featured_track": 363707467,
+    "featured_track_title": "Beautica",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 24,
+    "why": null,
+    "url_hints": {
+     "subdomain": "badsound",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "bad-sound",
+     "item_type": "a"
+    },
+    "item_art_id": 1824586248,
+    "item_url": "https://badsound.bandcamp.com/album/bad-sound",
+    "package_details": null,
+    "num_streamable_tracks": 11,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4722911,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "19 Sep 2012 22:15:35 GMT"
+   },
+   "p1888711944": {
+    "item_id": 1888711944,
+    "item_type": "package",
+    "tralbum_id": 141888809,
+    "tralbum_type": "a",
+    "album_id": 141888809,
+    "item_title": "TRYING",
+    "band_id": 1014705723,
+    "band_name": "SPOOK HOUSES",
+    "featured_track": 1910288107,
+    "featured_track_title": "Try Pt. 1 / Pt. 2",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 370,
+    "why": null,
+    "url_hints": {
+     "subdomain": "spookhouses",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "trying",
+     "item_type": "a"
+    },
+    "item_art_id": 857045674,
+    "item_url": "https://spookhouses.bandcamp.com/album/trying",
+    "package_details": null,
+    "num_streamable_tracks": 9,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4722000,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "19 Sep 2012 20:50:07 GMT"
+   },
+   "a1803195507": {
+    "item_id": 1803195507,
+    "item_type": "album",
+    "tralbum_id": 1803195507,
+    "tralbum_type": "a",
+    "album_id": 1803195507,
+    "item_title": "Mystify",
+    "band_id": 785877430,
+    "band_name": "XXYYXX",
+    "featured_track": 1428464249,
+    "featured_track_title": "Living Together",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 2047,
+    "why": null,
+    "url_hints": {
+     "subdomain": "xxyyxx",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "mystify",
+     "item_type": "a"
+    },
+    "item_art_id": 1517869180,
+    "item_url": "https://xxyyxx.bandcamp.com/album/mystify",
+    "package_details": null,
+    "num_streamable_tracks": 6,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4653821,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "14 Sep 2012 03:05:16 GMT"
+   },
+   "a2354567944": {
+    "item_id": 2354567944,
+    "item_type": "album",
+    "tralbum_id": 2354567944,
+    "tralbum_type": "a",
+    "album_id": 2354567944,
+    "item_title": "XXYYXX",
+    "band_id": 785877430,
+    "band_name": "XXYYXX",
+    "featured_track": 2876144982,
+    "featured_track_title": "About You",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 5488,
+    "why": null,
+    "url_hints": {
+     "subdomain": "xxyyxx",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "xxyyxx",
+     "item_type": "a"
+    },
+    "item_art_id": 1327378404,
+    "item_url": "https://xxyyxx.bandcamp.com/album/xxyyxx",
+    "package_details": null,
+    "num_streamable_tracks": 13,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4653827,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "14 Sep 2012 03:05:16 GMT"
+   },
+   "p781733050": {
+    "item_id": 781733050,
+    "item_type": "package",
+    "tralbum_id": 2518243628,
+    "tralbum_type": "a",
+    "album_id": 2518243628,
+    "item_title": "WEIRD KOREA/SPOOK HOUSES SPLIT TAPE",
+    "band_id": 2678428111,
+    "band_name": "WK/SH",
+    "featured_track": 3143869553,
+    "featured_track_title": "CHEEP THRILLS",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 11,
+    "why": null,
+    "url_hints": {
+     "subdomain": "weirdkorea",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "weird-korea-spook-houses-split-tape",
+     "item_type": "a"
+    },
+    "item_art_id": 2761071266,
+    "item_url": "https://weirdkorea.bandcamp.com/album/weird-korea-spook-houses-split-tape",
+    "package_details": {
+     "title": "PHYSICAL COPY - CASSETTE TAPE",
+     "description": null,
+     "private": null,
+     "killed": null,
+     "band_id": 2678428111,
+     "label_id": null,
+     "is_subscriber_only": false,
+     "is_live_event": false,
+     "live_event_type": null,
+     "images": [],
+     "band_name": "WK/SH",
+     "url_hints": {
+      "subdomain": "weirdkorea",
+      "custom_domain": null,
+      "custom_domain_verified": null,
+      "slug": "/album/weird-korea-spook-houses-split-tape",
+      "item_type": "a"
+     },
+     "item_url": "https://weirdkorea.bandcamp.com/album/weird-korea-spook-houses-split-tape"
+    },
+    "num_streamable_tracks": 8,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4593708,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "09 Sep 2012 06:40:34 GMT"
+   },
+   "a2425357717": {
+    "item_id": 2425357717,
+    "item_type": "album",
+    "tralbum_id": 2425357717,
+    "tralbum_type": "a",
+    "album_id": 2425357717,
+    "item_title": "I Want a Gun",
+    "band_id": 3940398213,
+    "band_name": "Allen Thomas",
+    "featured_track": 962041425,
+    "featured_track_title": "Untitled (Yes!)",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 8,
+    "why": null,
+    "url_hints": {
+     "subdomain": "illmont",
+     "custom_domain": "illmontforrealmont.com",
+     "custom_domain_verified": null,
+     "slug": "i-want-a-gun",
+     "item_type": "a"
+    },
+    "item_art_id": 587855202,
+    "item_url": "https://illmont.bandcamp.com/album/i-want-a-gun",
+    "package_details": null,
+    "num_streamable_tracks": 15,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4576671,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "07 Sep 2012 18:59:14 GMT"
+   },
+   "a3557538685": {
+    "item_id": 3557538685,
+    "item_type": "album",
+    "tralbum_id": 3557538685,
+    "tralbum_type": "a",
+    "album_id": 3557538685,
+    "item_title": "Bruh the LP",
+    "band_id": 3940398213,
+    "band_name": "iLLmont",
+    "featured_track": 2036773781,
+    "featured_track_title": "Green Slurpee",
+    "featured_track_url": "https://illmont.bandcamp.com/album/bruh-the-lp?t=10",
+    "featured_track_is_custom": true,
+    "also_collected_count": 37,
+    "why": "insanely fun to listen to",
+    "url_hints": {
+     "subdomain": "illmont",
+     "custom_domain": "illmontforrealmont.com",
+     "custom_domain_verified": null,
+     "slug": "bruh-the-lp",
+     "item_type": "a"
+    },
+    "item_art_id": 403203856,
+    "item_url": "https://illmont.bandcamp.com/album/bruh-the-lp",
+    "package_details": null,
+    "num_streamable_tracks": 18,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4576647,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "07 Sep 2012 18:57:42 GMT"
+   },
+   "p1318145991": {
+    "item_id": 1318145991,
+    "item_type": "package",
+    "tralbum_id": 2597466512,
+    "tralbum_type": "a",
+    "album_id": 2597466512,
+    "item_title": "HOME",
+    "band_id": 1014705723,
+    "band_name": "SPOOK HOUSES",
+    "featured_track": 3100906826,
+    "featured_track_title": "Turn Twice",
+    "featured_track_url": "https://spookhouses.bandcamp.com/album/home?t=2",
+    "featured_track_is_custom": true,
+    "also_collected_count": 68,
+    "why": null,
+    "url_hints": {
+     "subdomain": "spookhouses",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "home",
+     "item_type": "a"
+    },
+    "item_art_id": 191317161,
+    "item_url": "https://spookhouses.bandcamp.com/album/home",
+    "package_details": null,
+    "num_streamable_tracks": 4,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": 4432299,
+    "sale_item_type": "p",
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": "25 Aug 2012 19:44:51 GMT"
+   }
+  },
+  "wishlist": {
+   "a444858048": {
+    "item_id": 444858048,
+    "item_type": "album",
+    "tralbum_id": 444858048,
+    "tralbum_type": "a",
+    "album_id": 444858048,
+    "item_title": "Shadows",
+    "band_id": 2761816229,
+    "band_name": "Maston",
+    "featured_track": 3268125665,
+    "featured_track_title": "Flutter",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 164,
+    "why": null,
+    "url_hints": {
+     "subdomain": "maston",
+     "custom_domain": "phonoscopestudios.com",
+     "custom_domain_verified": null,
+     "slug": "shadows",
+     "item_type": "a"
+    },
+    "item_art_id": 2407924205,
+    "item_url": "https://maston.bandcamp.com/album/shadows",
+    "package_details": null,
+    "num_streamable_tracks": 10,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "t3268125665": {
+    "item_id": 3268125665,
+    "item_type": "track",
+    "tralbum_id": 3268125665,
+    "tralbum_type": "t",
+    "album_id": 444858048,
+    "item_title": "Flutter",
+    "band_id": 2761816229,
+    "band_name": "Maston",
+    "featured_track": 3268125665,
+    "featured_track_title": "Flutter",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 7,
+    "why": null,
+    "url_hints": {
+     "subdomain": "maston",
+     "custom_domain": "phonoscopestudios.com",
+     "custom_domain_verified": null,
+     "slug": "shadows",
+     "item_type": "a"
+    },
+    "item_art_id": 2407924205,
+    "item_url": "https://maston.bandcamp.com/track/flutter",
+    "package_details": null,
+    "num_streamable_tracks": 1,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a1028150269": {
+    "item_id": 1028150269,
+    "item_type": "album",
+    "tralbum_id": 1028150269,
+    "tralbum_type": "a",
+    "album_id": 1028150269,
+    "item_title": "Y\u00da",
+    "band_id": 2601729034,
+    "band_name": "Dreamdecay",
+    "featured_track": 913047620,
+    "featured_track_title": "Y\u00da",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 153,
+    "why": null,
+    "url_hints": {
+     "subdomain": "dreamdecay",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "y-4",
+     "item_type": "a"
+    },
+    "item_art_id": 973161757,
+    "item_url": "https://dreamdecay.bandcamp.com/album/y-4",
+    "package_details": null,
+    "num_streamable_tracks": 9,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a1001012097": {
+    "item_id": 1001012097,
+    "item_type": "album",
+    "tralbum_id": 1001012097,
+    "tralbum_type": "a",
+    "album_id": 1001012097,
+    "item_title": "A Nigerian Retrospective (1966-79)",
+    "band_id": 1199846473,
+    "band_name": "Tunji Oyelana",
+    "featured_track": 1690695812,
+    "featured_track_title": "Ojo",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 64,
+    "why": null,
+    "url_hints": {
+     "subdomain": "tunjioyelana",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "a-nigerian-retrospective-1966-79",
+     "item_type": "a"
+    },
+    "item_art_id": 3986727821,
+    "item_url": "https://tunjioyelana.bandcamp.com/album/a-nigerian-retrospective-1966-79",
+    "package_details": null,
+    "num_streamable_tracks": 24,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a3445221655": {
+    "item_id": 3445221655,
+    "item_type": "album",
+    "tralbum_id": 3445221655,
+    "tralbum_type": "a",
+    "album_id": 3445221655,
+    "item_title": "Make It Fast, Make It Slow",
+    "band_id": 2831727005,
+    "band_name": "Rob",
+    "featured_track": 95379503,
+    "featured_track_title": "Loose Up Yourself",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 165,
+    "why": null,
+    "url_hints": {
+     "subdomain": "soundwayrecords",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "make-it-fast-make-it-slow",
+     "item_type": "a"
+    },
+    "item_art_id": 2346257212,
+    "item_url": "https://soundwayrecords.bandcamp.com/album/make-it-fast-make-it-slow",
+    "package_details": null,
+    "num_streamable_tracks": 8,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a821960319": {
+    "item_id": 821960319,
+    "item_type": "album",
+    "tralbum_id": 821960319,
+    "tralbum_type": "a",
+    "album_id": 821960319,
+    "item_title": "Ibibio Sound Machine",
+    "band_id": 2129598577,
+    "band_name": "Ibibio Sound Machine",
+    "featured_track": 2930917920,
+    "featured_track_title": "Got to Move, Got to Get Out! (Ana Nkpong ana Nwuoro",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 192,
+    "why": null,
+    "url_hints": {
+     "subdomain": "ibibiosoundmachine",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "ibibio-sound-machine",
+     "item_type": "a"
+    },
+    "item_art_id": 187407436,
+    "item_url": "https://ibibiosoundmachine.bandcamp.com/album/ibibio-sound-machine",
+    "package_details": null,
+    "num_streamable_tracks": 10,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a1744385092": {
+    "item_id": 1744385092,
+    "item_type": "album",
+    "tralbum_id": 1744385092,
+    "tralbum_type": "a",
+    "album_id": 1744385092,
+    "item_title": "Fela\u2019s Special / Aigana",
+    "band_id": 2831727005,
+    "band_name": "Fela Ransome-Kuti & His Highlife Rakers",
+    "featured_track": 4118708023,
+    "featured_track_title": "Fela's Special",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 46,
+    "why": null,
+    "url_hints": {
+     "subdomain": "soundwayrecords",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "fela-s-special-aigana",
+     "item_type": "a"
+    },
+    "item_art_id": 1770956908,
+    "item_url": "https://soundwayrecords.bandcamp.com/album/fela-s-special-aigana",
+    "package_details": null,
+    "num_streamable_tracks": 2,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a399115634": {
+    "item_id": 399115634,
+    "item_type": "album",
+    "tralbum_id": 399115634,
+    "tralbum_type": "a",
+    "album_id": 399115634,
+    "item_title": "Kenya Special : Volume Two",
+    "band_id": 2831727005,
+    "band_name": "Various Artists",
+    "featured_track": 1715972904,
+    "featured_track_title": "I Can Feel It",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 143,
+    "why": null,
+    "url_hints": {
+     "subdomain": "soundwayrecords",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "kenya-special-volume-two",
+     "item_type": "a"
+    },
+    "item_art_id": 2960792701,
+    "item_url": "https://soundwayrecords.bandcamp.com/album/kenya-special-volume-two",
+    "package_details": null,
+    "num_streamable_tracks": 18,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a2646456500": {
+    "item_id": 2646456500,
+    "item_type": "album",
+    "tralbum_id": 2646456500,
+    "tralbum_type": "a",
+    "album_id": 2646456500,
+    "item_title": "Baile Bucanero",
+    "band_id": 3973289676,
+    "band_name": "Ondatr\u00f3pica",
+    "featured_track": 263498074,
+    "featured_track_title": "Hummingbird",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 321,
+    "why": null,
+    "url_hints": {
+     "subdomain": "ondatropica",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "baile-bucanero",
+     "item_type": "a"
+    },
+    "item_art_id": 194348621,
+    "item_url": "https://ondatropica.bandcamp.com/album/baile-bucanero",
+    "package_details": null,
+    "num_streamable_tracks": 15,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a1368576689": {
+    "item_id": 1368576689,
+    "item_type": "album",
+    "tralbum_id": 1368576689,
+    "tralbum_type": "a",
+    "album_id": 1368576689,
+    "item_title": "Music For Shut-Ins",
+    "band_id": 2030709861,
+    "band_name": "Various Artists",
+    "featured_track": 2452809991,
+    "featured_track_title": "Jute",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 312,
+    "why": null,
+    "url_hints": {
+     "subdomain": "liesrecords",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "music-for-shut-ins",
+     "item_type": "a"
+    },
+    "item_art_id": 1017433374,
+    "item_url": "https://liesrecords.bandcamp.com/album/music-for-shut-ins",
+    "package_details": null,
+    "num_streamable_tracks": 20,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a3187206995": {
+    "item_id": 3187206995,
+    "item_type": "album",
+    "tralbum_id": 3187206995,
+    "tralbum_type": "a",
+    "album_id": 3187206995,
+    "item_title": "Iran",
+    "band_id": 2030709861,
+    "band_name": "KWC 92",
+    "featured_track": 2643939483,
+    "featured_track_title": "NR 1",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 21,
+    "why": null,
+    "url_hints": {
+     "subdomain": "liesrecords",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "iran",
+     "item_type": "a"
+    },
+    "item_art_id": 999986504,
+    "item_url": "https://liesrecords.bandcamp.com/album/iran",
+    "package_details": null,
+    "num_streamable_tracks": 8,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a3068595163": {
+    "item_id": 3068595163,
+    "item_type": "album",
+    "tralbum_id": 3068595163,
+    "tralbum_type": "a",
+    "album_id": 3068595163,
+    "item_title": "VS04 - Winners",
+    "band_id": 2142823425,
+    "band_name": "Health Problems",
+    "featured_track": 2066516574,
+    "featured_track_title": "Lies & Movement",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 31,
+    "why": null,
+    "url_hints": {
+     "subdomain": "virginspringpublishing",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "vs04-winners",
+     "item_type": "a"
+    },
+    "item_art_id": 3157897646,
+    "item_url": "https://virginspringpublishing.bandcamp.com/album/vs04-winners",
+    "package_details": null,
+    "num_streamable_tracks": 11,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a2884205964": {
+    "item_id": 2884205964,
+    "item_type": "album",
+    "tralbum_id": 2884205964,
+    "tralbum_type": "a",
+    "album_id": 2884205964,
+    "item_title": "Tendencies",
+    "band_id": 3544641594,
+    "band_name": "sloslylove",
+    "featured_track": 4112786081,
+    "featured_track_title": "Lost in Motion",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 245,
+    "why": null,
+    "url_hints": {
+     "subdomain": "sloslylove",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "tendencies",
+     "item_type": "a"
+    },
+    "item_art_id": 1158888218,
+    "item_url": "https://sloslylove.bandcamp.com/album/tendencies",
+    "package_details": null,
+    "num_streamable_tracks": 10,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a812883016": {
+    "item_id": 812883016,
+    "item_type": "album",
+    "tralbum_id": 812883016,
+    "tralbum_type": "a",
+    "album_id": 812883016,
+    "item_title": "Onuinu",
+    "band_id": 1692080589,
+    "band_name": "Mirror Gazer",
+    "featured_track": 334541236,
+    "featured_track_title": "Onuinu",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 15,
+    "why": null,
+    "url_hints": {
+     "subdomain": "freshselects",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "onuinu",
+     "item_type": "a"
+    },
+    "item_art_id": 3186904129,
+    "item_url": "https://freshselects.bandcamp.com/album/onuinu",
+    "package_details": null,
+    "num_streamable_tracks": 9,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "t2634791310": {
+    "item_id": 2634791310,
+    "item_type": "track",
+    "tralbum_id": 2634791310,
+    "tralbum_type": "t",
+    "album_id": null,
+    "item_title": "Poor Relations",
+    "band_id": 1925094950,
+    "band_name": "Mr Twin Sister",
+    "featured_track": 2634791310,
+    "featured_track_title": "Poor Relations",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 180,
+    "why": null,
+    "url_hints": {
+     "subdomain": "mrtwinsister",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "poor-relations",
+     "item_type": "t"
+    },
+    "item_art_id": 2833085657,
+    "item_url": "https://mrtwinsister.bandcamp.com/track/poor-relations",
+    "package_details": null,
+    "num_streamable_tracks": 1,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a3164149835": {
+    "item_id": 3164149835,
+    "item_type": "album",
+    "tralbum_id": 3164149835,
+    "tralbum_type": "a",
+    "album_id": 3164149835,
+    "item_title": "Morning Haze.Ep",
+    "band_id": 2868129942,
+    "band_name": "sleepyeyes",
+    "featured_track": 359176409,
+    "featured_track_title": "astro logic",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 71,
+    "why": null,
+    "url_hints": {
+     "subdomain": "sleepyeyes",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "morning-haze-ep",
+     "item_type": "a"
+    },
+    "item_art_id": 3104043215,
+    "item_url": "https://sleepyeyes.bandcamp.com/album/morning-haze-ep",
+    "package_details": null,
+    "num_streamable_tracks": 10,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a134435640": {
+    "item_id": 134435640,
+    "item_type": "album",
+    "tralbum_id": 134435640,
+    "tralbum_type": "a",
+    "album_id": 134435640,
+    "item_title": "new earth",
+    "band_id": 2868129942,
+    "band_name": "sleepyeyes",
+    "featured_track": 4169204571,
+    "featured_track_title": "laundry",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 39,
+    "why": null,
+    "url_hints": {
+     "subdomain": "sleepyeyes",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "new-earth",
+     "item_type": "a"
+    },
+    "item_art_id": 416253344,
+    "item_url": "https://sleepyeyes.bandcamp.com/album/new-earth",
+    "package_details": null,
+    "num_streamable_tracks": 5,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a2782518794": {
+    "item_id": 2782518794,
+    "item_type": "album",
+    "tralbum_id": 2782518794,
+    "tralbum_type": "a",
+    "album_id": 2782518794,
+    "item_title": "i will be my own hell because there is a devil inside my body",
+    "band_id": 3477858258,
+    "band_name": "teen suicide",
+    "featured_track": 3668066106,
+    "featured_track_title": "have you been eating that sandwich again",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 1155,
+    "why": null,
+    "url_hints": {
+     "subdomain": "teensuicide",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "i-will-be-my-own-hell-because-there-is-a-devil-inside-my-body",
+     "item_type": "a"
+    },
+    "item_art_id": 3583976972,
+    "item_url": "https://teensuicide.bandcamp.com/album/i-will-be-my-own-hell-because-there-is-a-devil-inside-my-body",
+    "package_details": null,
+    "num_streamable_tracks": 10,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a1443972995": {
+    "item_id": 1443972995,
+    "item_type": "album",
+    "tralbum_id": 1443972995,
+    "tralbum_type": "a",
+    "album_id": 1443972995,
+    "item_title": "Dark World",
+    "band_id": 2736683805,
+    "band_name": "Pity Sex",
+    "featured_track": 636127893,
+    "featured_track_title": "When You're Around",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 989,
+    "why": null,
+    "url_hints": {
+     "subdomain": "pitysex",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "dark-world",
+     "item_type": "a"
+    },
+    "item_art_id": 3206561109,
+    "item_url": "https://pitysex.bandcamp.com/album/dark-world",
+    "package_details": null,
+    "num_streamable_tracks": 6,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   },
+   "a1342890709": {
+    "item_id": 1342890709,
+    "item_type": "album",
+    "tralbum_id": 1342890709,
+    "tralbum_type": "a",
+    "album_id": 1342890709,
+    "item_title": "Lineage",
+    "band_id": 223941572,
+    "band_name": "SHIGETO",
+    "featured_track": 2263592641,
+    "featured_track_title": "Huron River Drive",
+    "featured_track_url": null,
+    "featured_track_is_custom": false,
+    "also_collected_count": 352,
+    "why": null,
+    "url_hints": {
+     "subdomain": "shigeto",
+     "custom_domain": null,
+     "custom_domain_verified": null,
+     "slug": "lineage",
+     "item_type": "a"
+    },
+    "item_art_id": 466299043,
+    "item_url": "https://shigeto.bandcamp.com/album/lineage",
+    "package_details": null,
+    "num_streamable_tracks": 8,
+    "is_purchasable": true,
+    "is_private": false,
+    "is_preorder": false,
+    "is_giftable": true,
+    "is_subscriber_only": false,
+    "is_subscription_item": false,
+    "hidden": null,
+    "gift_sender_name": null,
+    "gift_sender_note": null,
+    "gift_id": null,
+    "gift_recipient_name": null,
+    "sale_item_id": null,
+    "sale_item_type": null,
+    "band_image_id": null,
+    "band_location": null,
+    "release_count": null,
+    "message_count": null,
+    "service_name": null,
+    "service_url_fragment": null,
+    "download_available": true,
+    "purchased": null
+   }
+  },
+  "gifts_given": {},
+  "hidden": {},
+  "followers": {
+   "3787024": {
+    "fan_id": 3787024,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 15999293,
+    "trackpipe_url": "https://bandcamp.com/tmarchi",
+    "name": "tmarchi",
+    "is_following": false,
+    "location": null,
+    "date_followed": "19 May 2019 02:02:58 GMT",
+    "token": "1558231378:3787024"
+   },
+   "148105": {
+    "fan_id": 148105,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 17772128,
+    "trackpipe_url": "https://bandcamp.com/1800tsundere",
+    "name": "1800tsundere",
+    "is_following": false,
+    "location": null,
+    "date_followed": "16 Feb 2019 17:11:53 GMT",
+    "token": "1550337113:148105"
+   },
+   "584639": {
+    "fan_id": 584639,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 13813387,
+    "trackpipe_url": "https://bandcamp.com/endeavor_music",
+    "name": "Orion ",
+    "is_following": false,
+    "location": null,
+    "date_followed": "05 Jun 2017 18:43:51 GMT",
+    "token": "1496688231:584639"
+   },
+   "324485": {
+    "fan_id": 324485,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 16704943,
+    "trackpipe_url": "https://bandcamp.com/louseur",
+    "name": "lexi",
+    "is_following": false,
+    "location": "Mariposa, California",
+    "date_followed": "26 Sep 2015 01:36:54 GMT",
+    "token": "1443231414:324485"
+   },
+   "572680": {
+    "fan_id": 572680,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 21974400,
+    "trackpipe_url": "https://bandcamp.com/mothertree",
+    "name": "Mothertree ",
+    "is_following": false,
+    "location": "New York, New York",
+    "date_followed": "05 Sep 2015 05:12:39 GMT",
+    "token": "1441429959:572680"
+   },
+   "96337": {
+    "fan_id": 96337,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 12526946,
+    "trackpipe_url": "https://bandcamp.com/gus-b",
+    "name": "gus b",
+    "is_following": false,
+    "location": "MG, Brazil",
+    "date_followed": "22 Oct 2014 10:22:34 GMT",
+    "token": "1413973354:96337"
+   },
+   "116180": {
+    "fan_id": 116180,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 2047799,
+    "trackpipe_url": "https://bandcamp.com/maxxacre",
+    "name": "Maxx",
+    "is_following": false,
+    "location": "Oregon",
+    "date_followed": "14 Nov 2013 03:54:47 GMT",
+    "token": "1384401287:116180"
+   },
+   "6064": {
+    "fan_id": 6064,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 4718812,
+    "trackpipe_url": "https://bandcamp.com/aftpayne",
+    "name": "Ashie",
+    "is_following": false,
+    "location": "Auckland, New Zealand",
+    "date_followed": "10 Nov 2013 20:05:44 GMT",
+    "token": "1384113944:6064"
+   },
+   "41860": {
+    "fan_id": 41860,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 1879299,
+    "trackpipe_url": "https://bandcamp.com/homesuck",
+    "name": "jooj",
+    "is_following": false,
+    "location": null,
+    "date_followed": "30 Sep 2013 08:21:30 GMT",
+    "token": "1380529290:41860"
+   },
+   "5682": {
+    "fan_id": 5682,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 892452,
+    "trackpipe_url": "https://bandcamp.com/danielblue",
+    "name": "Daniel Blue",
+    "is_following": false,
+    "location": null,
+    "date_followed": "15 Feb 2013 13:18:06 GMT",
+    "token": "1360934286:5682"
+   },
+   "10530": {
+    "fan_id": 10530,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 978023,
+    "trackpipe_url": "https://bandcamp.com/replicante",
+    "name": "REPLICANTE",
+    "is_following": false,
+    "location": "Zaragoza, Spain",
+    "date_followed": "13 Feb 2013 09:54:27 GMT",
+    "token": "1360749267:10530"
+   }
+  },
+  "following_bands": {
+   "1199846473": {
+    "band_id": 1199846473,
+    "image_id": 42293812,
+    "art_id": 2627428344,
+    "url_hints": {
+     "subdomain": "tunjioyelana",
+     "custom_domain": null
+    },
+    "name": "Tunji Oyelana",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "Lagos, Nigeria",
+    "date_followed": "07 Jan 2026 12:03:45 GMT",
+    "token": "1767787425:1199846473"
+   },
+   "1925094950": {
+    "band_id": 1925094950,
+    "image_id": 22415874,
+    "art_id": 4191051966,
+    "url_hints": {
+     "subdomain": "mrtwinsister",
+     "custom_domain": null
+    },
+    "name": "Mr Twin Sister",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "New York, New York",
+    "date_followed": "25 Aug 2021 16:31:50 GMT",
+    "token": "1629909110:1925094950"
+   },
+   "2831727005": {
+    "band_id": 2831727005,
+    "image_id": 35302769,
+    "art_id": 2968423552,
+    "url_hints": {
+     "subdomain": "soundwayrecords",
+     "custom_domain": null
+    },
+    "name": "Soundway Records",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "UK",
+    "date_followed": "25 Aug 2021 16:31:10 GMT",
+    "token": "1629909070:2831727005"
+   },
+   "3915112459": {
+    "band_id": 3915112459,
+    "image_id": null,
+    "art_id": 624300872,
+    "url_hints": {
+     "subdomain": "mirrorgazer",
+     "custom_domain": null
+    },
+    "name": "Mirror Gazer",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "New York",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:3915112459"
+   },
+   "2789805108": {
+    "band_id": 2789805108,
+    "image_id": 705143,
+    "art_id": 2481672419,
+    "url_hints": {
+     "subdomain": "dbldblwhmmy",
+     "custom_domain": null
+    },
+    "name": "Double Double Whammy",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "Brooklyn, New York",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:2789805108"
+   },
+   "2678428111": {
+    "band_id": 2678428111,
+    "image_id": null,
+    "art_id": 2998680842,
+    "url_hints": {
+     "subdomain": "weirdkorea",
+     "custom_domain": null
+    },
+    "name": "WEIRD KOREA",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "Purchase, New York",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:2678428111"
+   },
+   "1484982518": {
+    "band_id": 1484982518,
+    "image_id": 15843914,
+    "art_id": 3494543303,
+    "url_hints": {
+     "subdomain": "itgetsbutter",
+     "custom_domain": null
+    },
+    "name": "100%",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": null,
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:1484982518"
+   },
+   "1014705723": {
+    "band_id": 1014705723,
+    "image_id": null,
+    "art_id": 1221554643,
+    "url_hints": {
+     "subdomain": "spookhouses",
+     "custom_domain": null
+    },
+    "name": "SPOOK HOUSES",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "New Jersey",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:1014705723"
+   },
+   "982632003": {
+    "band_id": 982632003,
+    "image_id": 20359965,
+    "art_id": 644876872,
+    "url_hints": {
+     "subdomain": "brendanlosch",
+     "custom_domain": null
+    },
+    "name": "Brendan Losch",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "Chicago",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:982632003"
+   },
+   "785877430": {
+    "band_id": 785877430,
+    "image_id": 1536018,
+    "art_id": 3041214507,
+    "url_hints": {
+     "subdomain": "xxyyxx",
+     "custom_domain": null
+    },
+    "name": "XXYYXX",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "Oklahoma",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:785877430"
+   },
+   "542854636": {
+    "band_id": 542854636,
+    "image_id": 94269,
+    "art_id": 2901163482,
+    "url_hints": {
+     "subdomain": "ginsuwives",
+     "custom_domain": null
+    },
+    "name": "Ginsu Wives",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "Little Rock",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:542854636"
+   },
+   "10312360": {
+    "band_id": 10312360,
+    "image_id": 6205510,
+    "art_id": 1692585866,
+    "url_hints": {
+     "subdomain": "outlierrecordings",
+     "custom_domain": null
+    },
+    "name": "OUTLIER RECORDINGS",
+    "is_following": false,
+    "is_subscribed": null,
+    "location": "New York",
+    "date_followed": "04 Jan 2013 04:22:15 GMT",
+    "token": "1357273335:10312360"
+   }
+  },
+  "following_fans": {
+   "945019": {
+    "fan_id": 945019,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 8115949,
+    "trackpipe_url": "https://bandcamp.com/maxpatton",
+    "name": "Max Patton",
+    "is_following": false,
+    "location": null,
+    "date_followed": "26 Sep 2021 14:45:27 GMT",
+    "token": "1632667527:945019"
+   },
+   "41860": {
+    "fan_id": 41860,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 1879299,
+    "trackpipe_url": "https://bandcamp.com/homesuck",
+    "name": "jooj",
+    "is_following": false,
+    "location": null,
+    "date_followed": "12 Mar 2015 15:48:40 GMT",
+    "token": "1426175320:41860"
+   },
+   "50": {
+    "fan_id": 50,
+    "band_id": null,
+    "fan_url": null,
+    "image_id": 28247263,
+    "trackpipe_url": "https://bandcamp.com/ryanm",
+    "name": "rpm",
+    "is_following": false,
+    "location": "Berkeley, California",
+    "date_followed": "04 Jan 2013 04:23:57 GMT",
+    "token": "1357273437:50"
+   }
+  },
+  "following_genres": {},
+  "fan_suggestions": {}
+ },
+ "report_fan": {
+  "MAX_NAME_LENGTH": 200,
+  "MAX_EMAIL_LENGTH": 300,
+  "MAX_SUBJECT_LENGTH": 300,
+  "MAX_MESSAGE_LENGTH": 199
+ },
+ "collection_count": 22,
+ "genre_picker": {
+  "genres": null,
+  "subgenres": null
+ },
+ "show_newsletter_invite_banner": null
+}

@@ -1,0 +1,13 @@
+# AI session context (managed in the private ai-context repo)
+AGENTS.md
+CLAUDE.md
+
+# Go build artifacts
+/bin/
+*.test
+*.out
+*.o
+*.so
+
+# macOS
+.DS_Store
