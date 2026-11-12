@@ -72,7 +72,8 @@ type Client struct {
 	testOrigin bool // BaseURL was explicitly set: rewrite artist hosts to path prefixes
 	session    string
 	identity   string
-	http       *http.Client
+	http       *http.Client // pages: full 30s request timeout
+	stream     *http.Client // audio: header deadline only, the body streams at real time
 	backoff    time.Duration
 	cache      *pageCache
 	urls       *urlCache
@@ -102,6 +103,7 @@ func New(opts Options) (*Client, error) {
 		session:    opts.Session,
 		identity:   opts.Identity,
 		http:       &http.Client{Timeout: defaultTimeout},
+		stream:     streamClient(),
 		backoff:    retryBaseBackoff,
 		cache:      &pageCache{dir: dir, ttl: ttl},
 		urls:       &urlCache{},
@@ -226,16 +228,35 @@ func drainClose(resp *http.Response) {
 	resp.Body.Close()
 }
 
+// streamClient builds the HTTP client for audio streams. A plain
+// http.Client.Timeout would sever every track: the timeout covers the whole
+// request, including the body read (verified against net/http: "Client.
+// Timeout or context cancellation while reading body"), and the audio
+// engine reads a body in real time, so any track longer than the timeout
+// would die mid-playback. Instead the client bounds only the request setup
+// with a ResponseHeaderTimeout — a dead signed URL still fails within 30s —
+// and leaves the body bound to the caller's context alone. HTTP/2 is
+// disabled because ResponseHeaderTimeout is not enforced for h2 requests; a
+// single audio stream gets nothing from h2, so h1 is the right trade.
+func streamClient() *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ForceAttemptHTTP2 = false
+	transport.ResponseHeaderTimeout = defaultTimeout
+	return &http.Client{Transport: transport}
+}
+
 // fetchStream GETs a signed stream URL. No cookies are needed (spike
 // finding 3: playback is auth-agnostic), but the browser user agent is
-// sent anyway — it has been verified to work and costs nothing.
+// sent anyway — it has been verified to work and costs nothing. It uses
+// the header-deadline stream client (see streamClient): the body is read
+// at real time by the audio engine and must survive beyond defaultTimeout.
 func (c *Client) fetchStream(ctx context.Context, u string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("bandcamp: stream %s: %w", u, err)
 	}
 	req.Header.Set("User-Agent", userAgent)
-	resp, err := c.http.Do(req)
+	resp, err := c.stream.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("bandcamp: stream %s: %w", u, err)
 	}

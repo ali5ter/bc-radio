@@ -273,6 +273,107 @@ func TestStreamURLResolutionChain(t *testing.T) {
 	}
 }
 
+// TestStreamClientTimeoutPolicy pins the stream client's timeout shape: no
+// global request timeout (which would sever a body read longer than the
+// timeout — and the audio engine reads bodies in real time, so every track
+// longer than the timeout), a ResponseHeaderTimeout to bound setup, and no
+// HTTP/2 (ResponseHeaderTimeout is not enforced for h2 requests).
+func TestStreamClientTimeoutPolicy(t *testing.T) {
+	t.Parallel()
+	c := streamClient()
+	if c.Timeout != 0 {
+		t.Errorf("stream client Timeout = %v, want 0 (a global timeout severs long stream bodies)", c.Timeout)
+	}
+	transport, ok := c.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("stream client transport = %T, want *http.Transport", c.Transport)
+	}
+	if transport.ResponseHeaderTimeout <= 0 {
+		t.Error("stream client must bound request setup with a ResponseHeaderTimeout")
+	}
+	if transport.ForceAttemptHTTP2 {
+		t.Error("stream client must not attempt HTTP/2 (ResponseHeaderTimeout is not enforced for h2)")
+	}
+}
+
+// TestOpenSlowStreamBody proves the body itself is untimed: a stream whose
+// body arrives slower than the header deadline still reads to completion.
+func TestOpenSlowStreamBody(t *testing.T) {
+	t.Parallel()
+	var page string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/fakehost/album/demo", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(page))
+	})
+	mux.HandleFunc("/stream/100", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "audio/mpeg")
+		fl, _ := w.(http.Flusher)
+		// The headers are instant; the body then trickles for three
+		// seconds, well past the header deadline below.
+		for i := 0; i < 3; i++ {
+			w.Write([]byte("A"))
+			fl.Flush()
+			time.Sleep(time.Second)
+		}
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	page = demoPage(srv.URL, time.Now().Add(24*time.Hour))
+
+	c := testClient(t, srv, "deerhoof")
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ForceAttemptHTTP2 = false
+	transport.ResponseHeaderTimeout = 100 * time.Millisecond
+	c.stream = &http.Client{Transport: transport}
+
+	stream, err := c.Open(context.Background(), synthTrack(42, "fakehost.bandcamp.com", "demo", "100"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer stream.Body.Close()
+	body, err := io.ReadAll(stream.Body)
+	if err != nil {
+		t.Fatalf("body read: %v (a slow body must not be cut off)", err)
+	}
+	if string(body) != "AAA" {
+		t.Errorf("body = %q, want AAA", body)
+	}
+}
+
+// TestOpenHeaderStallTimesOut proves setup is still bounded: a stream
+// endpoint that never sends headers fails within the header deadline.
+func TestOpenHeaderStallTimesOut(t *testing.T) {
+	t.Parallel()
+	var page string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/fakehost/album/demo", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(page))
+	})
+	mux.HandleFunc("/stream/100", func(w http.ResponseWriter, _ *http.Request) {
+		time.Sleep(5 * time.Second)
+		w.Write([]byte("MP3DATA"))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	page = demoPage(srv.URL, time.Now().Add(24*time.Hour))
+
+	c := testClient(t, srv, "deerhoof")
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ForceAttemptHTTP2 = false
+	transport.ResponseHeaderTimeout = 100 * time.Millisecond
+	c.stream = &http.Client{Transport: transport}
+
+	start := time.Now()
+	_, err := c.Open(context.Background(), synthTrack(42, "fakehost.bandcamp.com", "demo", "100"))
+	elapsed := time.Since(start)
+	if err == nil {
+		t.Fatal("Open: want an error when the stream headers never arrive")
+	}
+	if elapsed > time.Second {
+		t.Errorf("Open took %v; the header deadline should fail fast", elapsed)
+	}
+}
+
 // TestOpenStreamContentLengthUnknown pins the -1 convention.
 func TestOpenStreamContentLengthUnknown(t *testing.T) {
 	t.Parallel()
