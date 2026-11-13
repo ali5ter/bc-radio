@@ -40,10 +40,16 @@ const (
 //
 // Only unmodified keys are bound: ctrl and alt combos belong to the
 // terminal and the multiplexer, and shift is tolerated for letters (it
-// only affects the case). Text is the typed character for printable keys
+// only affects the case). The one exception is ctrl+c: the program runs
+// the terminal in raw mode, so the terminal will never interpret it for
+// us, and the universal emergency exit has to be handled here or the app
+// cannot be force-quit. Text is the typed character for printable keys
 // and empty for special keys, which is why printable keys match on Text
 // and special keys on String.
 func actionFor(msg tea.KeyPressMsg) action {
+	if msg.String() == "ctrl+c" {
+		return actQuit
+	}
 	if msg.Mod&(tea.ModCtrl|tea.ModAlt|tea.ModMeta) != 0 {
 		return actNone
 	}

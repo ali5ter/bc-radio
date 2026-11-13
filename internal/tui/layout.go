@@ -182,14 +182,11 @@ func renderHelp() string {
 }
 
 // tooSmall renders a centred notice for terminals the layout cannot use. The
-// message is truncated to the width first: Place pads but never truncates, so
-// an uncut notice would overflow the very area it is apologising for.
+// message is clipped to the width with an ellipsis first: Place pads but
+// never truncates, so an uncut notice would overflow the very area it is
+// apologising for, and a mid-word cut without … reads as a glitch.
 func tooSmall(w, h int, msg string) string {
-	msg = styleDim.Render(msg)
-	if lipgloss.Width(msg) > w {
-		msg = lipgloss.NewStyle().MaxWidth(w).Render(msg)
-	}
-	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, msg)
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, styleDim.Render(clip(msg, w)))
 }
 
 // viewLibrary assembles the browser screen: title, three columns, help.
@@ -271,29 +268,41 @@ func (a *App) browserColumn(col, cw, h int) string {
 		header, lipgloss.JoinVertical(lipgloss.Left, lines...)))
 }
 
-// viewHelp is the full help overlay.
+// viewHelp is the full help overlay. Sections are scoped to the screen the
+// overlay is open on, because several keys are no-ops off their own screen
+// (visualizer and transport keys act on the player; browser keys act on the
+// library): advertising a key that does nothing would train a false mental
+// model, so each section lists only the keys that work there.
 func (a *App) viewHelp() string {
 	lines := []string{
 		styleAccentB.Render("Keybindings"),
 		"",
-		"space      play / pause",
-		"n          next track",
-		"p          previous track, or restart if within 5 s",
-		"s          shuffle on / off",
-		"r          repeat on / off",
-		"v          next visualizer",
-		"f          fullscreen visualizer",
-		"l          library",
-		"+ / -      volume",
-		"?          this help",
-		"q          quit",
+		styleDimB.Render("anywhere"),
+		"  ?          this help",
+		"  q          quit",
+		"  ctrl+c     quit",
 		"",
-		styleDimB.Render("library"),
-		"  ↑/↓ select   ←/→ column   enter open / queue",
-		"  x remove from queue   esc back",
-		"",
-		styleDim.Render("The visualizers react to the 16-band analyser:"),
-		styleDim.Render(fmt.Sprintf("  v cycles %s", strings.Join(nameList(a.visualizers), " / "))),
+	}
+	if a.screen == screenLibrary {
+		lines = append(lines,
+			styleDimB.Render("library"),
+			"  ↑/↓ select   ←/→ column   enter open / queue",
+			"  x remove from queue   esc back to player",
+		)
+	} else {
+		lines = append(lines,
+			styleDimB.Render("player"),
+			"  space      play / pause",
+			"  n          next track",
+			"  p          previous track, or restart if within 5 s",
+			"  s          shuffle on / off",
+			"  r          repeat on / off",
+			"  v          next visualizer",
+			"  f          fullscreen visualizer",
+			"  l          library",
+			"  + / -      volume",
+			styleDim.Render(fmt.Sprintf("  v cycles: %s (16-band analyser)", strings.Join(nameList(a.visualizers), " / "))),
+		)
 	}
 	body := lipgloss.JoinVertical(lipgloss.Left, lines...)
 	box := lipgloss.NewStyle().

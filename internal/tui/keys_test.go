@@ -30,8 +30,11 @@ func TestActionFor(t *testing.T) {
 		{"? help", tea.KeyPressMsg{Text: "?"}, actHelp},
 		{"unbound letter", tea.KeyPressMsg{Text: "g"}, actNone},
 		{"shifted letter", tea.KeyPressMsg{Text: "N", Mod: tea.ModShift}, actNext},
-		// ctrl/alt/meta combos belong to the terminal, not the app.
-		{"ctrl-c", tea.KeyPressMsg{Text: "c", Mod: tea.ModCtrl}, actNone},
+		// ctrl+c is the emergency exit: raw mode means the terminal will
+		// never catch it for us, so the app must quit on it.
+		{"ctrl-c quits", tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl}, actQuit},
+		// Other ctrl/alt/meta combos belong to the terminal, not the app.
+		{"ctrl-d", tea.KeyPressMsg{Code: 'd', Mod: tea.ModCtrl}, actNone},
 		{"alt-l", tea.KeyPressMsg{Text: "l", Mod: tea.ModAlt}, actNone},
 		// Special keys match on String.
 		{"space", tea.KeyPressMsg{Code: tea.KeySpace}, actPlayPause},

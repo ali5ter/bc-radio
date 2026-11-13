@@ -604,16 +604,27 @@ func TestToggles(t *testing.T) {
 	}
 }
 
-// Help opens on ? and any key dismisses it.
+// Help opens on ? and any key dismisses it — except quit, which works from
+// the overlay too: the emergency exit must be reachable from every screen.
 func TestHelpToggle(t *testing.T) {
 	app, _, _ := newTestApp()
 	press(t, app, tea.KeyPressMsg{Text: "?"})
 	if !app.help {
 		t.Fatal("? must open the help overlay")
 	}
-	press(t, app, tea.KeyPressMsg{Text: "q"})
+	press(t, app, tea.KeyPressMsg{Text: "g"})
 	if app.help {
-		t.Fatal("any key must dismiss the help overlay (q is not quit while help is up)")
+		t.Fatal("any key must dismiss the help overlay")
+	}
+	app.help = true
+	m := mustRun(t, press(t, app, tea.KeyPressMsg{Text: "q"}))
+	if m == nil || app.help {
+		t.Fatal("q must quit while the help overlay is open")
+	}
+	app.help = true
+	m = mustRun(t, press(t, app, tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl}))
+	if m == nil || app.help {
+		t.Fatal("ctrl+c must quit while the help overlay is open")
 	}
 }
 

@@ -27,14 +27,13 @@ var (
 
 // Derived styles. Every colour in the UI comes from here, never inline.
 var (
-	styleAccent   = lipgloss.NewStyle().Foreground(colorAccent)
-	styleAccentB  = styleAccent.Bold(true)
-	styleVisual   = lipgloss.NewStyle().Foreground(colorVisual)
-	styleDim      = lipgloss.NewStyle().Foreground(colorDim)
-	styleDimB     = styleDim.Bold(true)
-	styleBad      = lipgloss.NewStyle().Foreground(colorBad)
-	styleText     = lipgloss.NewStyle()
-	styleSelected = lipgloss.NewStyle().Foreground(colorAccent).Bold(true).Background(lipgloss.Color("#2a2620"))
+	styleAccent  = lipgloss.NewStyle().Foreground(colorAccent)
+	styleAccentB = styleAccent.Bold(true)
+	styleVisual  = lipgloss.NewStyle().Foreground(colorVisual)
+	styleDim     = lipgloss.NewStyle().Foreground(colorDim)
+	styleDimB    = styleDim.Bold(true)
+	styleBad     = lipgloss.NewStyle().Foreground(colorBad)
+	styleText    = lipgloss.NewStyle()
 )
 
 // bandColor returns the spectrum colour for band k of contract.BandCount,

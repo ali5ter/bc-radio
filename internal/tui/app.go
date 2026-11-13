@@ -163,11 +163,18 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case tea.KeyPressMsg:
+		act := actionFor(m)
 		if a.help {
-			a.help = false // any key dismisses
+			// Any key dismisses the overlay — except quit: q and ctrl+c
+			// leave the app at once, so the emergency exit works from
+			// every screen.
+			a.help = false
+			if act == actQuit {
+				return a, quit()
+			}
 			return a, nil
 		}
-		return a, a.handleKey(actionFor(m))
+		return a, a.handleKey(act)
 	}
 	return a, nil
 }
