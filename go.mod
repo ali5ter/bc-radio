@@ -8,6 +8,7 @@ require (
 	github.com/faiface/beep v1.1.0
 	github.com/hajimehoshi/oto/v2 v2.4.3
 	golang.org/x/net v0.62.0
+	golang.org/x/term v0.47.0
 )
 
 require (
