@@ -248,11 +248,14 @@ func TestURLCache(t *testing.T) {
 
 func TestStreamURLResolutionChain(t *testing.T) {
 	t.Parallel()
-	// Full chain: URL cache -> page cache (stale URL) -> forced fetch.
+	// Full chain: URL cache -> page cache (stale URL) -> cache-busted
+	// fresh fetch.
 	var page string
+	var pageQueries []string
 	pageHits := 0
 	mux := http.NewServeMux()
-	mux.HandleFunc("/fakehost/album/demo", countingHandler(func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/fakehost/album/demo", countingHandler(func(w http.ResponseWriter, r *http.Request) {
+		pageQueries = append(pageQueries, r.URL.RawQuery)
 		w.Write([]byte(page))
 	}, &pageHits))
 	mux.HandleFunc("/stream/100", func(w http.ResponseWriter, _ *http.Request) {
@@ -261,7 +264,7 @@ func TestStreamURLResolutionChain(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 	// The single page version carries an expired URL, so resolution must
-	// end in a forced refetch and the "no valid stream URL" error.
+	// end in a cache-busted refetch and the "no valid stream URL" error.
 	page = demoPage(srv.URL, time.Now().Add(-time.Hour))
 
 	c := testClient(t, srv, "deerhoof")
@@ -269,15 +272,38 @@ func TestStreamURLResolutionChain(t *testing.T) {
 		t.Fatal("Open: want the no-valid-URL error when every render is expired")
 	}
 	if pageHits != 2 {
-		t.Errorf("page hits = %d, want 2 (page-cache read, then forced refetch)", pageHits)
+		t.Fatalf("page hits = %d, want 2 (page-cache read, then forced refetch)", pageHits)
+	}
+	if pageQueries[0] != "" {
+		t.Errorf("first page query = %q; the ordinary read must not be cache-busted", pageQueries[0])
+	}
+	if !strings.HasPrefix(pageQueries[1], "_=") {
+		t.Errorf("refetch query = %q; the fresh fetch must carry the cache buster", pageQueries[1])
+	}
+}
+
+// TestCacheBust pins the buster shape: the result must differ from its
+// input (a fresh cache key) whether or not the URL already has a query.
+func TestCacheBust(t *testing.T) {
+	t.Parallel()
+	plain := "https://x.bandcamp.com/album/demo"
+	if got := cacheBust(plain); got == plain || !strings.Contains(got, "?_=") {
+		t.Errorf("cacheBust(%q) = %q; want a distinct busted URL", plain, got)
+	}
+	queried := "https://x.bandcamp.com/album/demo?x=1"
+	if got := cacheBust(queried); got == queried || !strings.Contains(got, "&_=") {
+		t.Errorf("cacheBust(%q) = %q; want a distinct busted URL", queried, got)
 	}
 }
 
 // TestStreamClientTimeoutPolicy pins the stream client's timeout shape: no
 // global request timeout (which would sever a body read longer than the
 // timeout — and the audio engine reads bodies in real time, so every track
-// longer than the timeout), a ResponseHeaderTimeout to bound setup, and no
-// HTTP/2 (ResponseHeaderTimeout is not enforced for h2 requests).
+// longer than the timeout), a ResponseHeaderTimeout to bound setup, no
+// HTTP/2 (ResponseHeaderTimeout is not enforced for h2 requests), and an
+// explicit http/1.1 ALPN: with h2 wiring off, the stdlib would otherwise
+// send a ClientHello advertising no protocols at all, which the CDN edge
+// refuses (EOF after the headers — see streamClient).
 func TestStreamClientTimeoutPolicy(t *testing.T) {
 	t.Parallel()
 	c := streamClient()
@@ -293,6 +319,10 @@ func TestStreamClientTimeoutPolicy(t *testing.T) {
 	}
 	if transport.ForceAttemptHTTP2 {
 		t.Error("stream client must not attempt HTTP/2 (ResponseHeaderTimeout is not enforced for h2)")
+	}
+	protos := transport.TLSClientConfig.NextProtos
+	if len(protos) != 1 || protos[0] != "http/1.1" {
+		t.Errorf("stream client NextProtos = %v, want [http/1.1] (an ALPN-less handshake is refused by the CDN edge)", protos)
 	}
 }
 

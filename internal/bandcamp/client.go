@@ -2,6 +2,7 @@ package bandcamp
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -201,6 +202,17 @@ func (c *Client) getHTML(ctx context.Context, u string, force bool) (string, err
 			return page, nil
 		}
 	}
+	page, err := c.fetchHTML(ctx, u)
+	if err != nil {
+		return "", err
+	}
+	c.cache.put(u, page)
+	return page, nil
+}
+
+// fetchHTML GETs the page at u and returns its body, translating the
+// not-found and non-200 statuses into errors for the caller.
+func (c *Client) fetchHTML(ctx context.Context, u string) (string, error) {
 	resp, err := c.do(ctx, u)
 	if err != nil {
 		return "", err
@@ -216,9 +228,7 @@ func (c *Client) getHTML(ctx context.Context, u string, force bool) (string, err
 	if err != nil {
 		return "", fmt.Errorf("bandcamp: read %s: %w", u, err)
 	}
-	page := string(body)
-	c.cache.put(u, page)
-	return page, nil
+	return string(body), nil
 }
 
 // drainClose discards a response body and closes it, for responses that
@@ -235,12 +245,24 @@ func drainClose(resp *http.Response) {
 // engine reads a body in real time, so any track longer than the timeout
 // would die mid-playback. Instead the client bounds only the request setup
 // with a ResponseHeaderTimeout — a dead signed URL still fails within 30s —
-// and leaves the body bound to the caller's context alone. HTTP/2 is
-// disabled because ResponseHeaderTimeout is not enforced for h2 requests; a
-// single audio stream gets nothing from h2, so h1 is the right trade.
+// and leaves the body bound to the caller's context alone.
+//
+// HTTP/1.1 is selected deliberately, for two reasons. First,
+// ResponseHeaderTimeout is not enforced for h2 requests, so the setup
+// deadline needs h1; a single audio stream gets nothing from h2. Second —
+// the trap, found live against Bandcamp on Go 1.24+ (2026-11-12): the h2
+// wiring is what appends "h2" and "http/1.1" to TLSClientConfig.NextProtos
+// (x/net/http2's configureTransports), and it runs only when
+// ForceAttemptHTTP2 is true. With it off, the TLS ClientHello advertises
+// no ALPN protocols at all, and Bandcamp's CDN edge refuses ALPN-less
+// handshakes — every stream GET died with an EOF right after the headers
+// while curl and h2-shaped Go clients fetched the same URL fine.
+// Advertising "http/1.1" explicitly makes the handshake read as an
+// ordinary h1 client, which is what this client wants.
 func streamClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.ForceAttemptHTTP2 = false
+	transport.TLSClientConfig = &tls.Config{NextProtos: []string{"http/1.1"}}
 	transport.ResponseHeaderTimeout = defaultTimeout
 	return &http.Client{Transport: transport}
 }

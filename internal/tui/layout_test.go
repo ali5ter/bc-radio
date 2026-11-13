@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -57,6 +58,43 @@ func TestPlace(t *testing.T) {
 	for i, l := range strings.Split(place(5, "abcd\nefghij"), "\n") {
 		if w, _ := lipgloss.Size(l); w != 5 {
 			t.Fatalf("line %d of place output is %d cells; want 5: %q", i, w, l)
+		}
+	}
+}
+
+// TestBrowserColumnsAreIndependent pins the per-column rendering: each
+// column shows its own row count and its own selection marker, never the
+// focused column's values leaking in (the regression made all three
+// headers read the focused column's count and stamped phantom markers in
+// the other two columns wherever that selection happened to sit).
+func TestBrowserColumnsAreIndependent(t *testing.T) {
+	app, _, _ := newTestApp()
+	b := app.browser
+	b.artists = make([]contract.Artist, 12)
+	for i := range b.artists {
+		b.artists[i] = contract.Artist{Name: fmt.Sprintf("Artist %d", i)}
+	}
+	b.albums = []contract.Album{{Title: "One"}, {Title: "Two"}, {Title: "Three"}}
+	b.tracks = []contract.Track{
+		{Title: "T1"}, {Title: "T2"}, {Title: "T3"},
+		{Title: "T4"}, {Title: "T5"}, {Title: "T6"},
+	}
+	b.selArtist, b.selAlbum, b.selTrack = 11, 2, 5
+	b.focus = 2 // focused on the tracks column
+	b.scroll = [3]int{}
+	app.screen = screenLibrary
+	app.status = ""
+
+	got := stripANSI(app.viewLibrary())
+	for _, want := range []string{"Artists (12)", "Albums (3)", "Tracks (6)"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("library view missing header %q;\n%s", want, got)
+		}
+	}
+	// One marker per column, on each column's own selected row.
+	for _, want := range []string{"→ Artist 11", "→ Three", "→ T6"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("library view missing %q;\n%s", want, got)
 		}
 	}
 }

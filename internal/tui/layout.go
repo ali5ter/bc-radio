@@ -234,18 +234,22 @@ func (a *App) libraryStatus() string {
 }
 
 // browserColumn renders one browser column: a header, then the viewport of
-// rows with the selection marked.
+// rows with the selection marked. Each column shows its own row count and
+// its own selection marker — the focused column's values must not leak
+// into the other two, or their headers lie and phantom markers appear
+// wherever the focused selection happens to sit.
 func (a *App) browserColumn(col, cw, h int) string {
 	b := a.browser
-	n := b.columnCount()
+	n := b.columnCountAt(col)
+	sel := b.columnSelAt(col)
 	var lines []string
 	for i := b.scroll[col]; i < n && len(lines) < h; i++ {
 		mark := "  "
 		style := styleDim
-		if i == b.columnSel() {
+		if i == sel {
 			mark = "→ "
 			style = styleAccentB
-		} else if i == b.columnSel()-1 {
+		} else if i == sel-1 {
 			style = styleText
 		}
 		lines = append(lines, style.Render(mark+clip(b.rowFor(col, i), cw-4)))

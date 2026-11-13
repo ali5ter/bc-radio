@@ -75,8 +75,14 @@ type browser struct {
 func newBrowser() *browser { return &browser{albumsFor: -1} }
 
 // columnCount is the number of rows in the focused column.
-func (b *browser) columnCount() int {
-	switch b.focus {
+func (b *browser) columnCount() int { return b.columnCountAt(b.focus) }
+
+// columnSel is the selection index of the focused column.
+func (b *browser) columnSel() int { return b.columnSelAt(b.focus) }
+
+// columnCountAt is the number of rows in column col.
+func (b *browser) columnCountAt(col int) int {
+	switch col {
 	case 0:
 		return len(b.artists)
 	case 1:
@@ -86,9 +92,9 @@ func (b *browser) columnCount() int {
 	}
 }
 
-// columnSel is the selection index of the focused column.
-func (b *browser) columnSel() int {
-	switch b.focus {
+// columnSelAt is the selection index of column col.
+func (b *browser) columnSelAt(col int) int {
+	switch col {
 	case 0:
 		return b.selArtist
 	case 1:

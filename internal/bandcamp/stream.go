@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -144,10 +145,14 @@ func urlKeyFor(t contract.Track) (urlKey, error) {
 // unless force is set), then the URL cache again. If the page parses but
 // carries no usable URL for the track — the signature expired while the
 // page sat in the cache, or the release is private or removed — and force
-// is false, the page is fetched once more with the cache bypassed, because
-// a fresh page should carry a freshly signed URL. force true (a previous
+// is false, the page is fetched fresh with the cache bypassed, because a
+// fresh page should carry a freshly signed URL. force true (a previous
 // stream fetch failed) skips the page-cache read and does not loop beyond
-// the single fetch.
+// the single fresh fetch. Every fresh fetch uses a cache-busted copy of
+// the page URL: the CDN edge caches on the full URL, so without the buster
+// a "fresh" refetch could still be served the same stale render whose
+// signature the edge already rejected (verified live against Bandcamp's
+// mid-migration signing schemes, 2026-11-12).
 func (c *Client) streamURL(ctx context.Context, t contract.Track, key urlKey, force bool) (string, error) {
 	if !force {
 		if u, ok := c.urls.get(key); ok {
@@ -155,7 +160,15 @@ func (c *Client) streamURL(ctx context.Context, t contract.Track, key urlKey, fo
 		}
 	}
 	pageURL := c.pageURL(t.Subdomain, "/album/"+t.AlbumSlug)
-	page, err := c.getHTML(ctx, pageURL, force)
+	var (
+		page string
+		err  error
+	)
+	if force {
+		page, err = c.freshPage(ctx, pageURL)
+	} else {
+		page, err = c.getHTML(ctx, pageURL, false)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -169,7 +182,7 @@ func (c *Client) streamURL(ctx context.Context, t contract.Track, key urlKey, fo
 	if force {
 		return "", noValidStreamURL(t)
 	}
-	page, err = c.getHTML(ctx, pageURL, true)
+	page, err = c.freshPage(ctx, pageURL)
 	if err != nil {
 		return "", err
 	}
@@ -181,6 +194,31 @@ func (c *Client) streamURL(ctx context.Context, t contract.Track, key urlKey, fo
 		return "", noValidStreamURL(t)
 	}
 	return u, nil
+}
+
+// freshPage fetches a fresh render of the canonical page at u: the GET
+// carries a cache-buster query parameter, so a CDN edge that is still
+// serving a stale render of the canonical URL must re-render from origin,
+// and the result is stored under the canonical key so later uncached reads
+// get the fresh page (with its freshly signed URLs) instead of the stale
+// one.
+func (c *Client) freshPage(ctx context.Context, u string) (string, error) {
+	page, err := c.fetchHTML(ctx, cacheBust(u))
+	if err != nil {
+		return "", err
+	}
+	c.cache.put(u, page)
+	return page, nil
+}
+
+// cacheBust returns u with a unique cache-buster query parameter, so a
+// cache that keys on the URL treats it as a new page.
+func cacheBust(u string) string {
+	sep := "?"
+	if strings.ContainsRune(u, '?') {
+		sep = "&"
+	}
+	return u + sep + "_=" + strconv.FormatInt(time.Now().UnixNano(), 10)
 }
 
 // resolveFromPage parses an album page, caches every signed stream URL it
