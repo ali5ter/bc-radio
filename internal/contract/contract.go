@@ -119,6 +119,14 @@ type Library interface {
 
 	// Album returns the full release record for one slug, tracks included.
 	Album(ctx context.Context, a Artist, slug string) (Album, error)
+
+	// Tracks returns every track of every release of every followed artist
+	// — the flat index behind random radio. It is the composition of
+	// Artists, Albums and Album, walked in that order, and is served from
+	// the local cache. The walk is best-effort: a release whose page fails
+	// is skipped, not fatal; err (when non-nil) describes what was skipped
+	// and the returned slice is still the index to use.
+	Tracks(ctx context.Context) ([]Track, error)
 }
 
 // AudioSource opens the encoded audio of a track. bandcamp implements it;

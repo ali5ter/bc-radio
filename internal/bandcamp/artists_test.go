@@ -3,6 +3,8 @@ package bandcamp
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -78,6 +80,28 @@ func TestParseFollowingBatchCap(t *testing.T) {
 				t.Errorf("err = %q, want it to mention %q", err, tt.wantErrPart)
 			}
 		})
+	}
+}
+
+// TestArtistsBatchCap pins the over-cap contract at the client level: the
+// 20 readable bands are returned alongside the partial-list note, not
+// discarded — the list is the library screen's data and the track
+// index's input, and throwing it away would punish every user past 20
+// follows for a Bandcamp limitation.
+func TestArtistsBatchCap(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/big/following/artists_and_labels", htmlOK(followingPage(followingBlobJSON(25, 20))))
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+
+	c := testClient(t, srv, "big")
+	artists, err := c.Artists(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "partial") {
+		t.Fatalf("err = %v, want the partial-list note", err)
+	}
+	if len(artists) != 20 {
+		t.Fatalf("len(artists) = %d, want the 20 readable bands alongside the note", len(artists))
 	}
 }
 

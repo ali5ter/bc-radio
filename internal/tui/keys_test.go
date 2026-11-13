@@ -19,6 +19,7 @@ func TestActionFor(t *testing.T) {
 		{"p", tea.KeyPressMsg{Text: "p"}, actPrev},
 		{"s", tea.KeyPressMsg{Text: "s"}, actShuffle},
 		{"r", tea.KeyPressMsg{Text: "r"}, actRepeat},
+		{"d", tea.KeyPressMsg{Text: "d"}, actRadio},
 		{"v", tea.KeyPressMsg{Text: "v"}, actVisual},
 		{"f", tea.KeyPressMsg{Text: "f"}, actFullscreen},
 		{"l", tea.KeyPressMsg{Text: "l"}, actLibrary},
@@ -36,8 +37,14 @@ func TestActionFor(t *testing.T) {
 		// Other ctrl/alt/meta combos belong to the terminal, not the app.
 		{"ctrl-d", tea.KeyPressMsg{Code: 'd', Mod: tea.ModCtrl}, actNone},
 		{"alt-l", tea.KeyPressMsg{Text: "l", Mod: tea.ModAlt}, actNone},
-		// Special keys match on String.
-		{"space", tea.KeyPressMsg{Code: tea.KeySpace}, actPlayPause},
+		// Special keys match on String, but the space bar is the exception:
+		// it decodes with a non-empty Text in the legacy table and may decode
+		// without one under the Kitty protocol, so it binds on its code.
+		// Pin both decode shapes — the legacy one is the one that used to
+		// fall through to actNone.
+		{"space legacy decode", tea.KeyPressMsg{Code: tea.KeySpace, Text: " "}, actPlayPause},
+		{"space kitty decode", tea.KeyPressMsg{Code: tea.KeySpace}, actPlayPause},
+		{"ctrl-space", tea.KeyPressMsg{Code: tea.KeySpace, Mod: tea.ModCtrl}, actNone},
 		{"enter", tea.KeyPressMsg{Code: tea.KeyEnter}, actSelect},
 		{"up", tea.KeyPressMsg{Code: tea.KeyUp}, actScrollUp},
 		{"down", tea.KeyPressMsg{Code: tea.KeyDown}, actScrollDown},

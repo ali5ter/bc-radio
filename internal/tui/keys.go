@@ -20,6 +20,7 @@ const (
 	actPrev
 	actShuffle
 	actRepeat
+	actRadio
 	actVisual
 	actFullscreen
 	actVolumeUp
@@ -43,15 +44,21 @@ const (
 // only affects the case). The one exception is ctrl+c: the program runs
 // the terminal in raw mode, so the terminal will never interpret it for
 // us, and the universal emergency exit has to be handled here or the app
-// cannot be force-quit. Text is the typed character for printable keys
-// and empty for special keys, which is why printable keys match on Text
-// and special keys on String.
+// cannot be force-quit.
+//
+// Keys are matched on Text for printable characters and on String for
+// special keys — with one gotcha: in bubbletea v2 the space bar decodes
+// with Text " " (a printable character), so it is bound on its code
+// before the text switch, or it would fall through to actNone.
 func actionFor(msg tea.KeyPressMsg) action {
 	if msg.String() == "ctrl+c" {
 		return actQuit
 	}
 	if msg.Mod&(tea.ModCtrl|tea.ModAlt|tea.ModMeta) != 0 {
 		return actNone
+	}
+	if msg.Code == tea.KeySpace {
+		return actPlayPause
 	}
 	if msg.Text != "" {
 		switch strings.ToLower(msg.Text) {
@@ -65,6 +72,8 @@ func actionFor(msg tea.KeyPressMsg) action {
 			return actShuffle
 		case "r":
 			return actRepeat
+		case "d":
+			return actRadio
 		case "v":
 			return actVisual
 		case "f":
@@ -82,9 +91,8 @@ func actionFor(msg tea.KeyPressMsg) action {
 		}
 		return actNone
 	}
+	// Space is handled by its code above; it never reaches this switch.
 	switch msg.String() {
-	case "space":
-		return actPlayPause
 	case "enter":
 		return actSelect
 	case "up":

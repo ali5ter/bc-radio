@@ -99,8 +99,163 @@ func TestBrowserColumnsAreIndependent(t *testing.T) {
 	}
 }
 
+func TestIndexLine(t *testing.T) {
+	a := &App{playlist: newPlaylist()}
+	// The not-yet-ready states (before the follows land, and while the walk
+	// runs) both read "building": the index does not exist until it does.
+	a.indexState = indexIdle
+	if got := a.indexLine(); got != "building track index…" {
+		t.Errorf("indexLine(idle) = %q; want the building line", got)
+	}
+	a.indexState = indexBuilding
+	if got := a.indexLine(); got != "building track index…" {
+		t.Errorf("indexLine(building) = %q; want the building line", got)
+	}
+	// A failed walk reads unavailable (renderStatus colours it bad).
+	a.indexState = indexFailed
+	if got := a.indexLine(); got != "track index unavailable — the radio plays the queue only" {
+		t.Errorf("indexLine(failed) = %q; want the unavailable line", got)
+	}
+	// Ready: the radio's state and the size of the index it draws from.
+	a.indexState = indexReady
+	a.playlist.SetIndex([]contract.Track{{ID: "a1", BandID: 1}, {ID: "a2", BandID: 1}, {ID: "b1", BandID: 2}})
+	a.playlist.radio = true
+	if got := a.indexLine(); got != "◉ radio on · 3 tracks · 2 bands" {
+		t.Errorf("indexLine(ready, on) = %q; want the on line", got)
+	}
+	a.playlist.radio = false
+	if got := a.indexLine(); got != "○ radio off · 3 tracks · 2 bands" {
+		t.Errorf("indexLine(ready, off) = %q; want the off line", got)
+	}
+	// The on glyph needs a non-empty index: a radio on with nothing to draw
+	// from is shown off, so the line is honest.
+	a.playlist.radio = true
+	a.playlist.SetIndex(nil)
+	if got := a.indexLine(); got != "○ radio off · 0 tracks · 0 bands" {
+		t.Errorf("indexLine(ready, on, empty) = %q; want the off line (no index)", got)
+	}
+}
+
+// TestRenderStatusFallback pins that the status row shows the transient
+// status when set and the radio's standing line when not.
+func TestRenderStatusFallback(t *testing.T) {
+	a := &App{width: 80, playlist: newPlaylist()}
+	a.status = "now: A — B"
+	if got := stripANSI(a.renderStatus()); got != "now: A — B" {
+		t.Errorf("renderStatus = %q; want the transient status", got)
+	}
+	a.status = ""
+	a.indexState = indexReady
+	a.playlist.SetIndex([]contract.Track{{ID: "a1", BandID: 1}})
+	a.playlist.radio = true
+	if got := stripANSI(a.renderStatus()); got != "◉ radio on · 1 tracks · 1 bands" {
+		t.Errorf("renderStatus fallback = %q; want the standing radio line", got)
+	}
+	a.indexState = indexFailed
+	if got := stripANSI(a.renderStatus()); got != "track index unavailable — the radio plays the queue only" {
+		t.Errorf("renderStatus(failed) = %q; want the unavailable line", got)
+	}
+}
+
+// TestFitHints pins the bottom help row's priority trim: the row always
+// fits the width, keeps its display order, and the quit/help hints are the
+// floor nothing drops past. The regression it guards: at 80 columns the
+// old static player row (123 cells) was MaxWidth-cut by place(), losing
+// "l library", "+/− vol", "? help" and "q quit" past the terminal edge.
+func TestFitHints(t *testing.T) {
+	player := []hint{
+		{"space play/pause", 90},
+		{"n next", 85},
+		{"p prev", 70},
+		{"s shuffle", 40},
+		{"r repeat", 45},
+		{"d radio", 80},
+		{"v visual", 30},
+		{"f fullscreen", 20},
+		{"l library", 60},
+		{"+/− vol", 35},
+		{"? help", mustKeepHint},
+		{"q quit", mustKeepHint},
+	}
+	cases := []struct {
+		w    int
+		keep []string
+		drop []string
+	}{
+		// 80 columns: the convenience keys drop; the transport keys, the
+		// radio, the library and the must-keep pair survive (79 cells).
+		{80,
+			[]string{"space play/pause", "n next", "p prev", "r repeat", "d radio", "l library", "? help", "q quit"},
+			[]string{"shuffle", "visual", "fullscreen", "vol"}},
+		// 60 columns: the library hint drops next.
+		{60,
+			[]string{"space play/pause", "d radio", "? help", "q quit"},
+			[]string{"l library"}},
+		// 30 columns (the player minimum): only quit and help survive.
+		{30,
+			[]string{"? help", "q quit"},
+			[]string{"space play/pause", "d radio"}},
+		// Below even the must-keep set: clipped, never wider than w.
+		{5, nil, nil},
+	}
+	for _, tc := range cases {
+		out := stripANSI(fitHints(tc.w, "  ", player...))
+		if w, _ := lipgloss.Size(out); w > tc.w {
+			t.Errorf("fitHints(%d) is %d cells wide; must not exceed: %q", tc.w, w, out)
+		}
+		for _, s := range tc.keep {
+			if !strings.Contains(out, s) {
+				t.Errorf("fitHints(%d) dropped %q: %q", tc.w, s, out)
+			}
+		}
+		for _, s := range tc.drop {
+			if strings.Contains(out, s) {
+				t.Errorf("fitHints(%d) kept %q; it should have dropped: %q", tc.w, s, out)
+			}
+		}
+	}
+}
+
+// TestFitHintsLibrary pins the library row's narrower trade: at 80 columns
+// the "x remove from queue" hint drops (it is in the help overlay) so the
+// back-navigation hint displays in full instead of being cut to "l or esc b".
+func TestFitHintsLibrary(t *testing.T) {
+	a := &App{width: 80}
+	out := stripANSI(a.renderLibraryHelp())
+	for _, want := range []string{"↑/↓ select", "←/→ column", "enter open / queue", "l or esc back"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("library help row lost %q: %q", want, out)
+		}
+	}
+	if strings.Contains(out, "remove from queue") {
+		t.Errorf("library help row at 80 cols should have dropped the remove hint: %q", out)
+	}
+}
+
+func TestRenderQueueRadioHint(t *testing.T) {
+	a := &App{width: 80, playlist: newPlaylist()}
+	// Radio on with a non-empty index: the empty queue previews the radio.
+	a.playlist.SetIndex([]contract.Track{{ID: "a1"}})
+	a.playlist.radio = true
+	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "the radio plays next") {
+		t.Fatalf("empty queue = %q; want the radio hint", got)
+	}
+	// Radio off (or empty index): the old add-tracks hint.
+	a.playlist.radio = false
+	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "add tracks") {
+		t.Fatalf("empty queue, radio off = %q; want the add-tracks hint", got)
+	}
+	a.playlist.radio = true
+	a.playlist.SetIndex(nil)
+	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "add tracks") {
+		t.Fatalf("empty queue, empty index = %q; want the add-tracks hint", got)
+	}
+}
+
 func TestRenderQueue(t *testing.T) {
 	a := &App{width: 80, playlist: newPlaylist()}
+	// The radio is on by default but the index is empty here, so the empty
+	// queue still previews the add-tracks hint, not the radio.
 	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "add tracks") {
 		t.Fatalf("empty queue preview = %q; want the add-tracks hint", got)
 	}

@@ -70,7 +70,10 @@ func (c *Client) Artists(ctx context.Context) ([]contract.Artist, error) {
 	}
 	artists, err := parseFollowing(page)
 	if err != nil {
-		return nil, fmt.Errorf("bandcamp: parse following page: %w", err)
+		// The only parse error is the >20 batch-cap note: the list is
+		// complete-so-far and still useful, so return it alongside the
+		// error rather than throwing it away.
+		return artists, fmt.Errorf("bandcamp: parse following page: %w", err)
 	}
 	return artists, nil
 }

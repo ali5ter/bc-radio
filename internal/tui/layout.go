@@ -60,7 +60,11 @@ func place(w int, s string) string {
 func (a *App) viewPlayer() string {
 	w, h := a.width, a.height
 	if w < 30 || h < 8 {
-		return tooSmall(w, h, "terminal too small — bc-radio needs 30 × 8")
+		// Short on purpose: below the 30-column minimum the notice has to
+		// fit the very terminal it is apologising for, so it names the
+		// app and the requirement ("bc-radio needs 30 × 8") and nothing
+		// else — the longer wording ellipsised its own tail at 25 columns.
+		return tooSmall(w, h, "bc-radio needs 30 × 8")
 	}
 	// Fullscreen keeps the title and separator rows, so the visualizer gets
 	// everything but those two.
@@ -81,7 +85,7 @@ func (a *App) viewPlayer() string {
 			place(w, a.renderStatus()),
 			place(w, a.renderProgress()),
 			place(w, a.renderQueue()),
-			place(w, renderHelp()),
+			place(w, a.renderHelp()),
 		)
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
@@ -113,13 +117,38 @@ func (a *App) renderTitle() string {
 	return place(a.width, sb.String())
 }
 
-// renderStatus shows the transient status line, or nothing.
+// renderStatus shows the transient status line, or — when none is set —
+// the radio's standing status.
 func (a *App) renderStatus() string {
+	text := a.status
+	if text == "" {
+		text = a.indexLine()
+	}
 	style := styleDim
-	if strings.Contains(a.status, "failed") || strings.Contains(a.status, "error") {
+	if strings.Contains(a.status, "failed") || strings.Contains(a.status, "error") ||
+		strings.Contains(text, "unavailable") {
 		style = styleBad
 	}
-	return style.Render(a.status)
+	return style.Render(text)
+}
+
+// indexLine is the standing status-row content: the radio's state and the
+// size of the index it draws from. The not-yet-ready states (before the
+// follow list lands, and while the walk runs) both read "building",
+// because from the user's view the index does not exist until it does.
+func (a *App) indexLine() string {
+	switch a.indexState {
+	case indexIdle, indexBuilding:
+		return "building track index…"
+	case indexFailed:
+		return "track index unavailable — the radio plays the queue only"
+	}
+	n := len(a.playlist.Index())
+	radio := "○ radio off"
+	if a.playlist.radio && n > 0 {
+		radio = "◉ radio on"
+	}
+	return fmt.Sprintf("%s · %d tracks · %d bands", radio, n, a.playlist.IndexBands())
 }
 
 // renderProgress is the position bar: 1:23 ━━━━──── 4:56.
@@ -157,7 +186,11 @@ func (a *App) renderQueue() string {
 	var sb strings.Builder
 	sb.WriteString(styleDimB.Render("  up next "))
 	if len(q) == 0 {
-		sb.WriteString(styleDim.Render(" — add tracks from the library (l)"))
+		if a.playlist.radio && len(a.playlist.Index()) > 0 {
+			sb.WriteString(styleDim.Render(" — the radio plays next"))
+		} else {
+			sb.WriteString(styleDim.Render(" — add tracks from the library (l)"))
+		}
 		return sb.String()
 	}
 	max := len(q)
@@ -175,10 +208,93 @@ func (a *App) renderQueue() string {
 	return sb.String()
 }
 
-// renderHelp is the bottom keybinding hint row.
-func renderHelp() string {
-	return styleDim.Render(
-		" space play/pause  n next  p prev  s shuffle  r repeat  v visual  f fullscreen  l library  +/− vol  ? help  q quit")
+// hint is one keybinding on a bottom help row: its text and how much it
+// matters. fitHints drops the least important hints first when the row
+// cannot fit the terminal width.
+type hint struct {
+	text     string
+	priority int
+}
+
+// mustKeepHint is the priority floor of fitHints: hints at or above it
+// (quit and help) are never dropped, because a hint row that cannot say
+// how to quit or open the help overlay is worse than a short one.
+const mustKeepHint = 100
+
+// fitHints joins the hints with sep (after a leading space) and, while the
+// result is wider than w cells, drops one whole hint at a time, the lowest
+// priority first. Display order is preserved, so the keys read in the same
+// order at every width, and no surviving key or label is ever cut
+// mid-word. That is the point: the alternative (letting place() MaxWidth-
+// cut the static row) silently hides whatever keys sit past the terminal
+// edge — at 80 columns the old player row lost "l library", "+/− vol",
+// "? help" and "q quit" to it. If even the must-keep hints do not fit, the
+// row is clipped with an ellipsis rather than overflowing the row width
+// the layout relies on.
+func fitHints(w int, sep string, hints ...hint) string {
+	join := func(hs []hint) string {
+		s := " "
+		for i, h := range hs {
+			if i > 0 {
+				s += sep
+			}
+			s += h.text
+		}
+		return s
+	}
+	// Copy: the drop loop rewrites the slice in place, and the caller's
+	// backing array must not be clobbered (the hints are usually a
+	// freshly built variadic slice, but a reused one would be corrupted).
+	live := make([]hint, len(hints))
+	copy(live, hints)
+	for lipgloss.Width(join(live)) > w {
+		drop := -1
+		for i, h := range live {
+			if h.priority < mustKeepHint && (drop == -1 || h.priority < live[drop].priority) {
+				drop = i
+			}
+		}
+		if drop == -1 {
+			break // only the must-keep hints remain
+		}
+		live = append(live[:drop], live[drop+1:]...)
+	}
+	return styleDim.Render(clip(join(live), w))
+}
+
+// renderHelp is the player's bottom keybinding hint row, fitted to the
+// terminal width. The transport keys, the radio (the app's identity) and
+// the library drop in that order; shuffle, repeat, volume, the visualizer
+// and fullscreen are the first casualties, quit and help never drop.
+func (a *App) renderHelp() string {
+	return fitHints(a.width, "  ",
+		hint{"space play/pause", 90},
+		hint{"n next", 85},
+		hint{"p prev", 70},
+		hint{"s shuffle", 40},
+		hint{"r repeat", 45},
+		hint{"d radio", 80},
+		hint{"v visual", 30},
+		hint{"f fullscreen", 20},
+		hint{"l library", 60},
+		hint{"+/− vol", 35},
+		hint{"? help", mustKeepHint},
+		hint{"q quit", mustKeepHint},
+	)
+}
+
+// renderLibraryHelp is the library's bottom hint row, fitted the same way.
+// At 80 columns the "x remove from queue" hint drops (it is documented in
+// the help overlay) so the navigation hints, including "l or esc back",
+// stay whole; the select/queue hints are the last to go.
+func (a *App) renderLibraryHelp() string {
+	return fitHints(a.width, "   ",
+		hint{"↑/↓ select", 90},
+		hint{"←/→ column", 80},
+		hint{"enter open / queue", 85},
+		hint{"x remove from queue", 50},
+		hint{"l or esc back", 60},
+	)
 }
 
 // tooSmall renders a centred notice for terminals the layout cannot use. The
@@ -193,7 +309,9 @@ func tooSmall(w, h int, msg string) string {
 func (a *App) viewLibrary() string {
 	w, h := a.width, a.height
 	if w < 60 || h < 10 {
-		return tooSmall(w, h, "terminal too small — the library needs 60 × 10")
+		// Short for the same reason as the player's notice: it has to fit
+		// the terminal it is apologising for.
+		return tooSmall(w, h, "library needs 60 × 10")
 	}
 	var sb strings.Builder
 	sb.WriteString(styleAccentB.Render("bc-radio"))
@@ -210,8 +328,7 @@ func (a *App) viewLibrary() string {
 		cols[i] = a.browserColumn(i, cw, colH)
 	}
 	body := lipgloss.JoinHorizontal(lipgloss.Left, cols...)
-	help := place(w, styleDim.Render(
-		" ↑/↓ select   ←/→ column   enter open / queue   x remove from queue   l or esc back"))
+	help := place(w, a.renderLibraryHelp())
 	return lipgloss.JoinVertical(lipgloss.Left, title, place(w, body), help)
 }
 
@@ -297,6 +414,7 @@ func (a *App) viewHelp() string {
 			"  p          previous track, or restart if within 5 s",
 			"  s          shuffle on / off",
 			"  r          repeat on / off",
+			"  d          radio on / off (random tracks from your follows)",
 			"  v          next visualizer",
 			"  f          fullscreen visualizer",
 			"  l          library",

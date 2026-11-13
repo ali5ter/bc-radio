@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -117,10 +118,12 @@ type fakeLib struct {
 	artists  []contract.Artist
 	albums   map[int64][]contract.Album
 	full     map[string]contract.Album
+	tracks   []contract.Track
 	err      error
 	artistCt int
 	albumCt  int
 	fullCt   int
+	trackCt  int
 }
 
 func (f *fakeLib) Artists(ctx context.Context) ([]contract.Artist, error) {
@@ -153,6 +156,16 @@ func (f *fakeLib) Album(ctx context.Context, a contract.Artist, slug string) (co
 	al := f.full[slug]
 	al.BandID = a.BandID
 	return al, nil
+}
+
+func (f *fakeLib) Tracks(ctx context.Context) ([]contract.Track, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.trackCt++
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.tracks, nil
 }
 
 // newTestApp builds an app over the fakes, sized 80 × 24.
@@ -234,8 +247,11 @@ func TestViewTooSmall(t *testing.T) {
 	if w != 20 || h != 4 {
 		t.Fatalf("tiny view is %dx%d; want 20x4", w, h)
 	}
-	if !strings.Contains(stripANSI(v), "too small") {
-		t.Fatalf("tiny view should say the terminal is too small: %q", stripANSI(v))
+	// The notice is deliberately short ("bc-radio needs 30 × 8") so it
+	// displays in full even below the minimum width: at 20 columns the
+	// ellipsis eats only the trailing "× 8".
+	if got := stripANSI(v); !strings.Contains(got, "bc-radio") || !strings.Contains(got, "needs 30") {
+		t.Fatalf("tiny view should name the app and its minimum size: %q", got)
 	}
 }
 
@@ -389,13 +405,15 @@ func TestPlaybackFailedIdleWithQueueAdvances(t *testing.T) {
 	}
 }
 
-// Space on an idle engine with a queue starts the head.
+// Space on an idle engine with a queue starts the head. The key is the
+// legacy decode shape (Text " ") — the form the space bar actually arrives
+// in, and the one that used to fall through to actNone.
 func TestSpaceStartsQueueHead(t *testing.T) {
 	app, lp, _ := newTestApp()
 	app.playlist.Add(track("A"))
 	lp.setState(contract.State{})
 
-	cmd := press(t, app, tea.KeyPressMsg{Code: tea.KeySpace})
+	cmd := press(t, app, tea.KeyPressMsg{Code: tea.KeySpace, Text: " "})
 	m, ok := mustRun(t, cmd).(loadedMsg)
 	if !ok || m.track.ID != "A" || m.err != nil {
 		t.Fatalf("space should load A; got %v (%v)", m, m.err)
@@ -421,6 +439,22 @@ func mustRun(t *testing.T, cmd tea.Cmd) tea.Msg {
 	return cmd()
 }
 
+// runMsgs runs cmd and returns the messages it produced. A batch (several
+// commands, as when the index build is batched with a browser fetch) runs
+// every sub-command and yields them all; a plain command yields one.
+func runMsgs(t *testing.T, cmd tea.Cmd) []tea.Msg {
+	t.Helper()
+	m := mustRun(t, cmd)
+	if batch, ok := m.(tea.BatchMsg); ok {
+		out := make([]tea.Msg, len(batch))
+		for i, c := range batch {
+			out[i] = c()
+		}
+		return out
+	}
+	return []tea.Msg{m}
+}
+
 func TestSpacePauseResume(t *testing.T) {
 	app, lp, _ := newTestApp()
 	lp.setState(contract.State{Track: track("A"), Playing: true, Volume: 1})
@@ -441,9 +475,17 @@ func TestSpacePauseResume(t *testing.T) {
 
 func TestSpaceIdleEmptyQueue(t *testing.T) {
 	app, _, _ := newTestApp()
+	// The radio is on by default but the index is empty, so space finds
+	// nothing to start.
 	press(t, app, tea.KeyPressMsg{Code: tea.KeySpace})
-	if !strings.Contains(app.status, "queue is empty") {
-		t.Fatalf("status = %q; want the empty-queue hint", app.status)
+	if !strings.Contains(app.status, "nothing to play") {
+		t.Fatalf("status = %q; want the nothing-to-play hint", app.status)
+	}
+	// With the radio off the hint also names how to turn it back on.
+	app.playlist.radio = false
+	press(t, app, tea.KeyPressMsg{Code: tea.KeySpace})
+	if !strings.Contains(app.status, "radio off") {
+		t.Fatalf("status = %q; want the radio-off hint", app.status)
 	}
 }
 
@@ -656,10 +698,16 @@ func TestLibraryFlow(t *testing.T) {
 		t.Fatalf("screen = %v, artists = %d; want library / 2", app.screen, len(app.browser.artists))
 	}
 
-	// The browser preloads the selected artist's releases.
-	ma, ok := mustRun(t, cmd).(albumsMsg)
-	if !ok {
-		t.Fatalf("after artists load, the browser should fetch albums; got %v", ma)
+	// The browser preloads the selected artist's releases; the radio's index
+	// build starts in the same batch.
+	if app.indexState != indexBuilding {
+		t.Fatalf("indexState = %v; the index build must start when the follows land", app.indexState)
+	}
+	var ma albumsMsg
+	for _, x := range runMsgs(t, cmd) {
+		if am, ok := x.(albumsMsg); ok {
+			ma = am
+		}
 	}
 	_, cmd = app.Update(ma)
 	if len(app.browser.albums) != 2 || app.browser.tracksFor != "" {
@@ -714,9 +762,11 @@ func TestLibraryStaleAlbumsDropped(t *testing.T) {
 		t.Fatalf("l should fetch artists; got %v", m)
 	}
 	_, cmd := app.Update(m)
-	ma, ok := mustRun(t, cmd).(albumsMsg)
-	if !ok {
-		t.Fatalf("albums fetch expected; got %v", ma)
+	var ma albumsMsg
+	for _, x := range runMsgs(t, cmd) {
+		if am, ok := x.(albumsMsg); ok {
+			ma = am
+		}
 	}
 	_, _ = app.Update(ma)
 	if len(app.browser.albums) != 1 || app.browser.albums[0].Title != "One" {
@@ -767,6 +817,296 @@ func TestLoadedError(t *testing.T) {
 	}
 	if mustRun(t, press(t, app, tea.KeyPressMsg{Code: tea.KeySpace})) == nil {
 		t.Fatal("space must retry")
+	}
+}
+
+// --- radio ---
+
+// d toggles the radio on and off; the status line confirms.
+func TestRadioToggleKey(t *testing.T) {
+	app, _, _ := newTestApp()
+	if !app.playlist.radio {
+		t.Fatal("the radio must be on by default")
+	}
+	press(t, app, tea.KeyPressMsg{Text: "d"})
+	if app.playlist.radio || app.status != "radio off" {
+		t.Fatalf("radio = %v, status = %q; want off / \"radio off\"", app.playlist.radio, app.status)
+	}
+	press(t, app, tea.KeyPressMsg{Text: "d"})
+	if !app.playlist.radio || app.status != "radio on" {
+		t.Fatalf("radio = %v, status = %q; want on / \"radio on\"", app.playlist.radio, app.status)
+	}
+}
+
+// indexMsg lands the radio's flat track index in all three outcomes: a
+// clean build, a walk that failed with nothing (the radio has no pool), and
+// a walk that failed after reading some (a partial index is still fuel).
+func TestIndexMsg(t *testing.T) {
+	app, _, _ := newTestApp()
+	app.indexState = indexBuilding
+
+	_, _ = app.Update(indexMsg{tracks: []contract.Track{
+		{ID: "a1", BandID: 1}, {ID: "a2", BandID: 1}, {ID: "b1", BandID: 2},
+	}})
+	if app.indexState != indexReady {
+		t.Fatalf("indexState = %v; want ready", app.indexState)
+	}
+	if got := app.status; got != "track index: 3 tracks from 2 bands" {
+		t.Fatalf("status = %q", got)
+	}
+	if len(app.playlist.Index()) != 3 || app.playlist.IndexBands() != 2 {
+		t.Fatalf("index = %d tracks / %d bands; want 3 / 2", len(app.playlist.Index()), app.playlist.IndexBands())
+	}
+
+	_, _ = app.Update(indexMsg{err: errors.New("network down")})
+	if app.indexState != indexFailed {
+		t.Fatalf("indexState = %v; a failed empty walk is failed", app.indexState)
+	}
+	if got := app.status; got != "track index unavailable: network down" {
+		t.Fatalf("status = %q", got)
+	}
+	if len(app.playlist.Index()) != 0 {
+		t.Fatalf("index = %d; a failed empty walk clears the index", len(app.playlist.Index()))
+	}
+
+	_, _ = app.Update(indexMsg{
+		tracks: []contract.Track{{ID: "a1", BandID: 1}},
+		err:    errors.New("one band 404"),
+	})
+	if app.indexState != indexReady {
+		t.Fatalf("indexState = %v; a partial index is ready", app.indexState)
+	}
+	if got := app.status; got != "track index: 1 tracks — one band 404" {
+		t.Fatalf("status = %q", got)
+	}
+}
+
+// A partial follow list (the >20 batch cap) still lands the artists it read,
+// and the index build still walks them; the note is surfaced, not fatal.
+func TestArtistsPartialAcceptsBatchCap(t *testing.T) {
+	app, _, _ := newTestApp()
+	artists := make([]contract.Artist, 20)
+	for i := range artists {
+		artists[i] = contract.Artist{BandID: int64(i + 1), Name: fmt.Sprintf("Band %d", i+1)}
+	}
+	_, cmd := app.Update(artistsMsg{
+		artists: artists,
+		err:     errors.New("19 of 34 follows readable (batch cap)"),
+	})
+	if len(app.browser.artists) != 20 {
+		t.Fatalf("artists = %d; a partial list still lands", len(app.browser.artists))
+	}
+	if !strings.Contains(app.status, "library:") {
+		t.Fatalf("status = %q; the partial note must be surfaced", app.status)
+	}
+	if app.indexState != indexBuilding {
+		t.Fatalf("indexState = %v; the readable artists still walk", app.indexState)
+	}
+	var sawAlbums, sawIndex bool
+	for _, x := range runMsgs(t, cmd) {
+		if _, ok := x.(albumsMsg); ok {
+			sawAlbums = true
+		}
+		if _, ok := x.(indexMsg); ok {
+			sawIndex = true
+		}
+	}
+	if !sawAlbums || !sawIndex {
+		t.Fatalf("the batch must hold the browser preload and the index build (albums = %v, index = %v)",
+			sawAlbums, sawIndex)
+	}
+}
+
+// Space on an idle engine with the radio on and a built index starts a
+// random index track (a cold start draws from the index, not the pool).
+func TestSpaceIdleRadioStarts(t *testing.T) {
+	app, lp, _ := newTestApp()
+	app.playlist.SetIndex([]contract.Track{track("A"), track("B")})
+	lp.setState(contract.State{}) // idle
+	app.state = lp.State()
+
+	m, ok := mustRun(t, press(t, app, tea.KeyPressMsg{Code: tea.KeySpace})).(loadedMsg)
+	if !ok {
+		t.Fatalf("space should load a radio track; got %v", m)
+	}
+	if m.err != nil {
+		t.Fatalf("load err = %v", m.err)
+	}
+	want := map[string]bool{"A": true, "B": true}
+	if !want[m.track.ID] {
+		t.Fatalf("radio start = %q; want an index track", m.track.ID)
+	}
+	if !app.pendingLoad {
+		t.Fatal("pendingLoad must be set while the load is in flight")
+	}
+	if !strings.Contains(app.status, "play:") {
+		t.Fatalf("status = %q", app.status)
+	}
+
+	_, _ = app.Update(m)
+	if app.pendingLoad {
+		t.Fatal("pendingLoad must clear when the load lands")
+	}
+	if got := app.playlist.Current().ID; got != m.track.ID {
+		t.Fatalf("current = %q; want %q", got, m.track.ID)
+	}
+}
+
+// A track ends while the engine sits idle: the radio draws the next from
+// the index, avoiding the track that just ended.
+func TestTrackEndedIdleRadioAdvance(t *testing.T) {
+	app, lp, _ := newTestApp()
+	app.playlist.SetIndex([]contract.Track{track("A"), track("B"), track("C")})
+	app.playlist.SetCurrent(track("C"))
+	lp.setState(contract.State{}) // idle: the engine's own advance exhausted
+
+	_, _ = app.Update(eventMsg{ev: contract.Event{Kind: contract.EventTrackEnded, Track: track("C")}})
+
+	want := map[string]bool{"A": true, "B": true}
+	if got := last(ids(lp.queues)); !want[got] {
+		t.Fatalf("Queue calls = %v; the radio must avoid C and pick from the index", ids(lp.queues))
+	}
+	if got := app.playlist.Current().ID; got != "" {
+		t.Fatalf("current = %q; C ended, so the playlist must be idle", got)
+	}
+	if !strings.Contains(app.status, "now:") {
+		t.Fatalf("status = %q", app.status)
+	}
+}
+
+// queueAlbumBrowser arranges the library screen on an album with the given
+// tracks column, for the queue-all tests.
+func queueAlbumBrowser(app *App, tracksFor string, tracks ...contract.Track) {
+	app.screen = screenLibrary
+	app.browser.albumArtist = contract.Artist{BandID: 1, Name: "Alpha"}
+	app.browser.albums = []contract.Album{{Slug: "s1", Title: "One", BandID: 1}}
+	app.browser.tracksFor = tracksFor
+	app.browser.tracks = tracks
+	app.browser.focus = 1
+}
+
+func albumTracks() []contract.Track {
+	return []contract.Track{
+		{ID: "t1", Title: "T1", BandName: "Alpha", AlbumTitle: "One"},
+		{ID: "t2", Title: "T2", BandName: "Alpha", AlbumTitle: "One"},
+	}
+}
+
+// Enter on an album with a fresh tracks column queues every track at once;
+// an idle engine starts the first.
+func TestQueueAlbumFreshColumn(t *testing.T) {
+	app, lp, _ := newTestApp()
+	queueAlbumBrowser(app, "s1", albumTracks()...)
+	lp.setState(contract.State{}) // idle
+	app.state = lp.State()
+
+	press(t, app, tea.KeyPressMsg{Code: tea.KeyEnter})
+
+	if got := ids(app.playlist.Queue()); len(got) != 2 || got[0] != "t1" || got[1] != "t2" {
+		t.Fatalf("queue = %v; want [t1 t2]", got)
+	}
+	if app.status != "queued 2 tracks from One" {
+		t.Fatalf("status = %q", app.status)
+	}
+	if got := last(ids(lp.queues)); got != "t1" || app.engineNextID != "t1" {
+		t.Fatalf("Queue calls = %v, slot = %q; the idle engine must start t1", ids(lp.queues), app.engineNextID)
+	}
+}
+
+// Enter on an album dedups against the queue and the current track; a
+// second enter finds nothing new.
+func TestQueueAlbumDedup(t *testing.T) {
+	app, lp, _ := newTestApp()
+	queueAlbumBrowser(app, "s1", albumTracks()...)
+	t1 := albumTracks()[0]
+	app.playlist.SetCurrent(t1)
+	lp.setState(contract.State{Track: t1, Playing: true}) // t1 is playing
+	app.state = lp.State()
+
+	press(t, app, tea.KeyPressMsg{Code: tea.KeyEnter})
+	if got := ids(app.playlist.Queue()); len(got) != 1 || got[0] != "t2" {
+		t.Fatalf("queue = %v; t1 is playing, so only t2 queues", got)
+	}
+	if app.status != "queued 1 tracks from One" {
+		t.Fatalf("status = %q", app.status)
+	}
+	if got := last(ids(lp.queues)); got != "t2" || app.engineNextID != "t2" {
+		t.Fatalf("Queue calls = %v, slot = %q; t2 must be the prepared next", ids(lp.queues), app.engineNextID)
+	}
+
+	press(t, app, tea.KeyPressMsg{Code: tea.KeyEnter})
+	if app.status != "every track of One is already queued or playing" {
+		t.Fatalf("status = %q", app.status)
+	}
+	if got := last(ids(lp.queues)); got != "t2" {
+		t.Fatalf("Queue calls = %v; nothing new must be prepared", ids(lp.queues))
+	}
+}
+
+// Enter on an album with a stale tracks column records the intent and
+// queues when the refetch the browser issues lands.
+func TestQueueAlbumStaleRefetch(t *testing.T) {
+	app, lp, fl := newTestApp()
+	fl.full["s1"] = contract.Album{Slug: "s1", Title: "One", BandID: 1, Tracks: albumTracks()}
+	queueAlbumBrowser(app, "stale",
+		contract.Track{ID: "zz", Title: "Zz", BandName: "Other", AlbumTitle: "Else"})
+	lp.setState(contract.State{}) // idle
+	app.state = lp.State()
+
+	cmd := press(t, app, tea.KeyPressMsg{Code: tea.KeyEnter})
+	if app.browser.queueAllFor != "s1" {
+		t.Fatalf("queueAllFor = %q; want s1 (the tracks column is stale)", app.browser.queueAllFor)
+	}
+	m, ok := mustRun(t, cmd).(tracksMsg)
+	if !ok || m.err != nil {
+		t.Fatalf("the refetch must run and succeed; got %v (%v)", m, m.err)
+	}
+	_, _ = app.Update(m)
+
+	if got := ids(app.playlist.Queue()); len(got) != 2 || got[0] != "t1" || got[1] != "t2" {
+		t.Fatalf("queue = %v; the pending queue-all must land with the refetch", got)
+	}
+	if app.browser.queueAllFor != "" {
+		t.Fatal("queueAllFor must be consumed")
+	}
+	if app.status != "queued 2 tracks from One" {
+		t.Fatalf("status = %q", app.status)
+	}
+	if app.browser.tracksFor != "s1" || len(app.browser.tracks) != 2 {
+		t.Fatalf("tracksFor = %q, tracks = %d; the column must refresh to s1", app.browser.tracksFor, len(app.browser.tracks))
+	}
+	if got := last(ids(lp.queues)); got != "t1" {
+		t.Fatalf("Queue calls = %v; the idle engine must start t1", ids(lp.queues))
+	}
+}
+
+// And a failed refetch reports the queue-all failure and clears the intent.
+func TestQueueAlbumStaleRefetchFails(t *testing.T) {
+	app, lp, fl := newTestApp()
+	fl.err = errors.New("bandcamp down")
+	queueAlbumBrowser(app, "stale",
+		contract.Track{ID: "zz", Title: "Zz", BandName: "Other", AlbumTitle: "Else"})
+	lp.setState(contract.State{}) // idle
+	app.state = lp.State()
+
+	cmd := press(t, app, tea.KeyPressMsg{Code: tea.KeyEnter})
+	if app.browser.queueAllFor != "s1" {
+		t.Fatalf("queueAllFor = %q; want s1", app.browser.queueAllFor)
+	}
+	m, ok := mustRun(t, cmd).(tracksMsg)
+	if !ok || m.err == nil {
+		t.Fatalf("want a failed tracksMsg; got %v", m)
+	}
+	_, _ = app.Update(m)
+
+	if app.status != "queueing s1: bandcamp down" {
+		t.Fatalf("status = %q; the queue-all failure must name the album", app.status)
+	}
+	if app.browser.queueAllFor != "" {
+		t.Fatal("queueAllFor must be consumed on failure too")
+	}
+	if got := ids(lp.queues); len(got) != 0 {
+		t.Fatalf("Queue calls = %v; nothing must be prepared", got)
 	}
 }
 

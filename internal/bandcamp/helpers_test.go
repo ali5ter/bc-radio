@@ -1,6 +1,7 @@
 package bandcamp
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -81,6 +82,41 @@ func tralbumPage(json string) string {
 func followingPage(json string) string {
 	esc := strings.ReplaceAll(json, `"`, `&quot;`)
 	return `<html><body><div id="pagedata" data-blob="` + esc + `"></div></body></html>`
+}
+
+// musicPage renders an artist /music page with the given release cards, in
+// the shape Bandcamp serves: an li carrying data-item-id and data-band-id,
+// a link, a cover image and a title.
+func musicPage(cards ...string) string {
+	return `<html><body><ul>` + strings.Join(cards, "") + `</ul></body></html>`
+}
+
+// releaseCard is one release card for musicPage.
+func releaseCard(itemID, bandID int64, slug, title string, artID int64) string {
+	return fmt.Sprintf(
+		`<li data-item-id="album-%d" data-band-id="%d"><a href="/album/%s"></a>`+
+			`<img src="https://f4.bcbits.com/img/a%d_2.jpg"><p class="title">%s</p></li>`,
+		itemID, bandID, slug, artID, title)
+}
+
+// tralbumJSON builds the data-tralbum JSON for an album page (for
+// tralbumPage), hosted at the artist's subdomain. Every track carries one
+// mp3-128 stream URL, the encoding the client prefers.
+func tralbumJSON(id int64, sub, artist, slug, title string, bandID int64, tracks ...tralbumTrack) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, `{"id":%d,"item_type":"album","artist":%q,"url":"https://%s.bandcamp.com/album/%s",`+
+		`"current":{"title":%q,"band_id":%d,"release_date":"07 Jan 2026 12:03:45 GMT"},"trackinfo":[`,
+		id, artist, sub, slug, title, bandID)
+	for i, t := range tracks {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		fmt.Fprintf(&b, `{"id":%d,"track_id":%d,"title":%q,"track_num":%d,"duration":%v,`+
+			`"file":{"mp3-128":"https://s4.bcbits.com/stream/synthetic?ts=1"}}`,
+			t.ID, t.TrackID, t.Title, t.TrackNum, t.Duration)
+	}
+	b.WriteString("]}")
+	return b.String()
 }
 
 // artistWith builds a contract.Artist for test routing.

@@ -1,10 +1,12 @@
-// Command bc-radio runs a local-first terminal music player for the bands you
-// follow on Bandcamp. It scrapes your follows and their discography, streams
+// Command bc-radio runs a local-first terminal radio for the bands you follow
+// on Bandcamp. It builds a track index from your follows and their
+// discography, plays it as random radio (or whatever else you queue), streams
 // the tracks over your system audio, and renders a 60 fps interface with live
 // spectrum, waveform and particle visualizers.
 //
-// The interface is interactive: run it in a terminal, then open the library
-// (l) and queue some tracks. See the README for setup and keybindings.
+// The interface is interactive: run it in a terminal, press space to start
+// the radio, and l to queue specific tracks or albums. See the README for
+// setup and keybindings.
 package main
 
 import (

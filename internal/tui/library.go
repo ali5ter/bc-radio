@@ -23,7 +23,12 @@ type (
 	}
 	tracksMsg struct {
 		album contract.Album
+		slug  string // the requested slug, known even when the fetch failed
 		err   error
+	}
+	indexMsg struct {
+		tracks []contract.Track
+		err    error
 	}
 )
 
@@ -47,7 +52,18 @@ func fetchAlbums(lib contract.Library, a contract.Artist) tea.Cmd {
 func fetchAlbumFull(lib contract.Library, a contract.Artist, al contract.Album) tea.Cmd {
 	return func() tea.Msg {
 		album, err := lib.Album(context.Background(), a, al.Slug)
-		return tracksMsg{album: album, err: err}
+		return tracksMsg{album: album, slug: al.Slug, err: err}
+	}
+}
+
+// fetchIndex builds the radio's flat track index (every track of every
+// followed band). The walk is a few seconds of cached page reads, but it
+// runs in a goroutine under bubbletea anyway: it must never block the UI,
+// which shows "building track index…" in the meantime.
+func fetchIndex(lib contract.Library) tea.Cmd {
+	return func() tea.Msg {
+		tracks, err := lib.Tracks(context.Background())
+		return indexMsg{tracks: tracks, err: err}
 	}
 }
 
@@ -69,6 +85,11 @@ type browser struct {
 	viewH     int    // viewport rows per column, set on resize
 	albumsFor int64  // artist BandID the albums column holds; -1 = none
 	tracksFor string // album slug the tracks column holds; "" = none
+
+	// queueAllFor is the album slug whose tracks the user asked to queue
+	// (enter on the albums column) but whose tracks column was not fresh:
+	// set here, consumed when the refetched tracksMsg lands.
+	queueAllFor string
 }
 
 // newBrowser builds a browser with no data loaded.

@@ -3,8 +3,9 @@
 // It consumes contract.Library and contract.Player and owns everything the
 // frozen contracts leave to the front end:
 //
-//   - the queue policy — shuffle, repeat, history, and the pool that the
-//     radio loops when the queue runs dry (playlist.go);
+//   - the queue policy — shuffle, repeat, history, the pool that repeat
+//     loops, and the radio: a random pick from the flat index of every
+//     followed band (playlist.go);
 //   - the two screens — the player (title, visualizer, progress, queue
 //     preview, controls) and the three-column library browser
 //     (layout.go, library.go);

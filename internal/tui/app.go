@@ -25,6 +25,19 @@ const (
 	screenLibrary
 )
 
+// indexState is the radio's track-index lifecycle: built once, as soon as
+// the follow list lands, and not rebuilt mid-session — the page cache keeps
+// the signed stream URLs alive, and new follows do not happen while a
+// session is running.
+type indexState int
+
+const (
+	indexIdle     indexState = iota // not started
+	indexBuilding                   // a fetchIndex is in flight
+	indexReady                      // the playlist holds the index
+	indexFailed                     // the walk failed with nothing: the radio has no pool
+)
+
 // Messages internal to the app (the library's fetch messages live in
 // library.go).
 type (
@@ -66,6 +79,7 @@ type App struct {
 	engineNextID string         // the track in the engine's single pending slot
 	pendingLoad  bool           // a Load is in flight; transport actions wait
 	skipFrom     contract.Track // abandoned by a skip/prev, recorded on success
+	indexState   indexState     // the radio's track-index lifecycle
 }
 
 // New builds an App over a library and a player. The player is not started
@@ -82,9 +96,12 @@ func New(library contract.Library, player contract.Player) *App {
 	}
 }
 
-// Init implements tea.Model: start the render tick and the event pump.
+// Init implements tea.Model: start the render tick, the event pump, and
+// the follow-list fetch. The follow list is fetched at startup (not on the
+// first l, as before) so the radio's track index can start building while
+// the user is still reading the player screen.
 func (a *App) Init() tea.Cmd {
-	return tea.Batch(a.tick(), a.watch())
+	return tea.Batch(a.tick(), a.watch(), fetchArtists(a.library))
 }
 
 // Update implements tea.Model.
@@ -120,15 +137,25 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case artistsMsg:
-		if m.err != nil {
-			a.statusf("library: %v", m.err)
-			return a, nil
-		}
+		// A partial list (the >20 batch-cap note) still lands the artists
+		// it read: only an empty failure leaves the library empty.
 		a.browser.artists = m.artists
 		a.browser.selArtist = 0
 		a.browser.scroll[0] = 0
-		a.statusf("%d artists", len(m.artists))
-		return a, a.browserCmd()
+		if m.err != nil {
+			a.statusf("library: %v", m.err)
+		} else {
+			a.statusf("%d artists", len(m.artists))
+		}
+		// The index is the radio's fuel: build it as soon as there are
+		// follows. The batch cap's partial note is not a stop — the 20
+		// readable artists still walk.
+		cmd := a.browserCmd()
+		if a.indexState == indexIdle && len(m.artists) > 0 {
+			a.indexState = indexBuilding
+			cmd = tea.Batch(cmd, fetchIndex(a.library))
+		}
+		return a, cmd
 
 	case albumsMsg:
 		if m.err != nil {
@@ -150,8 +177,20 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tracksMsg:
 		if m.err != nil {
-			a.statusf("tracks: %v", m.err)
+			if a.browser.queueAllFor == m.slug {
+				a.browser.queueAllFor = ""
+				a.statusf("queueing %s: %v", m.slug, m.err)
+			} else {
+				a.statusf("tracks: %v", m.err)
+			}
 			return a, nil
+		}
+		// A pending queue-all (enter on a stale albums column) is
+		// consumed when its refetch lands, even if the selection has
+		// moved on: the user asked for that album explicitly.
+		if a.browser.queueAllFor == m.slug {
+			a.browser.queueAllFor = ""
+			a.queueAlbumTracks(m.album.Tracks)
 		}
 		if a.browser.selAlbum < len(a.browser.albums) &&
 			a.browser.albums[a.browser.selAlbum].Slug == m.album.Slug {
@@ -159,6 +198,21 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.browser.tracksFor = m.album.Slug
 			a.browser.selTrack = 0
 			a.browser.scroll[2] = 0
+		}
+		return a, nil
+
+	case indexMsg:
+		a.playlist.SetIndex(m.tracks)
+		switch {
+		case m.err != nil && len(m.tracks) == 0:
+			a.indexState = indexFailed
+			a.statusf("track index unavailable: %v", m.err)
+		case m.err != nil:
+			a.indexState = indexReady
+			a.statusf("track index: %d tracks — %v", len(m.tracks), m.err)
+		default:
+			a.indexState = indexReady
+			a.statusf("track index: %d tracks from %d bands", len(m.tracks), a.playlist.IndexBands())
 		}
 		return a, nil
 
@@ -360,6 +414,9 @@ func (a *App) handlePlayerKey(act action) tea.Cmd {
 	case actRepeat:
 		a.playlist.repeat = !a.playlist.repeat
 		a.statusf("repeat %s", onOff(a.playlist.repeat))
+	case actRadio:
+		a.playlist.radio = !a.playlist.radio
+		a.statusf("radio %s", onOff(a.playlist.radio))
 	case actVisual:
 		a.visIdx = (a.visIdx + 1) % len(a.visualizers)
 		a.statusf("visualizer: %s", a.visualizers[a.visIdx].Name())
@@ -404,19 +461,27 @@ func (a *App) setVolume(v float64) {
 	a.statusf("volume %d%%", int(v*100+0.5))
 }
 
-// togglePlayPause implements space: play/pause, or start the queue head
-// when nothing is loaded.
+// togglePlayPause implements space: play/pause, or — when the engine is
+// idle — start whatever the policy says comes first (queue head, then
+// repeat-one, then the radio).
 func (a *App) togglePlayPause() tea.Cmd {
 	st := a.state
 	switch {
 	case st.Track.ID == "":
-		if q := a.playlist.Queue(); len(q) > 0 {
+		if a.pendingLoad {
+			return nil // a start is already in flight; the radio re-picks on failure
+		}
+		if t, ok := a.playlist.Start(); ok {
 			a.pendingLoad = true
 			a.skipFrom = contract.Track{}
-			a.statusf("play: %s — %s", q[0].BandName, q[0].Title)
-			return a.loadCmd(q[0])
+			a.statusf("play: %s — %s", t.BandName, t.Title)
+			return a.loadCmd(t)
 		}
-		a.statusf("queue is empty — add tracks with l")
+		if a.playlist.radio {
+			a.statusf("nothing to play — add tracks with l") // the radio is on but the index is empty
+		} else {
+			a.statusf("queue is empty, radio off — l adds tracks, d starts the radio")
+		}
 	case st.Playing:
 		if err := a.player.Pause(context.Background()); err != nil {
 			a.statusf("pause failed: %v", err)
@@ -510,7 +575,8 @@ func (a *App) handleLibraryKey(act action) tea.Cmd {
 }
 
 // activateBrowser acts on the focused column's selection: artist → load
-// their releases, album → load its tracks, track → queue it.
+// their releases (pure navigation), album → queue all its tracks, track →
+// queue it.
 func (a *App) activateBrowser() tea.Cmd {
 	b := a.browser
 	switch b.focus {
@@ -520,7 +586,7 @@ func (a *App) activateBrowser() tea.Cmd {
 		}
 	case 1:
 		if b.selAlbum < len(b.albums) {
-			b.focusOn(2)
+			a.queueAlbum()
 		}
 	case 2:
 		if b.selTrack < len(b.tracks) {
@@ -528,6 +594,53 @@ func (a *App) activateBrowser() tea.Cmd {
 		}
 	}
 	return a.browserCmd()
+}
+
+// queueAlbum queues every track of the selected album (enter on the albums
+// column). When the tracks column is fresh for that album the tracks queue
+// at once; otherwise the intent is recorded in queueAllFor and the
+// refetch browserCmd issues does the queuing when its tracksMsg lands.
+func (a *App) queueAlbum() {
+	b := a.browser
+	if b.selAlbum >= len(b.albums) {
+		return
+	}
+	al := b.albums[b.selAlbum]
+	if b.tracksFor == al.Slug {
+		a.queueAlbumTracks(b.tracks)
+		return
+	}
+	b.queueAllFor = al.Slug
+}
+
+// queueAlbumTracks adds the given tracks to the queue, skipping those
+// already queued or playing, and fills the engine's pending slot.
+func (a *App) queueAlbumTracks(ts []contract.Track) {
+	if len(ts) == 0 {
+		return
+	}
+	queued := make(map[string]bool, len(ts))
+	for _, q := range a.playlist.Queue() {
+		queued[q.ID] = true
+	}
+	if c := a.playlist.Current(); c.ID != "" {
+		queued[c.ID] = true
+	}
+	n := 0
+	for _, t := range ts {
+		if queued[t.ID] {
+			continue
+		}
+		queued[t.ID] = true
+		a.playlist.Add(t)
+		n++
+	}
+	if n == 0 {
+		a.statusf("every track of %s is already queued or playing", clip(ts[0].AlbumTitle, 24))
+		return
+	}
+	a.statusf("queued %d tracks from %s", n, clip(ts[0].AlbumTitle, 24))
+	a.syncNext()
 }
 
 // queueTrack adds t to the queue and fills the engine's pending slot.
