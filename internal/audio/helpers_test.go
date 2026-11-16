@@ -20,6 +20,7 @@ import (
 type fakeDevice struct {
 	mu    sync.Mutex
 	calls []string
+	unpl  int // the depth unplayed reports; scripts it with SetUnplayed
 }
 
 func (d *fakeDevice) record(call string) {
@@ -32,6 +33,22 @@ func (d *fakeDevice) play()  { d.record("play") }
 func (d *fakeDevice) pause() { d.record("pause") }
 func (d *fakeDevice) flush() { d.record("flush") }
 func (d *fakeDevice) close() { d.record("close") }
+
+// unplayed implements device. It is a query, not a control call, so it is
+// not recorded in calls: tests script the buffer depth without breaking the
+// call-sequence assertions.
+func (d *fakeDevice) unplayed() int {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.unpl
+}
+
+// SetUnplayed scripts the depth unplayed reports.
+func (d *fakeDevice) SetUnplayed(n int) {
+	d.mu.Lock()
+	d.unpl = n
+	d.mu.Unlock()
+}
 
 // Calls returns the recorded control calls in order.
 func (d *fakeDevice) Calls() []string {

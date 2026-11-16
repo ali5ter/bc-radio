@@ -19,7 +19,9 @@ import (
 )
 
 // BandCount is the number of frequency bands in one analyser frame.
-// The locked v1 decision: a 16-band Goertzel analyser (docs/spike.md).
+// The locked v1 decision: a 16-band analyser (docs/spike.md) — v1 built
+// it from Goertzel filters; Phase 2 analyses with a pure-Go FFT instead,
+// but the count is all the contract pins.
 const BandCount = 16
 
 // Artist is a followed Bandcamp artist, as parsed from the following
@@ -160,8 +162,16 @@ type Player interface {
 	State() State
 
 	// Bands returns the latest analyser frame: BandCount values in [0,1],
-	// ordered low to high frequency.
+	// ordered low to high frequency. The frame reflects what is audible
+	// right now — it refreshes as the audio device's buffer drains, and
+	// decays to rest on silence. Display data only.
 	Bands() []float64
+
+	// Scope returns the post-gain mono samples ending at what is audible
+	// right now, for a time-domain display: oldest to newest, in [-1,1],
+	// at most one analyser window. The slice is empty before audio is
+	// produced. Display data only — never gate playback logic on it.
+	Scope() []float64
 
 	// Events yields player events. The channel closes when the engine
 	// stops.

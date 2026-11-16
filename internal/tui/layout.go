@@ -78,7 +78,7 @@ func (a *App) viewPlayer() string {
 	lines := []string{
 		a.renderTitle(),
 		place(w, styleDim.Render(strings.Repeat("─", w))),
-		place(w, a.visualizers[a.visIdx].Render(a.bands, w, visH)),
+		place(w, a.visualizers[a.visIdx].Render(frame{bands: a.bands, scope: a.scope, w: w, h: visH})),
 	}
 	if !a.fullscreen {
 		lines = append(lines,
@@ -91,8 +91,23 @@ func (a *App) viewPlayer() string {
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
+// titleFixed is the title row's fixed cells: the app name with its gap, the
+// transport verb (2 only when a track is loaded), and the volume readout.
+// The name fields get whatever is left, so the volume can never be the part
+// that is cut at the terminal edge (F9).
+func titleFixed(withTrack bool) int {
+	n := 11 + 11 // "bc-radio   " + "   vol %3d%%"
+	if withTrack {
+		n += 2 // "▶ " or "⏸ "
+	}
+	return n
+}
+
 // renderTitle is the top row: app name, transport glyph, now playing,
-// volume.
+// volume. The now-playing fields are allocated a share of the middle and
+// clipped inside their share (the way the library columns clip), so a long
+// title ellipses in the middle of the row instead of silently costing the
+// volume readout at the edge.
 func (a *App) renderTitle() string {
 	st := a.state
 	var sb strings.Builder
@@ -104,22 +119,60 @@ func (a *App) renderTitle() string {
 			verb = "⏸"
 		}
 		sb.WriteString(styleAccentB.Render(verb + " "))
-		sb.WriteString(styleText.Render(st.Track.BandName))
-		sb.WriteString(styleDim.Render(" — "))
-		sb.WriteString(styleAccent.Render(st.Track.Title))
+		// band : title : album as 2 : 3 : 2 of what the separators leave —
+		// the title is the field that overflows in practice, so it gets
+		// the largest share.
+		mid := a.width - titleFixed(true)
+		if mid < 6 {
+			mid = 6
+		}
 		if st.Track.AlbumTitle != "" {
-			sb.WriteString(styleDim.Render(" · " + st.Track.AlbumTitle))
+			cw := mid - 6 // " — " and " · "
+			if cw < 3 {
+				cw = 3
+			}
+			bw := cw * 2 / 7
+			tw := cw * 3 / 7
+			aw := cw - bw - tw
+			sb.WriteString(styleText.Render(clip(st.Track.BandName, bw)))
+			sb.WriteString(styleDim.Render(" — "))
+			sb.WriteString(styleAccent.Render(clip(st.Track.Title, tw)))
+			sb.WriteString(styleDim.Render(" · " + clip(st.Track.AlbumTitle, aw)))
+		} else {
+			cw := mid - 3 // " — "
+			if cw < 3 {
+				cw = 3
+			}
+			bw := cw * 2 / 7
+			sb.WriteString(styleText.Render(clip(st.Track.BandName, bw)))
+			sb.WriteString(styleDim.Render(" — "))
+			sb.WriteString(styleAccent.Render(clip(st.Track.Title, cw-bw)))
 		}
 	} else {
-		sb.WriteString(styleDim.Render("nothing playing — open the library (l)"))
+		mid := a.width - titleFixed(false)
+		if mid < 1 {
+			mid = 1
+		}
+		sb.WriteString(styleDim.Render(clip("nothing playing — open the library (l)", mid)))
 	}
 	sb.WriteString(styleDim.Render(fmt.Sprintf("   vol %3d%%", int(st.Volume*100+0.5))))
 	return place(a.width, sb.String())
 }
 
 // renderStatus shows the transient status line, or — when none is set —
-// the radio's standing status.
+// the radio's standing status, or — when the audio is silenced — a hint
+// that explains the blank visualizer: the analyser sits after the gain, so
+// at volume zero there is genuinely nothing to draw, and the hint says what
+// brings it back. Precedence: transient > mute > index.
 func (a *App) renderStatus() string {
+	if a.status == "" && a.state.Volume < 0.001 && a.state.Track.Title != "" {
+		idx := a.indexLine()
+		style := styleDim
+		if strings.Contains(idx, "unavailable") {
+			style = styleBad
+		}
+		return style.Render(idx) + styleAccent.Render(" — muted: +/− raises the volume")
+	}
 	text := a.status
 	if text == "" {
 		text = a.indexLine()
@@ -419,7 +472,7 @@ func (a *App) viewHelp() string {
 			"  f          fullscreen visualizer",
 			"  l          library",
 			"  + / -      volume",
-			styleDim.Render(fmt.Sprintf("  v cycles: %s (16-band analyser)", strings.Join(nameList(a.visualizers), " / "))),
+			styleDim.Render(fmt.Sprintf("  v cycles: %s", strings.Join(nameList(a.visualizers), " / "))),
 		)
 	}
 	body := lipgloss.JoinVertical(lipgloss.Left, lines...)

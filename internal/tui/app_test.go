@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"bc-radio/internal/contract"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/colorprofile"
 )
 
 // fakePlayer is a scriptable contract.Player: it records calls and exposes
@@ -23,6 +25,7 @@ type fakePlayer struct {
 	mu      sync.Mutex
 	state   contract.State
 	bands   []float64
+	scope   []float64
 	loads   []contract.Track
 	queues  []contract.Track
 	plays   int
@@ -36,6 +39,7 @@ type fakePlayer struct {
 func newFakePlayer() *fakePlayer {
 	return &fakePlayer{
 		bands:  make([]float64, contract.BandCount),
+		scope:  []float64{},
 		events: make(chan contract.Event, 8),
 	}
 }
@@ -97,6 +101,12 @@ func (f *fakePlayer) Bands() []float64 {
 	return f.bands
 }
 
+func (f *fakePlayer) Scope() []float64 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.scope
+}
+
 func (f *fakePlayer) Events() <-chan contract.Event { return f.events }
 
 // setState mutates the engine state directly (tests only).
@@ -110,6 +120,12 @@ func (f *fakePlayer) setBands(vals ...float64) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.bands = frameBands(vals...)
+}
+
+func (f *fakePlayer) setScope(vals ...float64) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.scope = vals
 }
 
 // fakeLib serves preset library data and logs which calls arrived.
@@ -174,7 +190,7 @@ func newTestApp() (*App, *fakePlayer, *fakeLib) {
 		albums: map[int64][]contract.Album{},
 		full:   map[string]contract.Album{},
 	}
-	app := New(fl, lp)
+	app := New(fl, lp, "dark")
 	_, _ = app.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	return app, lp, fl
 }
@@ -187,12 +203,51 @@ func press(t *testing.T, a *App, msg tea.KeyPressMsg) tea.Cmd {
 }
 
 func TestNew(t *testing.T) {
-	app := New(&fakeLib{}, newFakePlayer())
+	app := New(&fakeLib{}, newFakePlayer(), "dark")
 	if got := len(app.bands); got != contract.BandCount {
 		t.Fatalf("bands = %d; want %d", got, contract.BandCount)
 	}
-	if got := len(app.visualizers); got != 3 {
-		t.Fatalf("visualizers = %d; want 3", got)
+	if got := len(app.visualizers); got != 4 {
+		t.Fatalf("visualizers = %d; want 4", got)
+	}
+	if app.theme != themeDark {
+		t.Fatalf("theme = %q; want dark", app.theme)
+	}
+}
+
+func TestNewThemeFallback(t *testing.T) {
+	// An unvalidated name must land on the conservative theme, never an
+	// empty palette: main is the gate, but New must not be able to break.
+	app := New(&fakeLib{}, newFakePlayer(), "nope")
+	if app.theme != themeAuto {
+		t.Fatalf("theme = %q; want auto for an unknown name", app.theme)
+	}
+}
+
+func TestThemeResolution(t *testing.T) {
+	dark := colorprofile.TrueColor
+	ascii := colorprofile.ASCII
+	// auto follows the profile: NO_COLOR (ASCII) is mono.
+	auto := New(&fakeLib{}, newFakePlayer(), "auto")
+	auto.profile = ascii
+	auto.applyThemeNow()
+	if !current.mono {
+		t.Fatal("auto with an ASCII profile must resolve to mono")
+	}
+	// auto follows the background: a light one is the light palette.
+	auto.profile = dark
+	auto.bgDark = false
+	auto.applyThemeNow()
+	if current.mono {
+		t.Fatal("auto with a light background must not be mono")
+	}
+	// An explicit theme never moves: the same inputs keep the dark palette.
+	auto.theme = themeDark
+	auto.profile = ascii
+	auto.bgDark = false
+	auto.applyThemeNow()
+	if current.mono {
+		t.Fatal("an explicit dark theme must ignore the ASCII profile")
 	}
 }
 
@@ -255,41 +310,112 @@ func TestViewTooSmall(t *testing.T) {
 	}
 }
 
-// sample eases the band frame 30% toward the target each tick, freezes the
-// position while paused, and decays to rest when the engine is idle — the
-// engine's analyser is only fed while audio is produced, so a stale
+// sample refreshes the position (frozen while paused), the scope samples,
+// and the status expiry on every tick; the band frame steps on its own 50 ms
+// quantum (specStepPeriod) — fast on the way up (bandRiseRate) and slow on
+// the way down (bandFallRate) — and decays to rest when the engine is idle:
+// the player reports no current track, so the target is nil and a stale
 // non-zero Bands() must not keep the visual alive.
+// almost fails the test unless got is within eps of want, for pins derived
+// from the easing formula whose float values are not exactly representable.
+func almost(t *testing.T, got, want, eps float64) {
+	t.Helper()
+	if math.Abs(got-want) > eps {
+		t.Fatalf("got %v; want %v (±%v)", got, want, eps)
+	}
+}
+
 func TestSample(t *testing.T) {
 	app, lp, _ := newTestApp()
+	// Stamp the render clock: each sample() advances it by exactly one
+	// frame, so the steps land where the formula says and the pins below
+	// hold no matter how slowly the test itself runs.
+	clock := time.Unix(0, 0)
+	app.now = func() time.Time {
+		clock = clock.Add(tickPeriod)
+		return clock
+	}
 	lp.setState(contract.State{Track: track("A"), Playing: true, Position: 30 * time.Second})
 	lp.setBands(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+	lp.setScope(0.5, -0.5)
 
+	// The band frame steps on the 50 ms quantum, not on every 16 ms tick:
+	// three ticks bank below it and must not move the frame, while the
+	// position and scope refresh on every tick.
 	app.sample()
-	if app.bands[0] != 0.3 {
-		t.Fatalf("band after first sample = %v; want 0.3 (30%% ease from 0)", app.bands[0])
+	app.sample()
+	app.sample()
+	if app.bands[0] != 0 {
+		t.Fatalf("bands[0] = %v after three ticks; want 0 (below the 50 ms quantum)", app.bands[0])
 	}
 	if app.pos != 30*time.Second {
 		t.Fatalf("pos = %v; want 30s while playing", app.pos)
 	}
+	// The scope passes the raw post-gain samples through, unrescaled.
+	if len(app.scope) != 2 || app.scope[0] != 0.5 || app.scope[1] != -0.5 {
+		t.Fatalf("scope = %v; want [0.5 -0.5] (raw post-gain)", app.scope)
+	}
+	// The fourth tick banks 64 ms: the analyser publishes on a log scale and
+	// the app uses it absolute, so the step closes 1−e^(−34·64ms) ≈ 0.8865
+	// of the gap from 0.
+	app.sample()
+	almost(t, app.bands[0], 0.886505397698, 1e-9)
 
-	// The music stops: the frame decays and the position freezes.
+	// The music stops: the frame decays with the fall rate on its own
+	// quantum — three ticks bank below it, the fourth steps 64 ms:
+	// 0.8865·e^(−10·64ms) ≈ 0.4674. The position freezes.
 	lp.setState(contract.State{Track: track("A"), Position: 31 * time.Second})
 	lp.setBands() // zero frame
 	app.sample()
-	if got := app.bands[0]; got != 0.21 {
-		t.Fatalf("band after silence = %v; want 0.21 (decay toward 0)", got)
-	}
+	app.sample()
+	app.sample()
+	almost(t, app.bands[0], 0.886505397698, 1e-9)
 	if app.pos != 30*time.Second {
 		t.Fatalf("pos = %v; must stay frozen while paused", app.pos)
 	}
+	app.sample()
+	almost(t, app.bands[0], 0.467447580079, 1e-9)
 
 	// Engine idle with a stale analyser frame: the target is zero, not the
-	// stale frame.
+	// stale frame, and the scope empties with the track. The decay continues
+	// on the same quantum: 0.4674·e^(−10·64ms) ≈ 0.2465.
 	lp.setState(contract.State{})
 	lp.setBands(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 	app.sample()
-	if got := app.bands[0]; got != 0.147 {
-		t.Fatalf("idle band = %v; want 0.147 (decay; the stale analyser is ignored)", got)
+	app.sample()
+	app.sample()
+	almost(t, app.bands[0], 0.467447580079, 1e-9)
+	if app.scope != nil {
+		t.Fatalf("scope = %v; want nil when the engine is idle", app.scope)
+	}
+	app.sample()
+	almost(t, app.bands[0], 0.246481567613, 1e-9)
+}
+
+// clampFrameDT bounds the easing step: a missing clock, a backwards gap, or
+// a gap of more than ten frames yields exactly one frame, so a pause or a
+// stalled terminal moves the visual one frame instead of the whole gap;
+// inside the cap the real elapsed time passes through.
+func TestClampFrameDT(t *testing.T) {
+	t0 := time.Unix(1_000_000, 0)
+	cases := []struct {
+		name string
+		now  time.Time
+		last time.Time
+		want time.Duration
+	}{
+		{"zero now", time.Time{}, t0, tickPeriod},
+		{"zero last", t0, time.Time{}, tickPeriod},
+		{"zero gap", t0, t0, tickPeriod},
+		{"backwards gap", t0, t0.Add(tickPeriod), tickPeriod},
+		{"eleven frames", t0.Add(11 * tickPeriod), t0, tickPeriod},
+		{"five frames", t0.Add(5 * tickPeriod), t0, 5 * tickPeriod},
+		{"ten frames, cap inclusive", t0.Add(10 * tickPeriod), t0, 10 * tickPeriod},
+	}
+	for _, c := range cases {
+		if got := clampFrameDT(c.now, c.last); got != c.want {
+			t.Fatalf("%s: clampFrameDT = %v; want %v", c.name, got, c.want)
+		}
 	}
 }
 
@@ -637,8 +763,8 @@ func TestToggles(t *testing.T) {
 		t.Fatal("repeat must turn on")
 	}
 	press(t, app, tea.KeyPressMsg{Text: "v"})
-	if app.visIdx != 1 || app.status != "visualizer: waveform" {
-		t.Fatalf("visIdx = %d, status = %q; want 1 / waveform", app.visIdx, app.status)
+	if app.visIdx != 1 || app.status != "visualizer: particles" {
+		t.Fatalf("visIdx = %d, status = %q; want 1 / particles", app.visIdx, app.status)
 	}
 	press(t, app, tea.KeyPressMsg{Text: "f"})
 	if !app.fullscreen {

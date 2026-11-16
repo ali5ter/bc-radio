@@ -3,7 +3,8 @@
 A local-first terminal radio for the bands you follow on Bandcamp. bc-radio builds a track
 index from your follows and their discography, plays it as random radio — or whatever else
 you queue — streams the tracks over your system audio, and renders a 60 fps interface with
-live spectrum, waveform and particle visualizers.
+live visualizers: a bar spectrum, dust mapped to the bands, a radial meter, and an
+oscilloscope of the raw output.
 
 - Frozen contracts between the three packages: `internal/contract/`
 - Test fixtures: `testdata/`
@@ -47,6 +48,7 @@ releases.
 | `-cache-dir` | Page cache directory (default `$XDG_CACHE_HOME/bc-radio`) |
 | `-page-ttl` | How long parsed Bandcamp pages stay in the cache (default `24h`) |
 | `-volume` | Starting volume, 0 to 1 (default `1`) |
+| `-theme` | Interface theme: `auto` (follows the terminal), `dark`, `light` or `mono` |
 
 Outside a terminal, bc-radio exits with an actionable error instead of emitting escape
 sequences into the pipe.
@@ -61,7 +63,7 @@ sequences into the pipe.
 | `s` | Shuffle on / off | Player |
 | `r` | Repeat on / off | Player |
 | `d` | Radio on / off (random tracks from your follows) | Player |
-| `v` | Next visualizer (spectrum → waveform → particles) | Player |
+| `v` | Next visualizer (spectrum → particles → radial → scope) | Player |
 | `f` | Fullscreen visualizer | Player |
 | `l` | Library | Player |
 | `+` / `-` | Volume up / down | Player |
@@ -72,6 +74,14 @@ sequences into the pipe.
 | `esc` | Back to the player | Library |
 | `?` | This keybinding overlay (any key dismisses it) | Anywhere |
 | `q` / `ctrl+c` | Quit | Anywhere |
+
+## Themes
+
+`-theme` chooses the palette: `dark` for dark terminals, `light` for light ones, and `mono`
+renders everything in the terminal's default colour, with the hierarchy carried by bold and
+faint instead. The default, `auto`, follows the terminal: `NO_COLOR` resolves to mono, and
+otherwise the palette matches the terminal's background colour. An explicit choice never
+moves.
 
 ## How it works
 
@@ -90,9 +100,15 @@ or repeat-one always plays first. With the radio off, the player loops the track
 gathered, like any other queue.
 
 Tracks decode in pure Go (`beep/mp3`, which wraps `hajimehoshi/go-mp3`) and play through oto.
-The queue pre-decodes the next track while the current one plays for gapless transitions, and
-a 16-band Goertzel analyser turns the output into band frames that the interface eases into its
-60 fps render to drive the visualizers.
+The queue pre-decodes the next track while the current one plays for gapless transitions.
+Analysis is pure Go as well: a Hann-windowed FFT of 2048 samples, half-overlapped, folded
+into the 16 bands on a log (decibel) scale, so a loud passage reads tall and a quiet one
+short — the visualizers show the music's own dynamics. The audio device refills its buffer
+in bursts, so the analyser keeps a rolling copy of everything it is given and anchors its
+reads on what is audible right now: the motion tracks the music at a steady cadence instead
+of in step with the buffer. The interface eases each band toward its target at the
+terminal's clock rate, and the oscilloscope draws the analyser's most recent samples raw,
+sample by sample.
 
 The terminal needs to be at least 30 × 8 for the player screen and 60 × 10 for the library;
 below that, bc-radio shows a notice instead of a broken layout.

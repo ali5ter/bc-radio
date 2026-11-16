@@ -3,10 +3,12 @@ package tui
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"bc-radio/internal/contract"
 	"charm.land/bubbletea/v2"
+	"github.com/charmbracelet/colorprofile"
 )
 
 // tickPeriod is the render cadence: 16 ms ≈ 60 fps, the PRD's visual
@@ -14,8 +16,34 @@ import (
 // floor for animation, not a ceiling.
 const tickPeriod = 16 * time.Millisecond
 
+// specStepPeriod is the cadence the spectrum's band state steps: 50 ms,
+// about 20 Hz, the quantum cliamp animates its spectrum at (its TickFast).
+// The program still renders at 60 fps — the peak caps and the scope move on
+// every frame — but the bands ease once per
+// quantum, so a rendered step closes 1−e^(−rate·50ms) of the gap (82%
+// rising, 39% falling) instead of the 60 fps share (43%/16%). The travel
+// per second is the same either way; what the eye reads is the size of each
+// rendered step, and the bigger steps are what make the bars read as fast.
+const specStepPeriod = 50 * time.Millisecond
+
 // statusTTL is how long a status message lingers before fading.
 const statusTTL = 8 * time.Second
+
+// bandRiseRate and bandFallRate are the visualizer's easing rates in levels
+// per second: each spectrum step closes the gap to the target by
+// 1−e^(−rate·dt), the same exponential ease cliamp uses, with cliamp's own
+// rates. They are deliberately asymmetric — sound energy arrives and leaves
+// at different speeds, and the eye reads a fast rise with a slower fall as
+// "responsive" where an equal rate reads as "laggy". At the 50 ms step a
+// 34/s rise closes 82% of a new level per step (98% in about 115 ms of wall
+// clock), and a 10/s fall decays a vanished peak 39% per step (to 2% in
+// about 390 ms), so transients track the music and the fall keeps a visible
+// tail instead of a hard cut.
+const (
+	bandRiseRate      = 34.0
+	bandFallRate      = 10.0
+	maxSmoothDtFrames = 10 // the cap clampFrameDT applies to the elapsed gap, in frames
+)
 
 // screen selects the visible screen.
 type screen int
@@ -63,10 +91,15 @@ type App struct {
 	browser  *browser
 
 	bands       []float64
+	scope       []float64 // the analyser's recent samples, for the scope visualizer
 	state       contract.State
 	pos         time.Duration
 	visualizers []visualizer
 	visIdx      int
+
+	theme   themeKind            // the user's -theme choice
+	profile colorprofile.Profile // the terminal's colour profile (the program reports it)
+	bgDark  bool                 // the terminal's background, from the colour query
 
 	width      int
 	height     int
@@ -76,32 +109,65 @@ type App struct {
 	status     string
 	statusAt   time.Time
 
+	now        func() time.Time // the clock sample() reads; tests stamp it
+	lastSample time.Time        // the clock reading of the previous sample()
+	specDT     time.Duration    // wall clock banked since the last spectrum step
+
 	engineNextID string         // the track in the engine's single pending slot
 	pendingLoad  bool           // a Load is in flight; transport actions wait
 	skipFrom     contract.Track // abandoned by a skip/prev, recorded on success
 	indexState   indexState     // the radio's track-index lifecycle
 }
 
-// New builds an App over a library and a player. The player is not started
-// here; Run drives the program and stops the player on exit.
-func New(library contract.Library, player contract.Player) *App {
-	return &App{
+// New builds an App over a library and a player. themeName is the -theme
+// choice (auto, dark, light or mono); main validates it, and a kind New does
+// not recognise falls back to auto rather than an empty palette. The player
+// is not started here; Run drives the program and stops the player on exit.
+func New(library contract.Library, player contract.Player, themeName string) *App {
+	kind := themeKind(themeName)
+	if kind != themeAuto && kind != themeDark && kind != themeLight && kind != themeMono {
+		kind = themeAuto
+	}
+	a := &App{
 		library:     library,
 		player:      player,
 		playlist:    newPlaylist(),
 		browser:     newBrowser(),
 		bands:       make([]float64, contract.BandCount),
+		now:         time.Now, // the render clock; sample() eases against it
 		state:       player.State(),
 		visualizers: makeVisualizers(),
+		theme:       kind,
+		// The program reports the real profile and background colour as
+		// soon as it starts; these are the guesses the first frame uses.
+		// TrueColor is the conservative colour bet (the renderer re-encodes
+		// per profile, so the only cost is the auto theme's one-frame guess)
+		// and dark is the common background.
+		profile: colorprofile.TrueColor,
+		bgDark:  true,
 	}
+	a.applyThemeNow()
+	return a
+}
+
+// applyThemeNow resolves the theme from the current profile and background
+// observations and installs the palette.
+func (a *App) applyThemeNow() {
+	applyTheme(resolveScheme(a.theme, a.profile, a.bgDark))
 }
 
 // Init implements tea.Model: start the render tick, the event pump, and
 // the follow-list fetch. The follow list is fetched at startup (not on the
 // first l, as before) so the radio's track index can start building while
-// the user is still reading the player screen.
+// the user is still reading the player screen. The background-colour query
+// answers the auto theme: the reply is a terminal event, not a key, so it
+// only matters when the theme can still move.
 func (a *App) Init() tea.Cmd {
-	return tea.Batch(a.tick(), a.watch(), fetchArtists(a.library))
+	if a.theme != themeAuto {
+		return tea.Batch(a.tick(), a.watch(), fetchArtists(a.library))
+	}
+	requestBg := func() tea.Msg { return tea.RequestBackgroundColor() }
+	return tea.Batch(a.tick(), a.watch(), fetchArtists(a.library), requestBg)
 }
 
 // Update implements tea.Model.
@@ -110,6 +176,24 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		a.width, a.height = m.Width, m.Height
 		a.browser.viewH = a.height - 3 // title, columns, help
+		return a, nil
+
+	case tea.BackgroundColorMsg:
+		// The terminal answered Init's query; only the auto theme moves.
+		a.bgDark = m.IsDark()
+		if a.theme == themeAuto {
+			a.applyThemeNow()
+		}
+		return a, nil
+
+	case tea.ColorProfileMsg:
+		// The program reports the terminal's colour profile at start and
+		// again when it is upgraded. Only the auto theme moves: NO_COLOR
+		// collapses the profile to ASCII, which resolves to mono.
+		a.profile = m.Profile
+		if a.theme == themeAuto {
+			a.applyThemeNow()
+		}
 		return a, nil
 
 	case tickMsg:
@@ -275,26 +359,78 @@ func (a *App) watch() tea.Cmd {
 	}
 }
 
+// clampFrameDT returns the elapsed time between two sample() clock readings,
+// capped for easing. A missing clock, a non-positive gap, or a gap of more
+// than maxSmoothDtFrames frames yields exactly one frame: a pause, a sleep
+// or a stalled terminal moves the visual one frame's worth instead of the
+// whole gap, so the bars resume where they left off rather than jumping.
+func clampFrameDT(now, last time.Time) time.Duration {
+	dt := tickPeriod
+	if !now.IsZero() && !last.IsZero() {
+		dt = now.Sub(last)
+	}
+	if dt <= 0 || dt > maxSmoothDtFrames*tickPeriod {
+		return tickPeriod
+	}
+	return dt
+}
+
 // sample refreshes the display state once per tick: the position (frozen
-// while paused), the eased band frame, and the status expiry. The engine's
-// analyser is fed only while audio is being produced, so when the engine
-// is idle the eased target is zero — the visual decays to rest.
+// while paused), the scope samples, and the status expiry every tick, and the
+// spectrum's band frame on its own 50 ms quantum (specStepPeriod).
+//
+// The engine's analyser publishes levels on a log (dB) scale in [0,1], so
+// the display uses them absolute: a loud passage reads tall and a quiet one
+// short, dynamics and all. The band frame eases toward them with the
+// asymmetric rise/fall rates, scaled by the elapsed time banked since the
+// last step, and the scope passes the raw post-gain samples through — the
+// region is fixed-scale, so the music's own loudness is what the eye sees.
+//
+// Paused, the device's buffer fills and pins the analyser's anchor, so it
+// stops publishing and the display holds its last frame — the familiar
+// pause cue. Idle (no track) the target is nil and the scope empties at
+// once, and the easing carries the bands to rest.
 func (a *App) sample() {
+	now := a.now()
+	dt := clampFrameDT(now, a.lastSample)
+	a.lastSample = now
 	st := a.player.State()
 	a.state = st
 	if st.Playing {
 		a.pos = st.Position
 	}
 	target := a.player.Bands()
+	var scope []float64
 	if st.Track.ID == "" {
+		// Engine idle: no target, no samples — the visual decays to rest.
 		target = nil
+	} else {
+		scope = a.player.Scope()
 	}
-	for k := range a.bands {
-		t := 0.0
-		if target != nil && k < len(target) {
-			t = target[k]
+	a.scope = scope
+	// The spectrum steps on its own quantum: the wall clock banks on every
+	// tick, and once the quantum is full the bands ease once, by the real
+	// elapsed time — the motion's speed is the wall clock's, and each
+	// rendered step carries a whole quantum of travel, which is what the eye
+	// reads as "fast".
+	a.specDT += dt
+	if a.specDT >= specStepPeriod {
+		sec := float64(a.specDT) / float64(time.Second)
+		a.specDT = 0
+		// Asymmetric easing: rises close fast, falls with a tail.
+		alphaRise := 1 - math.Exp(-bandRiseRate*sec)
+		alphaFall := 1 - math.Exp(-bandFallRate*sec)
+		for k := range a.bands {
+			t := 0.0
+			if target != nil && k < len(target) {
+				t = target[k]
+			}
+			alpha := alphaFall
+			if t > a.bands[k] {
+				alpha = alphaRise
+			}
+			a.bands[k] += (t - a.bands[k]) * alpha
 		}
-		a.bands[k] += (t - a.bands[k]) * 0.3
 	}
 	if a.status != "" && time.Since(a.statusAt) > statusTTL {
 		a.status = ""

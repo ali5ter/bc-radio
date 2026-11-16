@@ -30,10 +30,15 @@ func frameBands(vals ...float64) []float64 {
 	return b
 }
 
+// bandFrame builds a render frame carrying only bands (the scope is empty).
+func bandFrame(bands []float64, w, h int) frame {
+	return frame{bands: bands, w: w, h: h}
+}
+
 func TestMakeVisualizers(t *testing.T) {
 	vs := makeVisualizers()
-	if len(vs) != 3 {
-		t.Fatalf("makeVisualizers = %d; the PRD requires at least three", len(vs))
+	if len(vs) != 4 {
+		t.Fatalf("makeVisualizers = %d; want 4 (spectrum, particles, radial, scope)", len(vs))
 	}
 	seen := map[string]bool{}
 	for _, v := range vs {
@@ -50,7 +55,7 @@ func TestRenderDimensions(t *testing.T) {
 	sizes := [][2]int{{80, 24}, {40, 10}, {15, 8}, {8, 3}, {5, 1}}
 	for _, v := range makeVisualizers() {
 		for _, s := range sizes {
-			w, h := lipgloss.Size(v.Render(zeroBands(), s[0], s[1]))
+			w, h := lipgloss.Size(v.Render(bandFrame(zeroBands(), s[0], s[1])))
 			if w != s[0] || h != s[1] {
 				t.Errorf("%s at %dx%d: got %dx%d", v.Name(), s[0], s[1], w, h)
 			}
@@ -59,10 +64,10 @@ func TestRenderDimensions(t *testing.T) {
 }
 
 func TestSpectrumBarMath(t *testing.T) {
-	const h = 11 // 22 half-cells
+	const h = 11 // 88 steps of 1/8-cell resolution
 	b := zeroBands()
-	b[3] = 0.5 // half scale: 11 half-cells = 5 full rows + 1 half row
-	lines := strings.Split(stripANSI(newSpectrum().Render(b, 16, h)), "\n")
+	b[3] = 0.5 // half scale: 44 steps = 5 full rows + a half row
+	lines := strings.Split(stripANSI(newSpectrum().Render(bandFrame(b, 16, h))), "\n")
 	if len(lines) != h {
 		t.Fatalf("got %d rows; want %d", len(lines), h)
 	}
@@ -74,25 +79,62 @@ func TestSpectrumBarMath(t *testing.T) {
 		}
 		col.WriteRune(rs[3])
 	}
+	// Five full rows of bar, then the row its edge sits in at 1/8 precision
+	// (▄, the half row), then clear air. At w = 16 every band gets one
+	// column and no gaps fit, so band 3 is the fourth cell.
 	want := strings.Repeat("█", 5) + "▄" + strings.Repeat(" ", 5)
 	if got := col.String(); got != want {
 		t.Fatalf("band 3 column (bottom-up) = %q; want %q", got, want)
 	}
 }
 
-// At w ≥ 16 the bars tile the width in equal cells and the floor remainder
-// is absorbed into the last bar: band k occupies cells k·cellW .. (k+1)·cellW.
+// The peak cap hovers at the band's highest recent level and falls peakFall
+// per render, drawn at the same 1/8-cell precision as the bar: after a
+// full-scale frame the cap descends out of the top row a fraction at a
+// time, so the top cell steps ▇ ▆ ▅ … before the row clears.
+func TestSpectrumPeakFall(t *testing.T) {
+	v := newSpectrum()
+	b := zeroBands()
+	b[3] = 1.0
+	top := func(render string) rune {
+		lines := strings.Split(stripANSI(render), "\n")
+		rs := []rune(lines[0])
+		return rs[3]
+	}
+	v.Render(bandFrame(b, 16, 11)) // full scale: bar and cap both at the top
+	// One fall (0.992) still sits in the top row, seven-eighths filled.
+	if r := top(v.Render(bandFrame(zeroBands(), 16, 11))); r != '▇' {
+		t.Fatalf("top cell after 1 zero frame = %q; want ▇ (the falling cap)", r)
+	}
+	// Two falls (0.984), six-eighths.
+	if r := top(v.Render(bandFrame(zeroBands(), 16, 11))); r != '▆' {
+		t.Fatalf("top cell after 2 zero frames = %q; want ▆ (the falling cap)", r)
+	}
+	// And it keeps falling: the top row clears once the cap has descended
+	// below its floor, ~0.091/0.008 renders, well under the bound.
+	for i := 0; i < 200; i++ {
+		if top(v.Render(bandFrame(zeroBands(), 16, 11))) == ' ' {
+			return
+		}
+	}
+	t.Fatal("the peak cap never left the top row in 200 frames")
+}
+
+// The cliamp layout takes its priority order: the bands first, then the
+// one-column gaps between them. At w = 80 the 16 bands and 15 gaps fill the
+// row — the floor remainder goes to the first band (5 columns, the rest 4) —
+// so band 5 of 16 occupies cells 26..29, with a gap on either side.
 func TestSpectrumLaneMapping(t *testing.T) {
 	b := zeroBands()
 	b[5] = 1.0
-	lines := strings.Split(stripANSI(newSpectrum().Render(b, 80, 10)), "\n")
+	lines := strings.Split(stripANSI(newSpectrum().Render(bandFrame(b, 80, 10))), "\n")
 	rs := []rune(lines[9])
 	if len(rs) != 80 {
 		t.Fatalf("bottom row is %d cells; want 80", len(rs))
 	}
 	for c, r := range rs {
 		want := ' '
-		if c >= 25 && c < 30 { // band 5 of 16: cells 25..29
+		if c >= 26 && c < 30 { // band 5 of 16: cells 26..29
 			want = '█'
 		}
 		if r != want {
@@ -102,7 +144,7 @@ func TestSpectrumLaneMapping(t *testing.T) {
 }
 
 func TestSpectrumZeroFrameBlank(t *testing.T) {
-	got := stripANSI(newSpectrum().Render(zeroBands(), 80, 24))
+	got := stripANSI(newSpectrum().Render(bandFrame(zeroBands(), 80, 24)))
 	for i, r := range got {
 		if r != ' ' && r != '\n' {
 			t.Fatalf("zero frame cell %d = %q; want a blank field", i, r)
@@ -110,39 +152,48 @@ func TestSpectrumZeroFrameBlank(t *testing.T) {
 	}
 }
 
-func TestWaveformSilence(t *testing.T) {
-	lines := strings.Split(stripANSI(newWaveform().Render(zeroBands(), 80, 9)), "\n")
-	if len(lines) != 9 {
-		t.Fatalf("got %d rows; want 9", len(lines))
+// The scope plots the newest samples at the right edge of the Braille dot
+// grid, two dots per cell. The three samples {1, −1, 0} land on dot
+// columns 157, 158, 159 of the 160-wide grid: the +1 dot at the top of the
+// grid, the −1 dot at the bottom, the 0 dot on the centre row, with the
+// sub-30-dot jump between the last two interpolated into the trace.
+func TestScopeTrace(t *testing.T) {
+	const w, h = 80, 11            // 160 × 44 dots; the centre row is 5
+	samples := []float64{1, -1, 0} // oldest to newest
+	lines := strings.Split(stripANSI(newScope().Render(frame{scope: samples, w: w, h: h})), "\n")
+	if len(lines) != h {
+		t.Fatalf("got %d rows; want %d", len(lines), h)
 	}
-	for y, l := range lines {
-		rs := []rune(l)
-		if len(rs) != 80 {
-			t.Fatalf("row %d is %d cells; want 80", y, len(rs))
+	check := func(row int, x int, want rune) {
+		rs := []rune(lines[row])
+		if len(rs) != w || rs[x] != want {
+			t.Errorf("row %d cell %d = %q; want %q", row, x, rs[x], want)
 		}
-		for x, r := range rs {
+	}
+	check(0, 77, ' ')       // the column before the trace is clear air
+	check(0, 78, '\u2810')  // the +1 sample: top dot row, right-hand dot
+	check(10, 78, ' ')      // the −1 sample lands in the neighbouring cell…
+	check(10, 79, '\u280f') // …with the interpolated line back up the column
+	check(5, 78, '─')       // a trace that left the baseline leaves its mark there
+	check(5, 79, '\u282c')  // the 0 sample on the baseline, with the line coming in
+	check(5, 0, '─')        // the unfilled left of the buffer is the baseline
+	check(0, 79, ' ')       // and the top of the trace column is clear above the trace
+}
+
+// An empty scope is the quiet baseline: one dashed centre row, blank above
+// and below.
+func TestScopeEmpty(t *testing.T) {
+	lines := strings.Split(stripANSI(newScope().Render(bandFrame(zeroBands(), 80, 11))), "\n")
+	for y, l := range lines {
+		for x, r := range []rune(l) {
 			want := ' '
-			if y == 4 { // the centre row
+			if y == 5 {
 				want = '─'
 			}
 			if r != want {
-				t.Fatalf("cell %d,%d = %q; want %q (silence shows the baseline only)", x, y, r, want)
+				t.Fatalf("empty scope row %d cell %d = %q; want %q", y, x, r, want)
 			}
 		}
-	}
-}
-
-func TestWaveformTrace(t *testing.T) {
-	b := zeroBands()
-	for i := range b {
-		b[i] = 0.5
-	}
-	got := stripANSI(newWaveform().Render(b, 80, 11))
-	if !strings.Contains(got, "•") {
-		t.Fatal("a full-scale frame should draw a trace of dots")
-	}
-	if !strings.Contains(got, "·") {
-		t.Fatal("a full-scale frame should keep the quiet baseline")
 	}
 }
 
@@ -151,7 +202,7 @@ func TestParticlesPopulation(t *testing.T) {
 	b := frameBands(1.0, 0.8, 0.6, 0.4) // strong bass: target population 256
 	var got string
 	for i := 0; i < 120; i++ { // two seconds at 60 fps: the field equilibrates
-		got = v.Render(b, 80, 24)
+		got = v.Render(bandFrame(b, 80, 24))
 	}
 	nonSpace := 0
 	for _, r := range stripANSI(got) {
@@ -171,7 +222,7 @@ func TestParticlesRestPopulation(t *testing.T) {
 	v := newParticles()
 	var got string
 	for i := 0; i < 120; i++ {
-		got = v.Render(zeroBands(), 80, 24)
+		got = v.Render(bandFrame(zeroBands(), 80, 24))
 	}
 	nonSpace := 0
 	for _, r := range stripANSI(got) {
@@ -181,6 +232,39 @@ func TestParticlesRestPopulation(t *testing.T) {
 	}
 	if nonSpace < particleMinPop/2 {
 		t.Fatalf("at rest the field should hold about %d sparks, saw %d", particleMinPop, nonSpace)
+	}
+}
+
+// The pattern the redesign exists for: a loud band throws a dense plume in
+// its own lane while the quiet lanes hold a sparse trickle, so the field
+// reads as the spectrum's shape. A uniform random field would spread the
+// same motes evenly and fail both bounds.
+func TestParticlesLaneMapping(t *testing.T) {
+	v := newParticles()
+	b := zeroBands()
+	b[3] = 1.0 // band 3 of 16 owns cells 15..19 of an 80-column panel
+	var got string
+	for i := 0; i < 120; i++ {
+		got = v.Render(bandFrame(b, 80, 24))
+	}
+	lane, other := 0, 0
+	for _, l := range strings.Split(stripANSI(got), "\n") {
+		for x, r := range []rune(l) {
+			if r == ' ' {
+				continue
+			}
+			if x >= 15 && x < 20 {
+				lane++
+			} else {
+				other++
+			}
+		}
+	}
+	if lane < 10 {
+		t.Errorf("loud band's lane holds %d motes; want a dense plume (>= 10)", lane)
+	}
+	if other > 15 {
+		t.Errorf("quiet lanes hold %d motes; want a sparse trickle (<= 15, one per lane)", other)
 	}
 }
 
@@ -195,11 +279,11 @@ func TestVisualizersDeterministic(t *testing.T) {
 			for k := range b {
 				b[k] = 0.5 + 0.5*math.Sin(float64(i)/10.0+float64(k))
 			}
-			out.WriteString(vs[0].Render(b, w, h))
+			out.WriteString(vs[0].Render(bandFrame(b, w, h)))
 		}
 		return out.String()
 	}
-	for i, name := range []string{"spectrum", "waveform", "particles"} {
+	for i, name := range []string{"spectrum", "particles", "radial", "scope"} {
 		if vs1[i].Name() != name {
 			t.Fatalf("makeVisualizers()[%d] = %s; the test expects %s", i, vs1[i].Name(), name)
 		}

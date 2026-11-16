@@ -11,8 +11,9 @@
 //     time;
 //   - the pump decodes the engine's current chain — MP3 via beep/mp3 (pure
 //     Go), a resampler only when the source rate differs from the device
-//     rate, then the shared digital gain — and feeds the post-gain frames
-//     to the analyser, so the bands always reflect what is heard;
+//     rate, then the shared digital gain — and feeds everything it emits,
+//     silent tail included, to the analyser, whose reads anchor on what is
+//     audible now, so the bands always reflect what is heard;
 //   - a track switch happens inside the pump, which is what makes
 //     transitions gapless: the next track's chain is prepared in the
 //     background (stream fetched, decoder built) while the current track

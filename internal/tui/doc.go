@@ -9,8 +9,8 @@
 //   - the two screens — the player (title, visualizer, progress, queue
 //     preview, controls) and the three-column library browser
 //     (layout.go, library.go);
-//   - the v1 visualizers — spectrum, waveform and particles, all driven by
-//     the 16-band analyser frame (visualizer.go and the visual_*.go files);
+//   - the four visualizers — the band-driven spectrum, particles and radial,
+//     and the sample-driven scope (visualizer.go and the visual_*.go files);
 //   - the keybindings (keys.go) and the colour and style palette
 //     (styles.go).
 //

@@ -5,6 +5,7 @@ go 1.27.4
 require (
 	charm.land/bubbletea/v2 v2.1.1
 	charm.land/lipgloss/v2 v2.1.0
+	github.com/charmbracelet/colorprofile v0.4.3
 	github.com/faiface/beep v1.1.0
 	github.com/hajimehoshi/oto/v2 v2.4.3
 	golang.org/x/net v0.62.0
@@ -12,7 +13,6 @@ require (
 )
 
 require (
-	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 // indirect
 	github.com/charmbracelet/x/ansi v0.11.9 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect

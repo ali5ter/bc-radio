@@ -32,6 +32,11 @@ type device interface {
 	// come from the newly installed chain, so nothing of the previous
 	// track is heard.
 	flush()
+	// unplayed reports the frames the device has already pulled but not yet
+	// played, at the device's sample rate. The analyser subtracts it from
+	// what it has been fed to anchor its reads on what is audible right
+	// now.
+	unplayed() int
 	// close releases the output device.
 	close()
 }
@@ -56,6 +61,13 @@ func newOtoDevice(pump io.Reader) (device, error) {
 
 func (d *otoDevice) play()  { d.player.Play() }
 func (d *otoDevice) pause() { d.player.Pause() }
+
+// unplayed converts oto's byte count of the internal buffer to frames:
+// the device is stereo float32, bytesPerFrame bytes per frame, so the
+// division is exact. After Close the buffer is gone and oto reports 0.
+func (d *otoDevice) unplayed() int {
+	return d.player.UnplayedBufferSize() / bytesPerFrame
+}
 
 // flush is the one reset-and-resume: oto/v2's Reset empties the player's
 // internal buffer (setting it paused) and Play restarts the pull.

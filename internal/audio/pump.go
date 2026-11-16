@@ -16,9 +16,12 @@ const bytesPerFrame = 8
 // calls Read to pull audio in real time; device backpressure is what paces
 // decoding at exactly one second of audio per second of wall time.
 //
-// Read decodes the engine's current chain into the buffer, feeds the
-// post-gain frames to the analyser, and encodes the result as float32
-// little-endian stereo. When the current chain drains, the pump installs the
+// Read decodes the engine's current chain into the buffer, feeds everything
+// it emits — audio and silent tail alike — to the analyser, and encodes the
+// result as float32 little-endian stereo. The analyser's ring must mirror
+// exactly what the device plays for its audible-position anchor to stay
+// honest, which is why the silent tail is fed too. When the current chain
+// drains, the pump installs the
 // prepared next chain (if any) and keeps filling the same buffer, which is
 // what makes track transitions gapless. With no current track it emits
 // silence, so the device keeps running without a gap or a busy loop.
@@ -82,7 +85,6 @@ func (p *pump) Read(buf []byte) (int, error) {
 
 		n, ok := cur.tail.Stream(out[filled:])
 		if n > 0 {
-			p.eng.analyser.Feed(out[filled : filled+n])
 			p.eng.addPos(n)
 		}
 		filled += n
@@ -107,6 +109,10 @@ func (p *pump) Read(buf []byte) (int, error) {
 	for i := filled; i < nframes; i++ {
 		out[i][0], out[i][1] = 0, 0
 	}
+	// Feed the whole buffer to the analyser — decoded audio and silent tail
+	// alike: it must mirror exactly what the device plays (see the type
+	// comment).
+	p.eng.analyser.Feed(out)
 
 	encodeFloat32(buf, out)
 	return nframes * bytesPerFrame, nil

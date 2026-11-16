@@ -136,6 +136,79 @@ func TestIndexLine(t *testing.T) {
 	}
 }
 
+// TestRenderTitleFits pins the F9 fix: the now-playing fields share the row
+// and clip inside their share, so a long title ellipses in the middle of the
+// row instead of pushing the volume readout past the terminal edge.
+func TestRenderTitleFits(t *testing.T) {
+	a := &App{
+		width: 80,
+		state: contract.State{
+			Track: contract.Track{
+				ID:         "A",
+				BandName:   "The Extraordinarily Longest Band Name In The World",
+				Title:      "An Absolutely Unreasonably Long Track Title For Terminals",
+				AlbumTitle: "Album Title That Also Exceeds Its Allotted Share",
+			},
+			Volume: 1,
+		},
+	}
+	row := a.renderTitle()
+	if w, _ := lipgloss.Size(row); w != 80 {
+		t.Fatalf("title row is %d cells; want exactly 80: %q", w, stripANSI(row))
+	}
+	got := stripANSI(row)
+	if !strings.Contains(got, "vol 100%") {
+		t.Fatalf("title row lost the volume readout at 80 cols: %q", got)
+	}
+	if !strings.Contains(got, "…") {
+		t.Fatalf("an overflowing name should ellipsize, not cut: %q", got)
+	}
+}
+
+// The readout survives the narrow end too: at the 30-column minimum the
+// name fields shrink to nothing before the volume is cut.
+func TestRenderTitleNarrow(t *testing.T) {
+	a := &App{
+		width: 30,
+		state: contract.State{
+			Track:  contract.Track{ID: "A", BandName: "Some Band", Title: "Some Long Track Title"},
+			Volume: 1,
+		},
+	}
+	row := a.renderTitle()
+	if w, _ := lipgloss.Size(row); w != 30 {
+		t.Fatalf("title row is %d cells; want exactly 30: %q", w, stripANSI(row))
+	}
+	if got := stripANSI(row); !strings.Contains(got, "vol 100%") {
+		t.Fatalf("title row lost the volume readout at 30 cols: %q", got)
+	}
+}
+
+// TestRenderStatusMuteHint pins the volume-zero hint: with a track loaded
+// and the audio silenced, the standing status explains the blank visualizer
+// (the analyser sits after the gain) instead of leaving it a mystery.
+func TestRenderStatusMuteHint(t *testing.T) {
+	a := &App{width: 80, playlist: newPlaylist(), indexState: indexReady}
+	a.state = contract.State{Track: contract.Track{ID: "A", Title: "A"}, Volume: 0}
+	a.playlist.SetIndex([]contract.Track{{ID: "a1"}})
+	a.playlist.radio = true
+	if got := stripANSI(a.renderStatus()); !strings.Contains(got, "muted: +/− raises the volume") {
+		t.Fatalf("muted status = %q; want the turn-up hint", got)
+	}
+	// A transient status wins over the hint.
+	a.status = "loading"
+	if got := stripANSI(a.renderStatus()); got != "loading" {
+		t.Fatalf("transient status must win over the mute hint: %q", got)
+	}
+	// No track loaded: nothing is playing, so there is no blank visual to
+	// explain and the hint must not appear.
+	a.status = ""
+	a.state = contract.State{Volume: 0}
+	if got := stripANSI(a.renderStatus()); strings.Contains(got, "muted") {
+		t.Fatalf("no track: the mute hint must not show: %q", got)
+	}
+}
+
 // TestRenderStatusFallback pins that the status row shows the transient
 // status when set and the radio's standing line when not.
 func TestRenderStatusFallback(t *testing.T) {

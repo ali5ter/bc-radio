@@ -88,6 +88,9 @@ func New(source contract.AudioSource, opts ...Option) (*Engine, error) {
 		}
 		e.device = d
 	}
+	// Wire the analyser to the device's buffer depth before the pull loop
+	// starts, so its audible-position anchor is live from the first frame.
+	e.analyser.setUnplayed(e.device.unplayed)
 	e.device.play()
 	return e, nil
 }
@@ -103,7 +106,8 @@ var _ contract.Player = (*Engine)(nil)
 // On success Load flushes the device: the player keeps up to half a second
 // of already-pulled audio in its buffer, and nothing but a reset clears it,
 // so without the flush the tail of the previous track would play ahead of
-// t.
+// t. It also resets the analyser, so the new track's bands and scope build
+// from its own samples rather than the tail of the previous one.
 func (e *Engine) Load(ctx context.Context, t contract.Track) error {
 	e.mu.Lock()
 	if e.stopped {
@@ -133,6 +137,7 @@ func (e *Engine) Load(ctx context.Context, t contract.Track) error {
 	e.playing = true
 	e.mu.Unlock()
 	e.device.flush()
+	e.analyser.Reset()
 	return nil
 }
 
@@ -263,6 +268,12 @@ func (e *Engine) State() contract.State {
 // [0,1], ordered low to high frequency.
 func (e *Engine) Bands() []float64 {
 	return e.analyser.Bands()
+}
+
+// Scope returns the analyser's most recent post-gain mono samples (oldest to
+// newest) for a time-domain display.
+func (e *Engine) Scope() []float64 {
+	return e.analyser.Scope()
 }
 
 // Events returns the player-event channel, closed when the engine stops.

@@ -2,7 +2,7 @@
 // on Bandcamp. It builds a track index from your follows and their
 // discography, plays it as random radio (or whatever else you queue), streams
 // the tracks over your system audio, and renders a 60 fps interface with live
-// spectrum, waveform and particle visualizers.
+// spectrum, particle and radial visualizers, plus an oscilloscope.
 //
 // The interface is interactive: run it in a terminal, press space to start
 // the radio, and l to queue specific tracks or albums. See the README for
@@ -31,6 +31,7 @@ type options struct {
 	cacheDir string
 	pageTTL  time.Duration
 	volume   float64
+	theme    string
 }
 
 // parseFlags reads the command line into an options, exiting on invalid input
@@ -43,6 +44,7 @@ func parseFlags() options {
 	flag.StringVar(&o.cacheDir, "cache-dir", "", "the page cache directory (defaults to $XDG_CACHE_HOME/bc-radio)")
 	flag.DurationVar(&o.pageTTL, "page-ttl", 24*time.Hour, "how long parsed Bandcamp pages stay in the local cache")
 	flag.Float64Var(&o.volume, "volume", 1, "the starting volume, from 0 (silent) to 1 (full)")
+	flag.StringVar(&o.theme, "theme", "auto", "the interface theme: auto (follows the terminal), dark, light or mono")
 	flag.Parse()
 
 	if err := o.validate(); err != nil {
@@ -63,7 +65,7 @@ func (o options) validate() error {
 	if o.volume < 0 || o.volume > 1 {
 		return fmt.Errorf("the --volume flag must be between 0 and 1 (got %g)", o.volume)
 	}
-	return nil
+	return tui.ValidateTheme(o.theme)
 }
 
 // newClient builds the Bandcamp scraper. The same client serves both roles:
@@ -104,7 +106,7 @@ func main() {
 		fatal(fmt.Errorf("audio: %w", err))
 	}
 
-	app := tui.New(bc, engine)
+	app := tui.New(bc, engine, o.theme)
 	if err := app.Run(); err != nil {
 		fatal(fmt.Errorf("tui: %w", err))
 	}

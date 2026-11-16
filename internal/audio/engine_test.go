@@ -320,6 +320,52 @@ func TestBands(t *testing.T) {
 	}
 }
 
+// TestScope: the engine surfaces the analyser's most recent audible samples;
+// before any audio is produced the slice is empty.
+func TestScope(t *testing.T) {
+	t.Parallel()
+	e, _ := newTestEngine(t, &fakeSource{})
+	if s := e.Scope(); s == nil || len(s) != 0 {
+		t.Errorf("Scope = %#v before any audio, want an empty non-nil slice", s)
+	}
+}
+
+// TestLoadResetsAnalyser pins the track-replacement contract end to end:
+// once audio has flowed, a Load leaves the analyser blank, so the new
+// track's bands and scope build from its own samples.
+func TestLoadResetsAnalyser(t *testing.T) {
+	t.Parallel()
+	body := readFixture(t, "actually-you-can-track1.mp3")
+	e, _ := newTestEngine(t, sourceFromBytes(body))
+	// The fake device never pulls, so drive the pump: enough of the fixture
+	// for the scope to hold a full window.
+	if err := e.Load(context.Background(), testTrack("first")); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	buf := pumpBuf(22050)
+	for i := 0; i < 8; i++ {
+		if _, err := e.pump.Read(buf); err != nil {
+			t.Fatalf("Read %d: %v", i, err)
+		}
+	}
+	if s := e.Scope(); len(s) != analyserWindow {
+		t.Fatalf("Scope = %d samples after driving the pump, want a full window", len(s))
+	}
+	// Replace the track: the flush clears the device, and the analyser
+	// resets with it.
+	if err := e.Load(context.Background(), testTrack("second")); err != nil {
+		t.Fatalf("Load (replacement): %v", err)
+	}
+	if s := e.Scope(); len(s) != 0 {
+		t.Errorf("Scope = %d samples after the replacement, want empty (the analyser resets)", len(s))
+	}
+	for k, b := range e.Bands() {
+		if b != 0 {
+			t.Errorf("band %d = %v after the replacement, want 0", k, b)
+		}
+	}
+}
+
 // TestClose: the clean-shutdown path stops the engine and releases the
 // device exactly once.
 func TestClose(t *testing.T) {
