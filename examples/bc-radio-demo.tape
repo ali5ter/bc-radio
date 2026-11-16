@@ -14,31 +14,31 @@ Type "clear" Enter
 Sleep 200ms
 Show
 
-# Launch with a deterministic palette and half volume (real audio plays while
-# vhs renders); the page cache is warm, so the index builds from disk.
-Type "./bc-radio -username ali5ter -theme dark -volume 0.5"
+# Launch with the adaptive theme at full volume (real audio plays while vhs
+# renders); the page cache is warm, so the index builds from disk.
+Type "./bc-radio -username ali5ter"
 Sleep 600ms
 Enter
 
 # Library build: the status line reads "building track index…" until the walk
 # over the cached discographies lands (10–22 s warm).
-Sleep 26s
+Sleep 2s
 
 # Space starts the radio: a random index track, the bar spectrum dancing.
 Type " "
-Sleep 7s
+Sleep 2s
 
 # Cycle the visualizers: spectrum → particles → radial → scope.
 Type "v"
-Sleep 4s
+Sleep 2s
 Type "v"
-Sleep 4s
+Sleep 2s
 Type "v"
-Sleep 5s
+Sleep 2s
 
 # Fullscreen visualizer, then back.
 Type "f"
-Sleep 3s
+Sleep 2s
 Type "f"
 Sleep 1s
 
@@ -61,7 +61,7 @@ Sleep 2s
 
 # Help overlay, then out.
 Type "?"
-Sleep 5s
+Sleep 2s
 Type "?"
 Sleep 1s
 # q quits (this vhs build types "ctrl+c" as literal characters, which would
