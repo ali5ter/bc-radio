@@ -208,6 +208,17 @@ func (a *App) indexLine() string {
 func (a *App) renderProgress() string {
 	st := a.state
 	if st.Track.Title == "" {
+		// Idle: say what space will do — the radio is the app's primary
+		// action, and the idle screen otherwise points only at the library.
+		// Name only what space would actually start: the queue beats the
+		// radio in Start, and the radio needs its index (space while the
+		// index is still building starts nothing).
+		switch {
+		case len(a.playlist.Queue()) > 0:
+			return styleDim.Render("  waiting — press space to play the queue")
+		case a.playlist.radio && len(a.playlist.Index()) > 0:
+			return styleDim.Render("  waiting — press space to start the radio")
+		}
 		return styleDim.Render("  waiting")
 	}
 	var sb strings.Builder

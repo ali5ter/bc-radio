@@ -359,9 +359,35 @@ func TestRenderProgress(t *testing.T) {
 		}
 	}
 
-	// Idle: just the waiting marker.
-	a = &App{width: 80}
-	if got := stripANSI(a.renderProgress()); !strings.Contains(got, "waiting") {
-		t.Errorf("idle progress = %q; want waiting", got)
+	// Idle: just the waiting marker — the playlist has an empty index and
+	// an empty queue, so there is nothing to name.
+	a = &App{width: 80, playlist: newPlaylist()}
+	if got := stripANSI(a.renderProgress()); got != "  waiting" {
+		t.Errorf("idle progress = %q; want the plain waiting line", got)
+	}
+}
+
+// TestRenderProgressIdleHint is the first-run gap: the idle screen
+// previously pointed only at the library, never at space — the radio is the
+// app's primary action. Name only what space would actually start: the
+// queue beats the radio in Start, and the radio needs its index.
+func TestRenderProgressIdleHint(t *testing.T) {
+	// Radio on with a non-empty index: the idle line names space.
+	a := &App{width: 80, playlist: newPlaylist()}
+	a.playlist.SetIndex([]contract.Track{{ID: "a1"}})
+	if got := stripANSI(a.renderProgress()); !strings.Contains(got, "press space to start the radio") {
+		t.Errorf("idle, radio on = %q; want the radio hint", got)
+	}
+	// Radio on but the index empty (still building): space would start
+	// nothing, so the hint stays plain.
+	a = &App{width: 80, playlist: newPlaylist()}
+	if got := stripANSI(a.renderProgress()); got != "  waiting" {
+		t.Errorf("idle, radio on, no index = %q; want the plain waiting line", got)
+	}
+	// The queue beats the radio in Start: it gets the hint instead.
+	a = &App{width: 80, playlist: newPlaylist()}
+	a.playlist.Add(contract.Track{ID: "1", Title: "T1"})
+	if got := stripANSI(a.renderProgress()); !strings.Contains(got, "press space to play the queue") {
+		t.Errorf("idle, queued = %q; want the queue hint", got)
 	}
 }
