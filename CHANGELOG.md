@@ -21,9 +21,9 @@ All notable changes to bc-radio are recorded here. Each release follows
   visual motion tracks the music at a steady cadence instead of rushing to a
   target, freezing, and rushing again — oto refills its 0.5 s buffer in
   bursts, and the old analyser followed the bursts.
-- The spectrum's band state steps on a 50 ms quantum (the cadence cliamp
-  animates its spectrum at); the perceived step size, not the frame rate, is
-  what made the bars read as fast. The interface still renders at 60 fps.
+- The spectrum's band state steps on a 50 ms quantum; the perceived step
+  size, not the frame rate, is what made the bars read as fast. The
+  interface still renders at 60 fps.
 - Band analysis uses a pure-Go Hann-windowed FFT folded into 16 bands on a
   logarithmic (decibel) scale, replacing the Goertzel analyser.
 - The particles are mapped to the bands: one lane per band, so a loud band

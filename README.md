@@ -1,14 +1,17 @@
 # bc-radio
 
 A local-first terminal radio for the bands you follow on Bandcamp. bc-radio builds a track
-index from your follows and their discography, plays it as random radio — or whatever else
-you queue — streams the tracks over your system audio, and renders a 60 fps interface with
-live visualizers: a bar spectrum, dust mapped to the bands, a radial meter, and an
-oscilloscope of the raw output.
+index from your follows and their discographies, plays it as random radio — or whatever else
+you queue — and streams the tracks over your system audio: everything you hear comes from
+Bandcamp, the platform where your follows, likes, and purchases support the artists. The
+interface renders at 60 fps with live visualizers: a bar spectrum, dust mapped to the bands,
+a radial meter, and an oscilloscope of the raw output.
 
-- The product specification is a private document; the public record is [the
-  changelog](CHANGELOG.md) and the source
-- Frozen contracts between the three packages: `internal/contract/`
+- The product specification and the spike findings are private documents; the public record
+  is [the changelog](CHANGELOG.md) and the source
+- The packages: `internal/bandcamp` (the Bandcamp client), `internal/audio` (playback and
+  analysis), `internal/tui` (the interface), with the frozen contracts between them in
+  `internal/contract/`
 - Test fixtures: `testdata/` (captured Bandcamp pages for the schema tests; the MP3s are
   generated test tones)
 
@@ -97,12 +100,15 @@ moves.
 
 ## How it works
 
-Bandcamp has no public consumer API, so the client reads the JSON embedded in the pages
-themselves: `data-blob` on your following page and `data-tralbum` on each album page. Parsed
-pages are cached on disk for 24 h (Bandcamp's markup is fragile; the cache is the
-stability layer). Stream URLs are signed and expire in about a day, so a failed stream
-refetches the album page with a cache-busting query and stores the result under the canonical
-URL — the failure self-heals the disk cache. HTTP 429 responses back off before retrying.
+Bandcamp has no public consumer API, so the client reads the JSON Bandcamp embeds in its own
+pages — your following list and each album page. Parsed pages are cached on disk for 24
+hours (by default) so restarts are fast and a markup change does not take the library down.
+Stream links are time-limited; when one expires, the client re-resolves the album page for a
+fresh link, and a failed stream shows as a brief notice before the radio moves on. Repeated
+failures back off before retrying.
+
+Nothing is stored for later: tracks are streamed and played as they arrive, and the only
+local state is the page cache above.
 
 The radio is the default mode. At startup bc-radio walks every followed band's discography —
 artists, releases, then album tracks — into a flat index, reading the same cached pages as

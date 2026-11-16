@@ -88,7 +88,7 @@ func signedURLExpiry(u string) time.Time {
 // Open opens the encoded audio of a track. It implements
 // contract.AudioSource; the consumer must close the returned Body.
 //
-// The resolution chain, per the stream-URL lifecycle in docs/spike.md:
+// The resolution chain, per the verified stream-URL lifecycle:
 //
 //  1. the in-memory URL cache, while the signed URL is still valid;
 //  2. the album page (disk page cache), re-parsing data-tralbum;

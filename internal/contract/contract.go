@@ -19,7 +19,7 @@ import (
 )
 
 // BandCount is the number of frequency bands in one analyser frame.
-// The locked v1 decision: a 16-band analyser (docs/spike.md) — v1 built
+// The locked v1 decision: a 16-band analyser — v1 built
 // it from Goertzel filters; Phase 2 analyses with a pure-Go FFT instead,
 // but the count is all the contract pins.
 const BandCount = 16
@@ -111,8 +111,8 @@ type Event struct {
 type Library interface {
 	// Artists returns the followed artists — the first 20 embedded in the
 	// following page. Implementations must surface a clear error or
-	// annotation when item_count exceeds the embedded batch (the only open
-	// gap from docs/spike.md).
+	// annotation when item_count exceeds the embedded batch (accounts
+	// following more than 20 artists).
 	Artists(ctx context.Context) ([]Artist, error)
 
 	// Albums returns the artist's releases from the /music page, in

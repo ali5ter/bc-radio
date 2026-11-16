@@ -1,7 +1,7 @@
 // Package bandcamp implements contract.Library and contract.AudioSource
 // against Bandcamp's web pages.
 //
-// It is a scraper, not an API client (docs/spike.md findings 1 and 4): the
+// It is a scraper, not an API client (live-verified in the Phase 0 spike): the
 // official api/tralbum/* endpoints return a 45-byte "bad function" error and
 // must never be used. The real data sources are HTML-embedded JSON:
 //
