@@ -5,7 +5,7 @@ import (
 	"io"
 	"math"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // bytesPerFrame is the size of one interleaved float32 stereo frame in the

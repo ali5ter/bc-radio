@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 func TestAlbums(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // prevRestartThreshold: pressing prev within this much of a track's start

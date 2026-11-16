@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"bc-radio/internal/contract"
 	"charm.land/lipgloss/v2"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // reSGR matches SGR colour sequences so tests can compare glyphs, not style.

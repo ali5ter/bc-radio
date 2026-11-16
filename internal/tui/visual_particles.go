@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"strings"
 
-	"bc-radio/internal/contract"
 	"charm.land/lipgloss/v2"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // particles is a band-mapped dust field: each band owns one vertical lane

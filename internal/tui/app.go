@@ -6,8 +6,8 @@ import (
 	"math"
 	"time"
 
-	"bc-radio/internal/contract"
 	"charm.land/bubbletea/v2"
+	"github.com/ali5ter/bc-radio/internal/contract"
 	"github.com/charmbracelet/colorprofile"
 )
 

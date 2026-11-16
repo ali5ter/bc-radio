@@ -18,10 +18,14 @@ import (
 
 	"golang.org/x/term"
 
-	"bc-radio/internal/audio"
-	"bc-radio/internal/bandcamp"
-	"bc-radio/internal/tui"
+	"github.com/ali5ter/bc-radio/internal/audio"
+	"github.com/ali5ter/bc-radio/internal/bandcamp"
+	"github.com/ali5ter/bc-radio/internal/tui"
 )
+
+// version is set at release time by goreleaser's ldflags; development
+// builds report "dev".
+var version = "dev"
 
 // options is the validated command-line configuration.
 type options struct {
@@ -34,10 +38,16 @@ type options struct {
 	theme    string
 }
 
+// showVersion is true when the -version flag was given: the binary prints
+// its version and exits before anything else (it must work off a terminal,
+// which is how brew's formula test invokes it).
+var showVersion bool
+
 // parseFlags reads the command line into an options, exiting on invalid input
 // with an actionable message.
 func parseFlags() options {
 	o := options{}
+	flag.BoolVar(&showVersion, "version", false, "print the version and exit")
 	flag.StringVar(&o.username, "username", "", "the Bandcamp account whose followed bands to play")
 	flag.StringVar(&o.session, "session", "", "the Bandcamp session cookie (optional; playback works without it)")
 	flag.StringVar(&o.identity, "identity", "", "the Bandcamp identity cookie (optional; playback works without it)")
@@ -46,6 +56,13 @@ func parseFlags() options {
 	flag.Float64Var(&o.volume, "volume", 1, "the starting volume, from 0 (silent) to 1 (full)")
 	flag.StringVar(&o.theme, "theme", "auto", "the interface theme: auto (follows the terminal), dark, light or mono")
 	flag.Parse()
+
+	// -version works with no other flags and off a terminal (brew's formula
+	// test runs it through system); exit before any validation or setup.
+	if showVersion {
+		fmt.Println("bc-radio " + version)
+		os.Exit(0)
+	}
 
 	if err := o.validate(); err != nil {
 		fatal(err)

@@ -4,8 +4,8 @@ import (
 	"math"
 	"strings"
 
-	"bc-radio/internal/contract"
 	"charm.land/lipgloss/v2"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // radial is a circular bar meter: contract.BandCount spokes from a centre

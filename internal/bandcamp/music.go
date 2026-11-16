@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/html"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // artIDPattern matches the art ID in a bcbits image URL

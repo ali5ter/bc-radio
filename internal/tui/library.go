@@ -3,8 +3,8 @@ package tui
 import (
 	"context"
 
-	"bc-radio/internal/contract"
 	"charm.land/bubbletea/v2"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // Messages carrying the results of library fetches. Each carries enough

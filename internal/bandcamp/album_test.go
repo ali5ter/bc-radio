@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 func TestAlbum(t *testing.T) {

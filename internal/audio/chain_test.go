@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // TestNewChainDecodesFixture drives the real pipeline — MP3 decode at the

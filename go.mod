@@ -1,4 +1,4 @@
-module bc-radio
+module github.com/ali5ter/bc-radio
 
 go 1.27.4
 

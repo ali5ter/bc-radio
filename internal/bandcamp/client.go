@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // userAgent masquerades as desktop Chrome: Bandcamp serves its full

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // Tracks returns every track of every release of every followed artist —

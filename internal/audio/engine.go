@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // errStopped is returned by operations on an engine that has been stopped.

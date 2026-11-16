@@ -4,7 +4,7 @@ import (
 	"math"
 	"sync"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // ringSeconds is how much audio the analyser's ring buffer retains: 2

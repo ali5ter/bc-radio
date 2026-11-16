@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // demoPage renders the synthetic release with the given signed-URL expiry.

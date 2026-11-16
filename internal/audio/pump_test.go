@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // pumpBuf returns a device-sized buffer of nframes frames.

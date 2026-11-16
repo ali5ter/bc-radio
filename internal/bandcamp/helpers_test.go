@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // fixtureServer serves the testdata corpus through one origin, with

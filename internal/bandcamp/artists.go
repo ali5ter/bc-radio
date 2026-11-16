@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // bcTimeLayout is Bandcamp's human timestamp layout

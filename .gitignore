@@ -2,6 +2,9 @@
 AGENTS.md
 CLAUDE.md
 
+# Product specification (private; not published)
+docs/PRD.md*
+
 # Go build artifacts
 /bin/
 /bc-radio
@@ -14,3 +17,9 @@ CLAUDE.md
 .DS_Store
 AGENTS.md.backup.*
 CLAUDE.md.backup.*
+
+# Editor scratch
+*.swp
+
+# Local design scratch (Alister's TUI header sketch)
+header-example.sh

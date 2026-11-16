@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // TestBandEdgeLayout pins the log-spaced layout: contract.BandCount+1

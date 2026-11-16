@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // track returns a named test track; the ID is what the policy keys on, the

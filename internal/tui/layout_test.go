@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"bc-radio/internal/contract"
 	"charm.land/lipgloss/v2"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 func TestFormatDuration(t *testing.T) {

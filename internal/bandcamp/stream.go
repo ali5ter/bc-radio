@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // urlKey addresses one signed stream URL: the release and track it belongs

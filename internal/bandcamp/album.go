@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 )
 
 // tralbumBlob is the data-tralbum JSON on an album page. Only the fields

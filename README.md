@@ -6,8 +6,11 @@ you queue — streams the tracks over your system audio, and renders a 60 fps in
 live visualizers: a bar spectrum, dust mapped to the bands, a radial meter, and an
 oscilloscope of the raw output.
 
+- The product specification is a private document; the public record is [the
+  changelog](CHANGELOG.md) and the source
 - Frozen contracts between the three packages: `internal/contract/`
-- Test fixtures: `testdata/`
+- Test fixtures: `testdata/` (captured Bandcamp pages for the schema tests; the MP3s are
+  generated test tones)
 
 ## Requirements
 

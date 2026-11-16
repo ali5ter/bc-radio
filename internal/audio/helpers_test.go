@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"bc-radio/internal/contract"
+	"github.com/ali5ter/bc-radio/internal/contract"
 	"github.com/faiface/beep"
 )
 
