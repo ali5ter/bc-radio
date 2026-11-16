@@ -140,6 +140,9 @@ type fakeLib struct {
 	albumCt  int
 	fullCt   int
 	trackCt  int
+
+	indexDone  int // the walk counter IndexProgress reports, fixed by the test
+	indexTotal int
 }
 
 func (f *fakeLib) Artists(ctx context.Context) ([]contract.Artist, error) {
@@ -182,6 +185,13 @@ func (f *fakeLib) Tracks(ctx context.Context) ([]contract.Track, error) {
 		return nil, f.err
 	}
 	return f.tracks, nil
+}
+
+// IndexProgress implements contract.Indexer with the test's fixed counter.
+func (f *fakeLib) IndexProgress() (artistsDone, artistsTotal int) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.indexDone, f.indexTotal
 }
 
 // newTestApp builds an app over the fakes, sized 80 × 24.
@@ -255,6 +265,42 @@ func TestInit(t *testing.T) {
 	app, _, _ := newTestApp()
 	if app.Init() == nil {
 		t.Fatal("Init must return the tick and event commands")
+	}
+}
+
+// TestTickPollsIndexProgress is the building line's lifeline: while the walk
+// runs, each render tick pulls the counter from a library that reports it
+// (contract.Indexer) and rolls the spinner, so a cold build reads as
+// progress instead of a frozen screen.
+func TestTickPollsIndexProgress(t *testing.T) {
+	app, _, fl := newTestApp()
+	fl.indexDone, fl.indexTotal = 9, 17
+	app.indexState = indexBuilding
+
+	_, _ = app.Update(tickMsg{})
+	if app.indexDone != 9 || app.indexTotal != 17 {
+		t.Fatalf("tick did not poll the counter: %d/%d; want 9/17", app.indexDone, app.indexTotal)
+	}
+	if app.spin != 1 {
+		t.Errorf("spin = %d after one tick; want 1", app.spin)
+	}
+	// The counter reaches the line: spinner frame advanced, counter shown.
+	if got := app.indexLine(); got != spinFrames[1]+" building track index… 9/17 bands" {
+		t.Errorf("indexLine after tick = %q; want the counter line", got)
+	}
+
+	// The index lands: the counter resets, the state goes ready, and the
+	// spinner stops advancing (indexMsg is not a tick).
+	fl.indexDone, fl.indexTotal = 0, 0
+	_, _ = app.Update(indexMsg{})
+	if app.indexDone != 0 || app.indexTotal != 0 {
+		t.Errorf("after indexMsg: counter = %d/%d; want 0/0", app.indexDone, app.indexTotal)
+	}
+	if app.indexState != indexReady {
+		t.Errorf("indexState = %d after a clean indexMsg; want ready", app.indexState)
+	}
+	if app.spin != 1 {
+		t.Errorf("spin = %d after indexMsg; want 1 (no tick has run)", app.spin)
 	}
 }
 

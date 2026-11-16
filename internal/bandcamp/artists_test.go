@@ -151,5 +151,8 @@ func TestParseBCDate(t *testing.T) {
 }
 
 // TestArtistsSatisfiesContract pins the interface at compile time.
-var _ contract.Library = (*Client)(nil)
-var _ contract.AudioSource = (*Client)(nil)
+var (
+	_ contract.Library     = (*Client)(nil)
+	_ contract.AudioSource = (*Client)(nil)
+	_ contract.Indexer     = (*Client)(nil)
+)

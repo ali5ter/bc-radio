@@ -11,6 +11,10 @@ import (
 // reserves: title, separator, status, progress, queue, help.
 const fixedRows = 6
 
+// spinFrames is the braille spinner the building line cycles through on the
+// render tick: steady motion, so a cold build never reads as a hung screen.
+var spinFrames = []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}
+
 // formatDuration renders a duration as m:ss, the radio shorthand.
 func formatDuration(seconds int) string {
 	if seconds < 0 {
@@ -191,8 +195,10 @@ func (a *App) renderStatus() string {
 // because from the user's view the index does not exist until it does.
 func (a *App) indexLine() string {
 	switch a.indexState {
-	case indexIdle, indexBuilding:
+	case indexIdle:
 		return "building track index…"
+	case indexBuilding:
+		return a.buildingLine()
 	case indexFailed:
 		return "track index unavailable — the radio plays the queue only"
 	}
@@ -202,6 +208,18 @@ func (a *App) indexLine() string {
 		radio = "◉ radio on"
 	}
 	return fmt.Sprintf("%s · %d tracks · %d bands", radio, n, a.playlist.IndexBands())
+}
+
+// buildingLine is the standing line while the walk runs: the spinner keeps
+// it moving, and the per-band counter shows how far the walk is — the wait
+// reads as progress instead of a frozen screen. Without a counter (a
+// library that cannot report) the spinner alone keeps it alive.
+func (a *App) buildingLine() string {
+	line := "building track index…"
+	if a.indexTotal > 0 {
+		line = fmt.Sprintf("building track index… %d/%d bands", a.indexDone, a.indexTotal)
+	}
+	return spinFrames[a.spin%len(spinFrames)] + " " + line
 }
 
 // renderProgress is the position bar: 1:23 ━━━━──── 4:56.

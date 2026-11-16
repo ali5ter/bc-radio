@@ -108,8 +108,13 @@ func TestIndexLine(t *testing.T) {
 		t.Errorf("indexLine(idle) = %q; want the building line", got)
 	}
 	a.indexState = indexBuilding
-	if got := a.indexLine(); got != "building track index…" {
-		t.Errorf("indexLine(building) = %q; want the building line", got)
+	if got := a.indexLine(); got != spinFrames[0]+" building track index…" {
+		t.Errorf("indexLine(building) = %q; want the spinner line", got)
+	}
+	// The counter appears once the walk reports how far it is.
+	a.indexDone, a.indexTotal = 9, 17
+	if got := a.indexLine(); got != spinFrames[0]+" building track index… 9/17 bands" {
+		t.Errorf("indexLine(building, 9/17) = %q; want the counter line", got)
 	}
 	// A failed walk reads unavailable (renderStatus colours it bad).
 	a.indexState = indexFailed

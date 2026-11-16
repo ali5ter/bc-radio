@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/ali5ter/bc-radio/internal/contract"
@@ -78,6 +79,12 @@ type Client struct {
 	backoff    time.Duration
 	cache      *pageCache
 	urls       *urlCache
+
+	// indexDone and indexTotal are the Tracks walk's progress for
+	// contract.Indexer (index.go): artists finished, and artists to walk.
+	// Atomic: the walk writes from its goroutine, a UI polls from its own.
+	indexDone  atomic.Int32
+	indexTotal atomic.Int32
 }
 
 // New builds a Client. It fails when Username is empty.

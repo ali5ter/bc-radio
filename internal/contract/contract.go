@@ -131,6 +131,18 @@ type Library interface {
 	Tracks(ctx context.Context) ([]Track, error)
 }
 
+// Indexer is implemented by Libraries that can report how far their
+// Tracks walk is through the followed artists, so a UI can show progress
+// while the index builds. It is separate from Library because reporting is
+// optional: a Library that cannot report it is still a Library, and the UI
+// simply shows the plain building line.
+type Indexer interface {
+	// IndexProgress returns how many artists the current Tracks walk has
+	// finished and how many it has to walk. The total is known once the
+	// follow list is read. Both are zero when no walk is running.
+	IndexProgress() (artistsDone, artistsTotal int)
+}
+
 // AudioSource opens the encoded audio of a track. bandcamp implements it;
 // audio consumes it. Implementations must re-fetch the stream URL when the
 // previous one has expired or a fetch fails (URLs are signed, ~24 h).

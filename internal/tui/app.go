@@ -117,6 +117,9 @@ type App struct {
 	pendingLoad  bool           // a Load is in flight; transport actions wait
 	skipFrom     contract.Track // abandoned by a skip/prev, recorded on success
 	indexState   indexState     // the radio's track-index lifecycle
+	indexDone    int            // the walk's finished artists, from contract.Indexer
+	indexTotal   int            // the walk's total artists, from contract.Indexer
+	spin         int            // the spinner frame, advanced while the index builds
 }
 
 // New builds an App over a library and a player. themeName is the -theme
@@ -198,6 +201,13 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		a.sample()
+		if a.indexState == indexBuilding {
+			// Keep the building line alive while the walk runs: pull the
+			// counter and roll the spinner, so the screen moves instead
+			// of reading as hung.
+			a.pollIndexProgress()
+			a.spin = (a.spin + 1) % len(spinFrames)
+		}
 		return a, a.tick()
 
 	case eventMsg:
@@ -286,6 +296,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case indexMsg:
+		a.indexDone, a.indexTotal = 0, 0
 		a.playlist.SetIndex(m.tracks)
 		switch {
 		case m.err != nil && len(m.tracks) == 0:
@@ -441,6 +452,18 @@ func (a *App) sample() {
 func (a *App) statusf(format string, args ...any) {
 	a.status = fmt.Sprintf(format, args...)
 	a.statusAt = time.Now()
+}
+
+// pollIndexProgress copies the walk's counter from a library that can
+// report it (contract.Indexer), so the building line can show
+// "9/17 bands". A library that cannot report leaves the counter at zero
+// and the line stays plain.
+func (a *App) pollIndexProgress() {
+	progress, ok := a.library.(contract.Indexer)
+	if !ok {
+		return
+	}
+	a.indexDone, a.indexTotal = progress.IndexProgress()
 }
 
 // syncNext fills the engine's single pending slot with the queue head, so

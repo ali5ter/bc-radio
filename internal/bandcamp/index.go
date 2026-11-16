@@ -37,28 +37,38 @@ func (c *Client) Tracks(ctx context.Context) ([]contract.Track, error) {
 		return nil, err
 	}
 
+	// Report the walk's progress while it runs (contract.Indexer): the
+	// total is the follow list, and done ticks up as each artist's
+	// releases land. Both reset to zero when the walk ends, so (0, 0)
+	// means "not building" and a UI shows the plain line.
+	c.indexDone.Store(0)
+	c.indexTotal.Store(int32(len(artists)))
+	defer c.indexDone.Store(0)
+	defer c.indexTotal.Store(0)
+
 	var (
 		tracks       []contract.Track
 		skipArtists  []string // artists whose /music page was unreadable
 		skipReleases []string // releases whose album page was unreadable
 	)
-	for _, a := range artists {
+	for i, a := range artists {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return tracks, ctxErr
 		}
 		albums, err := c.Albums(ctx, a)
 		if err != nil {
 			skipArtists = append(skipArtists, a.Name)
-			continue
-		}
-		for _, al := range albums {
-			full, err := c.Album(ctx, a, al.Slug)
-			if err != nil {
-				skipReleases = append(skipReleases, al.Title)
-				continue
+		} else {
+			for _, al := range albums {
+				full, err := c.Album(ctx, a, al.Slug)
+				if err != nil {
+					skipReleases = append(skipReleases, al.Title)
+					continue
+				}
+				tracks = append(tracks, full.Tracks...)
 			}
-			tracks = append(tracks, full.Tracks...)
 		}
+		c.indexDone.Store(int32(i + 1))
 	}
 
 	var problems []string
@@ -75,6 +85,12 @@ func (c *Client) Tracks(ctx context.Context) ([]contract.Track, error) {
 		return tracks, nil
 	}
 	return tracks, errors.New(strings.Join(problems, "; "))
+}
+
+// IndexProgress implements contract.Indexer: the current Tracks walk's
+// position, for a UI's "building track index… 9/17 bands" line.
+func (c *Client) IndexProgress() (artistsDone, artistsTotal int) {
+	return int(c.indexDone.Load()), int(c.indexTotal.Load())
 }
 
 // unavailable renders a skip list for an error message: up to three names,

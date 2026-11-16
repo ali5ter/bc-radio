@@ -246,5 +246,49 @@ func TestTracksCancelled(t *testing.T) {
 	}
 }
 
+// TestTracksIndexProgress covers contract.Indexer: while the walk runs the
+// counter reports (artists done, artists total), and when it ends — whatever
+// the outcome — both read zero, so a UI shows the plain line.
+func TestTracksIndexProgress(t *testing.T) {
+	t.Parallel()
+	reached := make(chan struct{})
+	release := make(chan struct{})
+	mux := http.NewServeMux()
+	mux.HandleFunc("/testuser/following/artists_and_labels", htmlOK(followingPage(namedFollowingBlob(
+		[2]string{"Alpha", "alpha"},
+		[2]string{"Beta", "beta"},
+		[2]string{"Gamma", "gamma"},
+	))))
+	mux.HandleFunc("/alpha/music", htmlOK(musicPage()))
+	// Beta answers, but only after the test has sampled the counter: it is
+	// the gate that pins the walk mid-flight.
+	mux.HandleFunc("/beta/music", func(w http.ResponseWriter, _ *http.Request) {
+		close(reached)
+		<-release
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(musicPage()))
+	})
+	// Gamma has no /music handler at all: it 404s and is skipped.
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	c := testClient(t, srv, "testuser")
+
+	walkDone := make(chan struct{})
+	go func() {
+		_, _ = c.Tracks(context.Background())
+		close(walkDone)
+	}()
+
+	<-reached // the walk has finished alpha and is blocked on beta
+	if done, total := c.IndexProgress(); done != 1 || total != 3 {
+		t.Fatalf("mid-walk IndexProgress = (%d, %d); want (1, 3)", done, total)
+	}
+	close(release)
+	<-walkDone
+	if done, total := c.IndexProgress(); done != 0 || total != 0 {
+		t.Fatalf("post-walk IndexProgress = (%d, %d); want (0, 0)", done, total)
+	}
+}
+
 // The Client's satisfaction of contract.Library (now including Tracks) is
 // pinned at compile time in artists_test.go.
