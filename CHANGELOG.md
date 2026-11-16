@@ -3,6 +3,14 @@
 All notable changes to bc-radio are recorded here. Each release follows
 [Semantic Versioning](https://semver.org/).
 
+## [v1.1.1] - 2026-11-16
+
+### Added
+
+- A VHS-rendered demo reel in `examples/` (linked from the README): a launch,
+  the radio, all four visualizers, the library, and the help overlay. No code
+  changes since v1.1.0 — the binary is the same, stamped `1.1.1`.
+
 ## [v1.1.0] - 2026-11-16
 
 ### Added
