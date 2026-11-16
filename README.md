@@ -20,6 +20,15 @@ oscilloscope of the raw output.
   `libpulse-dev`)
 - An interactive terminal
 
+## Install
+
+```bash
+brew install ali5ter/tap/bc-radio
+```
+
+Pre-built macOS binaries (arm64 and amd64) are attached to
+[the GitHub releases](https://github.com/ali5ter/bc-radio/releases).
+
 ## Build
 
 ```bash

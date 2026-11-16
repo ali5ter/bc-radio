@@ -1,0 +1,55 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+# bc-radio needs cgo (oto's PortAudio backend), so every build runs with
+# CGO_ENABLED=1 on a native runner. cgo cannot cross-compile between OSes,
+# but darwin arm64 -> amd64 works natively, so one macOS runner covers both
+# architectures; Linux builds are not published (darwin-only formula).
+builds:
+  - id: bc-radio
+    main: ./cmd/bc-radio
+    binary: bc-radio
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    # The version variable lives in the main package (cmd/bc-radio). The Go
+    # linker's -X flag matches a main package by its package name "main",
+    # never by its import path (github.com/ali5ter/bc-radio/cmd/bc-radio would
+    # silently be ignored and every release would report "dev"). main.version
+    # is unambiguous: a binary links exactly one main package.
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+brews:
+  - name: bc-radio
+    directory: Formula
+    repository:
+      owner: ali5ter
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/ali5ter/bc-radio
+    description: A local-first terminal radio for the bands you follow on Bandcamp
+    license: MIT
+    install: |
+      bin.install "bc-radio"
+    test: |
+      system "#{bin}/bc-radio", "--version"
+
+release:
+  github:
+    owner: ali5ter
+    name: bc-radio
