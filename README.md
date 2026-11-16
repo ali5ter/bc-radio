@@ -7,6 +7,8 @@ Bandcamp, the platform where your follows, likes, and purchases support the arti
 interface renders at 60 fps with live visualizers: a bar spectrum, dust mapped to the bands,
 a radial meter, and an oscilloscope of the raw output.
 
+![bc-radio demo](examples/bc-radio-demo.gif)
+
 - The product specification and the spike findings are private documents; the public record
   is [the changelog](CHANGELOG.md) and the source
 - The packages: `internal/bandcamp` (the Bandcamp client), `internal/audio` (playback and
