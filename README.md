@@ -23,7 +23,7 @@ a radial meter, and an oscilloscope of the raw output.
 - cgo (the audio device layer uses [oto](https://github.com/hajimehoshi/oto), which needs a C
   compiler; on macOS that is the built-in toolchain, on Linux `libasound2-dev` or
   `libpulse-dev`)
-- An interactive terminal
+- An interactive terminal (the `-json` and `-list` index exports work off one, in a pipe)
 
 ## Install
 
@@ -66,9 +66,29 @@ releases.
 | `-page-ttl` | How long parsed Bandcamp pages stay in the cache (default `24h`) |
 | `-volume` | Starting volume, 0 to 1 (default `1`) |
 | `-theme` | Interface theme: `auto` (follows the terminal), `dark`, `light` or `mono` |
+| `-json` | Build the track index, print it as JSON, and exit (no interface) |
+| `-list` | Build the track index, print it as a plain-text list, and exit (no interface) |
 
-Outside a terminal, bc-radio exits with an actionable error instead of emitting escape
-sequences into the pipe.
+Outside a terminal, without `-json` or `-list`, bc-radio exits with an actionable error
+instead of emitting escape sequences into the pipe.
+
+## Index export
+
+`-json` and `-list` build the same track index the radio plays — every followed band, its
+releases, and their tracks with durations — print it, and exit without opening the
+interface. They work off a terminal, in a pipe, script, or CI job, and exit `0` on
+success and non-zero when the index cannot be built. Gaps in the walk (a removed band or
+release) are reported on stderr, so piped stdout stays clean.
+
+```bash
+# The index as JSON: bands, then each band's albums, then each album's tracks
+# (id, number, title, duration in seconds), with counts at each level.
+./bc-radio -username yourbandcampname -json
+
+# A plain-text list, readable top to bottom — the linear fallback for the
+# 60 fps interface.
+./bc-radio -username yourbandcampname -list
+```
 
 ## Keybindings
 

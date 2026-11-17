@@ -5,7 +5,9 @@
 // spectrum, particle and radial visualizers, plus an oscilloscope.
 //
 // The interface is interactive: run it in a terminal, press space to start
-// the radio, and l to queue specific tracks or albums. See the README for
+// the radio, and l to queue specific tracks or albums. The -json and -list
+// flags export the built track index without the interface — for scripts,
+// and as a linear plain-text path for the 60 fps redraw. See the README for
 // setup and keybindings.
 package main
 
@@ -36,6 +38,8 @@ type options struct {
 	pageTTL  time.Duration
 	volume   float64
 	theme    string
+	jsonOut  bool
+	list     bool
 }
 
 // showVersion is true when the -version flag was given: the binary prints
@@ -55,6 +59,8 @@ func parseFlags() options {
 	flag.DurationVar(&o.pageTTL, "page-ttl", 24*time.Hour, "how long parsed Bandcamp pages stay in the local cache")
 	flag.Float64Var(&o.volume, "volume", 1, "the starting volume, from 0 (silent) to 1 (full)")
 	flag.StringVar(&o.theme, "theme", "auto", "the interface theme: auto (follows the terminal), dark, light or mono")
+	flag.BoolVar(&o.jsonOut, "json", false, "build the track index, print it as JSON, and exit (no interface, works off a terminal)")
+	flag.BoolVar(&o.list, "list", false, "build the track index, print it as a plain-text list, and exit (no interface, works off a terminal)")
 	flag.Parse()
 
 	// -version works with no other flags and off a terminal (brew's formula
@@ -82,6 +88,9 @@ func (o options) validate() error {
 	if o.volume < 0 || o.volume > 1 {
 		return fmt.Errorf("the --volume flag must be between 0 and 1 (got %g)", o.volume)
 	}
+	if o.jsonOut && o.list {
+		return fmt.Errorf("use only one of -json and -list")
+	}
 	return tui.ValidateTheme(o.theme)
 }
 
@@ -100,10 +109,23 @@ func (o options) newClient() (*bandcamp.Client, error) {
 func main() {
 	o := parseFlags()
 
+	// The export path runs off a terminal and exits: it needs no audio
+	// device and takes the TTY check out of the picture entirely.
+	if o.jsonOut || o.list {
+		bc, err := o.newClient()
+		if err != nil {
+			fatal(err)
+		}
+		if err := o.export(context.Background(), bc.Tracks, os.Stdout); err != nil {
+			fatal(err)
+		}
+		return
+	}
+
 	// The interface is a TUI; degrade with a clear error rather than let the
 	// terminal driver fail obscurely off a terminal.
 	if !term.IsTerminal(int(os.Stdout.Fd())) {
-		fatal(fmt.Errorf("bc-radio is a terminal interface and needs an interactive terminal; run it in one"))
+		fatal(fmt.Errorf("an interactive terminal is required (run it in one; -json and -list work off one too)"))
 	}
 
 	bc, err := o.newClient()
