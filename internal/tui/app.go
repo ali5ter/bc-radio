@@ -29,6 +29,13 @@ const specStepPeriod = 50 * time.Millisecond
 // statusTTL is how long a status message lingers before fading.
 const statusTTL = 8 * time.Second
 
+// briefTTL is the linger for switch confirmations (radio, visualizer,
+// volume, play/pause): 3 s is long enough to read the acknowledgement, and
+// short enough that the standing line is back before the row reads as
+// stale. The 8 s default would keep the radio line out of view for most of
+// the confirmation's life (issue #4).
+const briefTTL = 3 * time.Second
+
 // bandRiseRate and bandFallRate are the visualizer's easing rates in levels
 // per second: each spectrum step closes the gap to the target by
 // 1−e^(−rate·dt), the same exponential ease cliamp uses, with cliamp's own
@@ -109,6 +116,8 @@ type App struct {
 	status     string
 	statusKind statusKind
 	statusAt   time.Time
+	statusFor  time.Duration // how long this transient lingers before fading
+	statusOn   screen        // the screen the transient was raised on
 
 	now        func() time.Time // the clock sample() reads; tests stamp it
 	lastSample time.Time        // the clock reading of the previous sample()
@@ -245,15 +254,26 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.statusfWarn("library: %v", m.err)
 			} else {
 				a.statusfBad("library: %v", m.err)
+				// A read that came back empty also fails the index:
+				// without this the standing line would keep reading
+				// "building track index…" forever after the red
+				// transient fades (the walk never started, because it
+				// needs artists to walk). A working index is never
+				// demoted by a stray read.
+				if a.indexState != indexReady && a.indexState != indexBuilding {
+					a.indexState = indexFailed
+				}
 			}
 		} else {
 			a.statusf("%d artists", len(m.artists))
 		}
 		// The index is the radio's fuel: build it as soon as there are
 		// follows. The batch cap's partial note is not a stop — the 20
-		// readable artists still walk.
+		// readable artists still walk. A failed state restarts the walk
+		// on the next read: a transient network failure at startup must
+		// not permanently disable the radio when the l refetch recovers.
 		cmd := a.browserCmd()
-		if a.indexState == indexIdle && len(m.artists) > 0 {
+		if (a.indexState == indexIdle || a.indexState == indexFailed) && len(m.artists) > 0 {
 			a.indexState = indexBuilding
 			cmd = tea.Batch(cmd, fetchIndex(a.library))
 		}
@@ -454,7 +474,10 @@ func (a *App) sample() {
 			a.bands[k] += (t - a.bands[k]) * alpha
 		}
 	}
-	if a.status != "" && time.Since(a.statusAt) > statusTTL {
+	// The IsZero guard keeps tests that assign the status fields directly
+	// (without a stamp from setStatus) out of the expiry: an unstamped
+	// status lingers until something stamps it.
+	if a.status != "" && !a.statusAt.IsZero() && now.Sub(a.statusAt) > a.statusFor {
 		a.status = ""
 		a.statusKind = statusInfo
 	}
@@ -476,30 +499,43 @@ const (
 	statusBad                    // a hard failure: the alarm, red
 )
 
-// statusf sets the transient status line at the default (info) severity.
+// statusf sets the transient status line at the default (info) severity and
+// the default linger (statusTTL).
 func (a *App) statusf(format string, args ...any) {
-	a.setStatus(statusInfo, fmt.Sprintf(format, args...))
+	a.setStatus(statusInfo, fmt.Sprintf(format, args...), statusTTL)
 }
 
 // statusfWarn sets the transient status line at the warning severity: a
 // near-success that needs a glance, not an alarm (a partial index, a partial
 // follow list).
 func (a *App) statusfWarn(format string, args ...any) {
-	a.setStatus(statusWarn, fmt.Sprintf(format, args...))
+	a.setStatus(statusWarn, fmt.Sprintf(format, args...), statusTTL)
 }
 
 // statusfBad sets the transient status line at the failure severity: a hard
 // failure the user must notice.
 func (a *App) statusfBad(format string, args ...any) {
-	a.setStatus(statusBad, fmt.Sprintf(format, args...))
+	a.setStatus(statusBad, fmt.Sprintf(format, args...), statusTTL)
 }
 
-// setStatus records a transient status line with its severity and re-arms the
-// expiry clock (statusTTL).
-func (a *App) setStatus(kind statusKind, text string) {
+// statusfBrief sets a switch confirmation (radio, visualizer, volume,
+// play/pause) at the info severity with the brief linger: it acknowledges an
+// action the user just took and gives the standing line its row back after
+// briefTTL instead of holding it for the full 8 s.
+func (a *App) statusfBrief(format string, args ...any) {
+	a.setStatus(statusInfo, fmt.Sprintf(format, args...), briefTTL)
+}
+
+// setStatus records a transient status line: its severity, its linger (ttl),
+// its expiry clock, and the screen it was raised on — the line is only
+// shown on that screen, so a player confirmation never surfaces in the
+// library title row and vice versa.
+func (a *App) setStatus(kind statusKind, text string, ttl time.Duration) {
 	a.status = text
 	a.statusKind = kind
-	a.statusAt = time.Now()
+	a.statusFor = ttl
+	a.statusAt = a.now()
+	a.statusOn = a.screen
 }
 
 // pollIndexProgress copies the walk's counter from a library that can
@@ -617,16 +653,16 @@ func (a *App) handlePlayerKey(act action) tea.Cmd {
 		return a.prev()
 	case actShuffle:
 		a.playlist.shuffle = !a.playlist.shuffle
-		a.statusf("shuffle %s", onOff(a.playlist.shuffle))
+		a.statusfBrief("shuffle %s", onOff(a.playlist.shuffle))
 	case actRepeat:
 		a.playlist.repeat = !a.playlist.repeat
-		a.statusf("repeat %s", onOff(a.playlist.repeat))
+		a.statusfBrief("repeat %s", onOff(a.playlist.repeat))
 	case actRadio:
 		a.playlist.radio = !a.playlist.radio
-		a.statusf("radio %s", onOff(a.playlist.radio))
+		a.statusfBrief("radio %s", onOff(a.playlist.radio))
 	case actVisual:
 		a.visIdx = (a.visIdx + 1) % len(a.visualizers)
-		a.statusf("visualizer: %s", a.visualizers[a.visIdx].Name())
+		a.statusfBrief("visualizer: %s", a.visualizers[a.visIdx].Name())
 	case actFullscreen:
 		a.fullscreen = !a.fullscreen
 	case actVolumeUp:
@@ -665,7 +701,7 @@ func (a *App) setVolume(v float64) {
 		return
 	}
 	a.state.Volume = v
-	a.statusf("volume %d%%", int(v*100+0.5))
+	a.statusfBrief("volume %d%%", int(v*100+0.5))
 }
 
 // togglePlayPause implements space: play/pause, or — when the engine is
@@ -693,13 +729,13 @@ func (a *App) togglePlayPause() tea.Cmd {
 		if err := a.player.Pause(context.Background()); err != nil {
 			a.statusfBad("pause failed: %v", err)
 		} else {
-			a.statusf("paused")
+			a.statusfBrief("paused")
 		}
 	default:
 		if err := a.player.Play(context.Background()); err != nil {
 			a.statusfBad("play failed: %v", err)
 		} else {
-			a.statusf("playing")
+			a.statusfBrief("playing")
 		}
 	}
 	return nil

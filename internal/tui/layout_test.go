@@ -192,7 +192,10 @@ func TestRenderTitleNarrow(t *testing.T) {
 
 // TestRenderStatusMuteHint pins the volume-zero hint: with a track loaded
 // and the audio silenced, the standing status explains the blank visualizer
-// (the analyser sits after the gain) instead of leaving it a mystery.
+// (the analyser sits after the gain) instead of leaving it a mystery — and
+// the hint holds the row against an *info* transient (the "volume 0%"
+// confirmation is redundant with the vol readout in the title row) while a
+// warn or bad transient keeps the row and the hint rides at its tail.
 func TestRenderStatusMuteHint(t *testing.T) {
 	a := &App{width: 80, playlist: newPlaylist(), indexState: indexReady}
 	a.state = contract.State{Track: contract.Track{ID: "A", Title: "A"}, Volume: 0}
@@ -201,14 +204,26 @@ func TestRenderStatusMuteHint(t *testing.T) {
 	if got := stripANSI(a.renderStatus()); !strings.Contains(got, "muted: +/− raises the volume") {
 		t.Fatalf("muted status = %q; want the turn-up hint", got)
 	}
-	// A transient status wins over the hint.
-	a.status = "loading"
-	if got := stripANSI(a.renderStatus()); got != "loading" {
-		t.Fatalf("transient status must win over the mute hint: %q", got)
+	// An info transient loses to the hint: it repeats what the title row
+	// already says, while the hint is what the quiet visualizer needs.
+	a.status = "volume 0%"
+	got := stripANSI(a.renderStatus())
+	if !strings.Contains(got, "muted: +/− raises the volume") {
+		t.Fatalf("muted + info transient = %q; want the turn-up hint", got)
+	}
+	if strings.Contains(got, "volume 0%") {
+		t.Fatalf("muted + info transient = %q; the redundant confirmation must not crowd the hint", got)
+	}
+	// A bad transient keeps the row; the hint rides at its tail.
+	a.status = "playback failed: stream expired"
+	a.statusKind = statusBad
+	if got := stripANSI(a.renderStatus()); !strings.Contains(got, "playback failed: stream expired") || !strings.Contains(got, "muted: +/− raises the volume") {
+		t.Fatalf("muted + bad transient = %q; want the alarm and the hint", got)
 	}
 	// No track loaded: nothing is playing, so there is no blank visual to
 	// explain and the hint must not appear.
 	a.status = ""
+	a.statusKind = statusInfo
 	a.state = contract.State{Volume: 0}
 	if got := stripANSI(a.renderStatus()); strings.Contains(got, "muted") {
 		t.Fatalf("no track: the mute hint must not show: %q", got)
@@ -272,6 +287,42 @@ func TestStatusSeverityStyles(t *testing.T) {
 	}
 	if w := styleForStatus(statusWarn).GetForeground(); w == current.dim || w == current.bad {
 		t.Errorf("the warn colour %v must be distinct from dim and bad", w)
+	}
+}
+
+// TestStatusScreenScope pins the screen scoping of the transient status line:
+// a confirmation raised on the player must not surface in the library title
+// row (the "Library   volume 90%" leak), and vice versa — each row falls back
+// to its own standing content.
+func TestStatusScreenScope(t *testing.T) {
+	a := &App{width: 80, playlist: newPlaylist(), indexState: indexReady, browser: newBrowser()}
+	a.playlist.SetIndex([]contract.Track{{ID: "a1", BandID: 1}})
+	a.playlist.radio = true
+	a.status = "volume 90%"
+	a.statusKind = statusInfo
+	a.statusOn = screenPlayer
+
+	// On the player the row shows the transient it was raised on.
+	if got := stripANSI(a.renderStatus()); got != "volume 90%" {
+		t.Errorf("player row = %q; want the transient", got)
+	}
+
+	// The user moves to the library (l): the title row must not inherit the
+	// player confirmation (the "Library   volume 90%" leak) — it reads the
+	// focused column's count instead.
+	a.screen = screenLibrary
+	if got := stripANSI(a.libraryStatus()); got != "0 artists" {
+		t.Errorf("library title = %q; want the focused column's count, not a player transient", got)
+	}
+
+	// A transient raised on the library shows in the library row…
+	a.statusOn = screenLibrary
+	if got := stripANSI(a.libraryStatus()); got != "volume 90%" {
+		t.Errorf("library title = %q; want the transient on its own screen", got)
+	}
+	// …and the player row falls back to the standing radio line.
+	if got := stripANSI(a.renderStatus()); got != "◉ radio on · 1 tracks · 1 bands" {
+		t.Errorf("player row = %q; want the standing radio line, not a foreign transient", got)
 	}
 }
 

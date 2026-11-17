@@ -968,9 +968,20 @@ func TestLibraryFetchError(t *testing.T) {
 	if app.statusKind != statusBad {
 		t.Fatalf("statusKind = %v; an empty follow list is a hard failure", app.statusKind)
 	}
+	// A failed read of an empty follow list also fails the index: without
+	// this the standing line would keep reading "building track index…"
+	// forever, because the walk never started (issue #4).
+	if app.indexState != indexFailed {
+		t.Fatalf("indexState = %v; a failed read that found no artists must fail the index", app.indexState)
+	}
 	_, _ = app.Update(artistsMsg{artists: []contract.Artist{{Name: "A"}}})
 	if len(app.browser.artists) != 1 {
 		t.Fatalf("artists = %d; a later success must land", len(app.browser.artists))
+	}
+	// A recovered read restarts the walk: a transient failure at startup must
+	// not permanently disable the radio.
+	if app.indexState != indexBuilding {
+		t.Fatalf("indexState = %v; a recovered read must restart the index walk", app.indexState)
 	}
 }
 
@@ -1016,6 +1027,75 @@ func TestRadioToggleKey(t *testing.T) {
 	press(t, app, tea.KeyPressMsg{Text: "d"})
 	if !app.playlist.radio || app.status != "radio on" {
 		t.Fatalf("radio = %v, status = %q; want on / \"radio on\"", app.playlist.radio, app.status)
+	}
+}
+
+// TestStatusBriefTTL pins the two-tier linger: switch confirmations get the
+// brief 3 s so the standing line returns quickly, everything else keeps the
+// 8 s default (issue #4 — the 8 s held the radio line out for most of a
+// confirmation's life).
+func TestStatusBriefTTL(t *testing.T) {
+	app, _, _ := newTestApp()
+
+	// The radio toggle is a confirmation: brief.
+	press(t, app, tea.KeyPressMsg{Text: "d"})
+	if app.status != "radio off" || app.statusFor != briefTTL {
+		t.Fatalf("radio: status = %q, statusFor = %v; want \"radio off\" / briefTTL", app.status, app.statusFor)
+	}
+	// So is the visualizer switch.
+	press(t, app, tea.KeyPressMsg{Text: "v"})
+	if app.statusFor != briefTTL {
+		t.Fatalf("visualizer: statusFor = %v; want briefTTL", app.statusFor)
+	}
+	// And the volume nudge: 95 → 100 is a success confirmation, not a readout.
+	app.state.Volume = 0.95
+	press(t, app, tea.KeyPressMsg{Text: "+"})
+	if app.status != "volume 100%" || app.statusFor != briefTTL {
+		t.Fatalf("volume: status = %q, statusFor = %v; want \"volume 100%%\" / briefTTL", app.status, app.statusFor)
+	}
+	// Play/pause: a paused track resumes with the brief "playing". The key
+	// handler reads the app's display state, so set that, not the fake.
+	app.state = contract.State{Track: track("A"), Position: 10 * time.Second}
+	press(t, app, tea.KeyPressMsg{Code: tea.KeySpace})
+	if app.status != "playing" || app.statusFor != briefTTL {
+		t.Fatalf("resume: status = %q, statusFor = %v; want \"playing\" / briefTTL", app.status, app.statusFor)
+	}
+
+	// An index read is a report, not a confirmation: full linger.
+	_, _ = app.Update(indexMsg{tracks: []contract.Track{{ID: "a1", BandID: 1}}})
+	if app.statusFor != statusTTL {
+		t.Fatalf("index read: statusFor = %v; want statusTTL", app.statusFor)
+	}
+}
+
+// TestStatusExpiry drives the expiry clock on a fake wall clock: the brief
+// confirmation fades after briefTTL and the standing line takes its row
+// back, with the severity reset to quiet.
+func TestStatusExpiry(t *testing.T) {
+	app, _, _ := newTestApp()
+	clock := time.Unix(0, 0)
+	app.now = func() time.Time { return clock }
+
+	press(t, app, tea.KeyPressMsg{Text: "d"})
+	if app.statusAt.IsZero() {
+		t.Fatal("the confirmation must be stamped on the clock")
+	}
+
+	// Mid-linger: still on the row.
+	clock = clock.Add(briefTTL / 2)
+	app.sample()
+	if app.status != "radio off" {
+		t.Fatalf("status = %q at half the TTL; the confirmation must still show", app.status)
+	}
+
+	// Past it: faded, severity reset to quiet.
+	clock = clock.Add(briefTTL/2 + tickPeriod)
+	app.sample()
+	if app.status != "" {
+		t.Fatalf("status = %q after the TTL; the standing line must have its row back", app.status)
+	}
+	if app.statusKind != statusInfo {
+		t.Fatalf("statusKind = %v after expiry; want info (the quiet line)", app.statusKind)
 	}
 }
 

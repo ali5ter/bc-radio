@@ -185,25 +185,42 @@ func styleForStatus(k statusKind) lipgloss.Style {
 	}
 }
 
-// renderStatus shows the transient status line, or — when none is set —
-// the radio's standing status, or — when the audio is silenced — a hint
-// that explains the blank visualizer: the analyser sits after the gain, so
-// at volume zero there is genuinely nothing to draw, and the hint says what
-// brings it back. Precedence: transient > mute > index. The style comes from
-// the severity recorded when the message was raised, never from its words.
+// muteSuffix is the turn-up hint the standing status line appends when the
+// audio is silenced: the analyser sits after the gain, so at volume zero
+// there is genuinely nothing to draw, and the hint says what brings the
+// visualizer back.
+const muteSuffix = " — muted: +/− raises the volume"
+
+// renderStatus composes the player's status row. A transient is only this
+// row's when it was raised on this screen (statusOn) — one set on the
+// library must not surface here, and the standing line takes the row
+// instead. At volume zero the mute hint owns the row over an *info*
+// transient: the "volume 0%" confirmation is redundant with the vol
+// readout in the title row, while the hint explains the blank visualizer —
+// the exact moment it is needed most. A warn or bad transient keeps the row
+// (an alarm is never masked by a hint); the hint rides at its tail, where a
+// wide line clips the hint first, never the alarm. With neither, the radio's
+// standing line. The style comes from the severity recorded when the
+// message was raised, never from its words.
 func (a *App) renderStatus() string {
-	if a.status == "" && a.state.Volume < 0.001 && a.state.Track.Title != "" {
-		idx := a.indexLine()
-		style := styleForStatus(statusOfIndex(a.indexState))
-		return style.Render(idx) + styleAccent.Render(" — muted: +/− raises the volume")
+	transient := ""
+	kind := statusInfo
+	if a.status != "" && a.statusOn == screenPlayer {
+		transient = a.status
+		kind = a.statusKind
 	}
-	text := a.status
-	kind := a.statusKind
-	if text == "" {
-		text = a.indexLine()
-		kind = statusOfIndex(a.indexState)
+	muted := a.state.Volume < 0.001 && a.state.Track.Title != ""
+	if muted {
+		base := styleForStatus(statusOfIndex(a.indexState)).Render(a.indexLine())
+		if transient == "" || kind == statusInfo {
+			return base + styleAccent.Render(muteSuffix)
+		}
+		return styleForStatus(kind).Render(transient) + styleAccent.Render(muteSuffix)
 	}
-	return styleForStatus(kind).Render(text)
+	if transient != "" {
+		return styleForStatus(kind).Render(transient)
+	}
+	return styleForStatus(statusOfIndex(a.indexState)).Render(a.indexLine())
 }
 
 // indexLine is the standing status-row content: the radio's state and the
@@ -414,7 +431,8 @@ func (a *App) viewLibrary() string {
 	}
 	var sb strings.Builder
 	sb.WriteString(styleAccentB.Render("bc-radio"))
-	sb.WriteString(styleDim.Render("   Library   " + a.libraryStatus()))
+	sb.WriteString(styleDim.Render("   Library   "))
+	sb.WriteString(a.libraryStatus())
 	title := place(w, sb.String())
 
 	colH := h - 3 // title, columns, help
@@ -431,19 +449,26 @@ func (a *App) viewLibrary() string {
 	return lipgloss.JoinVertical(lipgloss.Left, title, place(w, body), help)
 }
 
-// libraryStatus is the dim annotation in the library title row.
+// libraryStatus is the annotation in the library title row. The transient
+// shows only when it was raised on this screen — a player confirmation
+// (a "volume 90%" set before an l) must not surface here, which was the
+// "Library   volume 90%" leak; otherwise the focused column's count reads
+// dim, and a transient in the row takes the severity's own colour, the
+// same mapping the player's status row uses.
 func (a *App) libraryStatus() string {
-	if s := a.status; s != "" {
-		return s
+	if a.status != "" && a.statusOn == screenLibrary {
+		return styleForStatus(a.statusKind).Render(a.status)
 	}
+	text := ""
 	switch a.browser.focus {
 	case 0:
-		return fmt.Sprintf("%d artists", len(a.browser.artists))
+		text = fmt.Sprintf("%d artists", len(a.browser.artists))
 	case 1:
-		return fmt.Sprintf("%d releases", len(a.browser.albums))
+		text = fmt.Sprintf("%d releases", len(a.browser.albums))
 	default:
-		return fmt.Sprintf("%d tracks", len(a.browser.tracks))
+		text = fmt.Sprintf("%d tracks", len(a.browser.tracks))
 	}
+	return styleDim.Render(text)
 }
 
 // browserColumn renders one browser column: a header, then the viewport of
