@@ -20,9 +20,11 @@ Type "./bc-radio -username ali5ter"
 Sleep 600ms
 Enter
 
-# Library build: the status line reads "building track index…" until the walk
-# over the cached discographies lands (10–22 s warm).
-Sleep 2s
+# Library build: the status line runs a spinner with a per-band counter
+# until the walk over the cached discographies lands (10–22 s warm).
+# Wait for the walk to finish before space: a space pressed while the index
+# is still building starts nothing.
+Sleep 8s
 
 # Space starts the radio: a random index track, the bar spectrum dancing.
 Type " "
