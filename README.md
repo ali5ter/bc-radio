@@ -65,7 +65,7 @@ releases.
 | `-cache-dir` | Page cache directory (default `$XDG_CACHE_HOME/bc-radio`) |
 | `-page-ttl` | How long parsed Bandcamp pages stay in the cache (default `24h`) |
 | `-volume` | Starting volume, 0 to 1 (default `1`) |
-| `-theme` | Interface theme: `auto` (follows the terminal), `dark`, `light` or `mono` |
+| `-theme` | Interface theme: `auto` (follows the terminal), `dark`, `light` or `mono` — see Themes |
 | `-json` | Build the track index, print it as JSON, and exit (no interface) |
 | `-list` | Build the track index, print it as a plain-text list, and exit (no interface) |
 
@@ -118,7 +118,11 @@ release) are reported on stderr, so piped stdout stays clean.
 renders everything in the terminal's default colour, with the hierarchy carried by bold and
 faint instead. The default, `auto`, follows the terminal: `NO_COLOR` resolves to mono, and
 otherwise the palette matches the terminal's background colour. An explicit choice never
-moves.
+moves — and it is remembered: the app writes the last explicit choice to a one-line file
+(`$XDG_CONFIG_HOME/bc-radio/theme`, or `~/.config/bc-radio/theme` when that is unset), so a
+later unflagged launch keeps it. A `-theme` flag always wins over the remembered value, and
+a missing or unreadable file falls back to `auto`; delete the file, or pass `-theme auto`,
+to return to following the terminal.
 
 ## How it works
 
@@ -130,7 +134,8 @@ fresh link, and a failed stream shows as a brief notice before the radio moves o
 failures back off before retrying.
 
 Nothing is stored for later: tracks are streamed and played as they arrive, and the only
-local state is the page cache above.
+local state is the page cache above, plus the one-line theme preference the app remembers
+after an explicit `-theme` choice (see Themes).
 
 The radio is the default mode. At startup bc-radio walks every followed band's discography —
 artists, releases, then album tracks — into a flat index, reading the same cached pages as
