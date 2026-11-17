@@ -518,10 +518,11 @@ func (a *App) statusfBad(format string, args ...any) {
 	a.setStatus(statusBad, fmt.Sprintf(format, args...), statusTTL)
 }
 
-// statusfBrief sets a switch confirmation (radio, visualizer, volume,
-// play/pause) at the info severity with the brief linger: it acknowledges an
-// action the user just took and gives the standing line its row back after
-// briefTTL instead of holding it for the full 8 s.
+// statusfBrief sets a brief acknowledgement (the switch confirmations —
+// radio, visualizer, volume, play/pause — and the x no-op on a track that
+// is not queued) at the info severity with the brief linger: it
+// acknowledges an action the user just took and gives the standing line
+// its row back after briefTTL instead of holding it for the full 8 s.
 func (a *App) statusfBrief(format string, args ...any) {
 	a.setStatus(statusInfo, fmt.Sprintf(format, args...), briefTTL)
 }
@@ -893,7 +894,11 @@ func (a *App) queueTrack(t contract.Track) {
 	a.syncNext()
 }
 
-// removeBrowserTrack drops the selected track from the queue.
+// removeBrowserTrack drops the selected track from the queue. A track that
+// is not queued gets a brief acknowledgement instead of a silent no-op
+// (issue #11): removing stays one keystroke, since it is reversible (re-
+// queue the album), but the key is never silent — the brief linger gives
+// the standing line its row back within a glance.
 func (a *App) removeBrowserTrack() {
 	b := a.browser
 	if b.focus != 2 || b.selTrack >= len(b.tracks) {
@@ -902,6 +907,8 @@ func (a *App) removeBrowserTrack() {
 	t := b.tracks[b.selTrack]
 	if a.playlist.removeQueued(t) {
 		a.statusf("removed from queue: %s", t.Title)
+	} else {
+		a.statusfBrief("not in queue: %s", t.Title)
 	}
 }
 

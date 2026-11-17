@@ -918,6 +918,13 @@ func TestLibraryFlow(t *testing.T) {
 		t.Fatalf("queue = %v; x must remove the selected track", got)
 	}
 
+	// x once more: the selected track is no longer queued, so the key must
+	// acknowledge itself rather than no-op silently (issue #11).
+	press(t, app, tea.KeyPressMsg{Text: "x"})
+	if got := app.status; got != "not in queue: T1" {
+		t.Errorf("no-op x raised %q; want the not-in-queue transient", got)
+	}
+
 	// l goes back to the player.
 	press(t, app, tea.KeyPressMsg{Text: "l"})
 	if app.screen != screenPlayer {
