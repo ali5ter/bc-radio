@@ -90,6 +90,11 @@ release) are reported on stderr, so piped stdout stays clean.
 ./bc-radio -username yourbandcampname -list
 ```
 
+The index walks the page cache: parsed Bandcamp pages stay on disk for `-page-ttl`
+(24 h by default), so runs inside that window reuse what was already fetched. To
+force a fresh walk — a new album, a changed track list — pass a short `-page-ttl`
+(`1s` re-fetches every page) or point `-cache-dir` at an empty directory.
+
 ## Keybindings
 
 | Key | Action | Where |
