@@ -163,30 +163,47 @@ func (a *App) renderTitle() string {
 	return place(a.width, sb.String())
 }
 
+// statusOfIndex maps the standing index state to the severity of its line:
+// a failed walk is a hard failure (the radio has no pool to draw from), so
+// the line keeps the alarm colour; every other state reads as quiet.
+func statusOfIndex(s indexState) statusKind {
+	if s == indexFailed {
+		return statusBad
+	}
+	return statusInfo
+}
+
+// styleForStatus maps a status severity to its style.
+func styleForStatus(k statusKind) lipgloss.Style {
+	switch k {
+	case statusBad:
+		return styleBad
+	case statusWarn:
+		return styleWarn
+	default:
+		return styleDim
+	}
+}
+
 // renderStatus shows the transient status line, or — when none is set —
 // the radio's standing status, or — when the audio is silenced — a hint
 // that explains the blank visualizer: the analyser sits after the gain, so
 // at volume zero there is genuinely nothing to draw, and the hint says what
-// brings it back. Precedence: transient > mute > index.
+// brings it back. Precedence: transient > mute > index. The style comes from
+// the severity recorded when the message was raised, never from its words.
 func (a *App) renderStatus() string {
 	if a.status == "" && a.state.Volume < 0.001 && a.state.Track.Title != "" {
 		idx := a.indexLine()
-		style := styleDim
-		if strings.Contains(idx, "unavailable") {
-			style = styleBad
-		}
+		style := styleForStatus(statusOfIndex(a.indexState))
 		return style.Render(idx) + styleAccent.Render(" — muted: +/− raises the volume")
 	}
 	text := a.status
+	kind := a.statusKind
 	if text == "" {
 		text = a.indexLine()
+		kind = statusOfIndex(a.indexState)
 	}
-	style := styleDim
-	if strings.Contains(a.status, "failed") || strings.Contains(a.status, "error") ||
-		strings.Contains(text, "unavailable") {
-		style = styleBad
-	}
-	return style.Render(text)
+	return styleForStatus(kind).Render(text)
 }
 
 // indexLine is the standing status-row content: the radio's state and the

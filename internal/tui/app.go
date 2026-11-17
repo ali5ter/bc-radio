@@ -107,6 +107,7 @@ type App struct {
 	help       bool
 	screen     screen
 	status     string
+	statusKind statusKind
 	statusAt   time.Time
 
 	now        func() time.Time // the clock sample() reads; tests stamp it
@@ -219,7 +220,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		skipFrom := a.skipFrom
 		a.skipFrom = contract.Track{}
 		if m.err != nil {
-			a.statusf("playback failed: %v", m.err)
+			a.statusfBad("playback failed: %v", m.err)
 			return a, nil
 		}
 		a.playlist.recordPlayed(skipFrom)
@@ -236,8 +237,15 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.browser.artists = m.artists
 		a.browser.selArtist = 0
 		a.browser.scroll[0] = 0
+		// The follow list failing is a near-success when it still read some
+		// (the >20 batch-cap note) and a hard failure only when it read
+		// none: a partial list is still fuel for both the browser and the index.
 		if m.err != nil {
-			a.statusf("library: %v", m.err)
+			if len(m.artists) > 0 {
+				a.statusfWarn("library: %v", m.err)
+			} else {
+				a.statusfBad("library: %v", m.err)
+			}
 		} else {
 			a.statusf("%d artists", len(m.artists))
 		}
@@ -253,7 +261,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case albumsMsg:
 		if m.err != nil {
-			a.statusf("albums: %v", m.err)
+			a.statusfBad("albums: %v", m.err)
 			return a, nil
 		}
 		// Drop stale responses: the selection has moved on.
@@ -273,9 +281,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.err != nil {
 			if a.browser.queueAllFor == m.slug {
 				a.browser.queueAllFor = ""
-				a.statusf("queueing %s: %v", m.slug, m.err)
+				a.statusfBad("queueing %s: %v", m.slug, m.err)
 			} else {
-				a.statusf("tracks: %v", m.err)
+				a.statusfBad("tracks: %v", m.err)
 			}
 			return a, nil
 		}
@@ -301,10 +309,13 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case m.err != nil && len(m.tracks) == 0:
 			a.indexState = indexFailed
-			a.statusf("track index unavailable: %v", m.err)
+			a.statusfBad("track index unavailable: %v", m.err)
 		case m.err != nil:
 			a.indexState = indexReady
-			a.statusf("track index: %d tracks — %v", len(m.tracks), m.err)
+			// A partial walk is a near-success: the index is the union of what
+			// could be read, and the error names the gaps — a glance, not an
+			// alarm. Red is reserved for the walk that read nothing.
+			a.statusfWarn("track index: %d tracks — %v", len(m.tracks), m.err)
 		default:
 			a.indexState = indexReady
 			a.statusf("track index: %d tracks from %d bands", len(m.tracks), a.playlist.IndexBands())
@@ -445,12 +456,49 @@ func (a *App) sample() {
 	}
 	if a.status != "" && time.Since(a.statusAt) > statusTTL {
 		a.status = ""
+		a.statusKind = statusInfo
 	}
 }
 
-// statusf sets the transient status line.
+// statusKind is the severity of a status message. It is set structurally, at
+// the point the message is raised, from what actually happened — never inferred
+// from the message's words. Keying a colour off keywords was brittle in both
+// directions: a near-success phrased with a failure word (a partial index that
+// names an "unavailable" band) read as a hard failure, the only saturated colour
+// on the idle screen, drawing the eye to the one non-issue; and a real failure
+// phrased without the keywords read as quiet.
+type statusKind int
+
+// The three status severities, quiet to loud.
+const (
+	statusInfo statusKind = iota // normal operation: the quiet dim line
+	statusWarn                   // a near-success: a gap to glance at, amber
+	statusBad                    // a hard failure: the alarm, red
+)
+
+// statusf sets the transient status line at the default (info) severity.
 func (a *App) statusf(format string, args ...any) {
-	a.status = fmt.Sprintf(format, args...)
+	a.setStatus(statusInfo, fmt.Sprintf(format, args...))
+}
+
+// statusfWarn sets the transient status line at the warning severity: a
+// near-success that needs a glance, not an alarm (a partial index, a partial
+// follow list).
+func (a *App) statusfWarn(format string, args ...any) {
+	a.setStatus(statusWarn, fmt.Sprintf(format, args...))
+}
+
+// statusfBad sets the transient status line at the failure severity: a hard
+// failure the user must notice.
+func (a *App) statusfBad(format string, args ...any) {
+	a.setStatus(statusBad, fmt.Sprintf(format, args...))
+}
+
+// setStatus records a transient status line with its severity and re-arms the
+// expiry clock (statusTTL).
+func (a *App) setStatus(kind statusKind, text string) {
+	a.status = text
+	a.statusKind = kind
 	a.statusAt = time.Now()
 }
 
@@ -518,7 +566,7 @@ func (a *App) onEvent(ev contract.Event) {
 			a.syncNext()
 			return
 		}
-		a.statusf("playback failed: %v", ev.Err)
+		a.statusfBad("playback failed: %v", ev.Err)
 		a.autoAdvance(ev.Track, ev.Err)
 	}
 }
@@ -534,7 +582,7 @@ func (a *App) autoAdvance(ended contract.Track, failErr error) {
 		return
 	}
 	if failErr != nil && t.ID == ended.ID {
-		a.statusf("playback failed: %v", failErr)
+		a.statusfBad("playback failed: %v", failErr)
 		return
 	}
 	a.statusf("now: %s — %s", t.BandName, t.Title)
@@ -613,7 +661,7 @@ func (a *App) setVolume(v float64) {
 		v = 1
 	}
 	if err := a.player.SetVolume(context.Background(), v); err != nil {
-		a.statusf("volume: %v", err)
+		a.statusfBad("volume: %v", err)
 		return
 	}
 	a.state.Volume = v
@@ -643,13 +691,13 @@ func (a *App) togglePlayPause() tea.Cmd {
 		}
 	case st.Playing:
 		if err := a.player.Pause(context.Background()); err != nil {
-			a.statusf("pause failed: %v", err)
+			a.statusfBad("pause failed: %v", err)
 		} else {
 			a.statusf("paused")
 		}
 	default:
 		if err := a.player.Play(context.Background()); err != nil {
-			a.statusf("play failed: %v", err)
+			a.statusfBad("play failed: %v", err)
 		} else {
 			a.statusf("playing")
 		}

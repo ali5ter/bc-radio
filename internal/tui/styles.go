@@ -30,32 +30,36 @@ func ValidateTheme(name string) error {
 	return fmt.Errorf("unknown theme %q (choose auto, dark, light or mono)", name)
 }
 
-// scheme is one resolved palette: the four semantic colours, the two ends of
+// scheme is one resolved palette: the five semantic colours, the two ends of
 // the spectrum gradient, and the mono flag that turns the gradient off.
 // Every colour in the UI derives from a scheme, never from a literal.
 type scheme struct {
 	accent       color.Color // current track, selection: what the user is acting on
 	visual       color.Color // the visualizer: the cool counterweight
 	dim          color.Color // hints, meta, quiet structure
-	bad          color.Color // failures, warnings
+	warn         color.Color // a near-success: a gap to glance at, not an alarm
+	bad          color.Color // a hard failure: the alarm
 	spectrumLow  color.Color // the bass end of the band gradient
 	spectrumHigh color.Color // the treble end
 	mono         bool        // no colour at all: the hierarchy comes from weight
 }
 
 // The palette is warm-on-dark: an amber accent for anything the user is
-// acting on, a cool teal for the visualizer, and one muted tone for
-// everything decorative. One accent and one cool colour keep the screen
-// calm at 60 fps — a rainbow here would flicker into noise instead of
-// music. The light scheme keeps the same hues at a darker value: the same
-// hues on white wash out, the darker values hold their contrast. The
-// spectrum runs from a deep blue bass end to a warm copper treble end, so a
-// full-scale low-mid mix reads as warm against the teal.
+// acting on, a cool teal for the visualizer, a muted gray for everything
+// decorative, a muted gold for a near-success, and a muted coral for a hard
+// failure. The severity runs quiet → gold → coral, so a gap to glance at is
+// never dressed as an alarm. A few calm hues keep the screen readable at
+// 60 fps — a rainbow here would flicker into noise instead of music. The
+// light scheme keeps the same hues at a darker value: the same hues on white
+// wash out, the darker values hold their contrast. The spectrum runs from a
+// deep blue bass end to a warm copper treble end, so a full-scale low-mid
+// mix reads as warm against the teal.
 func darkScheme() scheme {
 	return scheme{
 		accent:       lipgloss.Color("#e8a15c"),
 		visual:       lipgloss.Color("#58b3a2"),
 		dim:          lipgloss.Color("#6e6a61"),
+		warn:         lipgloss.Color("#c29336"),
 		bad:          lipgloss.Color("#d9705f"),
 		spectrumLow:  lipgloss.Color("#3d6fb4"),
 		spectrumHigh: lipgloss.Color("#c96f3d"),
@@ -67,6 +71,7 @@ func lightScheme() scheme {
 		accent:       lipgloss.Color("#9a531a"),
 		visual:       lipgloss.Color("#0e6e5c"),
 		dim:          lipgloss.Color("#5d5950"),
+		warn:         lipgloss.Color("#8a6d1c"),
 		bad:          lipgloss.Color("#b23a28"),
 		spectrumLow:  lipgloss.Color("#2e589c"),
 		spectrumHigh: lipgloss.Color("#8f4718"),
@@ -78,9 +83,9 @@ func lightScheme() scheme {
 // weight (bold for importance, faint for decoration) instead.
 func monoScheme() scheme {
 	s := scheme{mono: true}
-	s.accent, s.visual, s.dim, s.bad, s.spectrumLow, s.spectrumHigh =
+	s.accent, s.visual, s.dim, s.warn, s.bad, s.spectrumLow, s.spectrumHigh =
 		lipgloss.NoColor{}, lipgloss.NoColor{}, lipgloss.NoColor{},
-		lipgloss.NoColor{}, lipgloss.NoColor{}, lipgloss.NoColor{}
+		lipgloss.NoColor{}, lipgloss.NoColor{}, lipgloss.NoColor{}, lipgloss.NoColor{}
 	return s
 }
 
@@ -111,11 +116,11 @@ func resolveScheme(kind themeKind, profile colorprofile.Profile, bgDark bool) sc
 // inline; applyTheme rebuilds all of them, so no call site knows which theme
 // is active.
 var (
-	colorAccent, colorVisual, colorDim, colorBad color.Color
-	styleAccent, styleAccentB, styleVisual       lipgloss.Style
-	styleDim, styleDimB, styleBad, styleText     lipgloss.Style
-	styleBands                                   []lipgloss.Style
-	current                                      scheme
+	colorAccent, colorVisual, colorDim, colorBad        color.Color
+	styleAccent, styleAccentB, styleVisual              lipgloss.Style
+	styleDim, styleDimB, styleWarn, styleBad, styleText lipgloss.Style
+	styleBands                                          []lipgloss.Style
+	current                                             scheme
 )
 
 // init installs the dark palette at package load, so code that renders
@@ -134,17 +139,22 @@ func applyTheme(s scheme) {
 	styleText = lipgloss.NewStyle()
 	if s.mono {
 		// No SGR at all — the terminal default colour everywhere, with the
-		// weight table above as the only hierarchy.
+		// weight table above as the only hierarchy: faint for the quiet
+		// (dim), plain for the near-success (warn), bold for the active and
+		// the failure.
 		styleAccent, styleAccentB = lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true)
 		styleVisual = lipgloss.NewStyle()
-		styleDim, styleDimB, styleBad =
-			lipgloss.NewStyle().Faint(true), lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true)
+		styleDim, styleDimB =
+			lipgloss.NewStyle().Faint(true), lipgloss.NewStyle().Bold(true)
+		styleWarn = lipgloss.NewStyle()
+		styleBad = lipgloss.NewStyle().Bold(true)
 	} else {
 		styleAccent = lipgloss.NewStyle().Foreground(s.accent)
 		styleAccentB = styleAccent.Bold(true)
 		styleVisual = lipgloss.NewStyle().Foreground(s.visual)
 		styleDim = lipgloss.NewStyle().Foreground(s.dim)
 		styleDimB = styleDim.Bold(true)
+		styleWarn = lipgloss.NewStyle().Foreground(s.warn)
 		styleBad = lipgloss.NewStyle().Foreground(s.bad)
 	}
 	styleBands = buildBandStyles()

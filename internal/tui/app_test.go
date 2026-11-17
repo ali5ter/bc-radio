@@ -560,6 +560,9 @@ func TestPlaybackFailedIdleNoRetry(t *testing.T) {
 	if !strings.Contains(app.status, "playback failed") {
 		t.Fatalf("status = %q; want the failure surfaced", app.status)
 	}
+	if app.statusKind != statusBad {
+		t.Fatalf("statusKind = %v; a failed playback is a hard failure", app.statusKind)
+	}
 }
 
 func TestPlaybackFailedIdleWithQueueAdvances(t *testing.T) {
@@ -962,6 +965,9 @@ func TestLibraryFetchError(t *testing.T) {
 	if !strings.Contains(app.status, "library:") {
 		t.Fatalf("status = %q; want the fetch error surfaced", app.status)
 	}
+	if app.statusKind != statusBad {
+		t.Fatalf("statusKind = %v; an empty follow list is a hard failure", app.statusKind)
+	}
 	_, _ = app.Update(artistsMsg{artists: []contract.Artist{{Name: "A"}}})
 	if len(app.browser.artists) != 1 {
 		t.Fatalf("artists = %d; a later success must land", len(app.browser.artists))
@@ -980,6 +986,9 @@ func TestLoadedError(t *testing.T) {
 	_, _ = app.Update(m)
 	if !strings.Contains(app.status, "playback failed") {
 		t.Fatalf("status = %q; want the load failure", app.status)
+	}
+	if app.statusKind != statusBad {
+		t.Fatalf("statusKind = %v; a failed load is a hard failure", app.statusKind)
 	}
 	if app.pendingLoad {
 		t.Fatal("pendingLoad must clear on failure")
@@ -1026,6 +1035,9 @@ func TestIndexMsg(t *testing.T) {
 	if got := app.status; got != "track index: 3 tracks from 2 bands" {
 		t.Fatalf("status = %q", got)
 	}
+	if app.statusKind != statusInfo {
+		t.Fatalf("statusKind = %v; a clean walk is quiet", app.statusKind)
+	}
 	if len(app.playlist.Index()) != 3 || app.playlist.IndexBands() != 2 {
 		t.Fatalf("index = %d tracks / %d bands; want 3 / 2", len(app.playlist.Index()), app.playlist.IndexBands())
 	}
@@ -1036,6 +1048,9 @@ func TestIndexMsg(t *testing.T) {
 	}
 	if got := app.status; got != "track index unavailable: network down" {
 		t.Fatalf("status = %q", got)
+	}
+	if app.statusKind != statusBad {
+		t.Fatalf("statusKind = %v; a failed empty walk is a hard failure", app.statusKind)
 	}
 	if len(app.playlist.Index()) != 0 {
 		t.Fatalf("index = %d; a failed empty walk clears the index", len(app.playlist.Index()))
@@ -1050,6 +1065,9 @@ func TestIndexMsg(t *testing.T) {
 	}
 	if got := app.status; got != "track index: 1 tracks — one band 404" {
 		t.Fatalf("status = %q", got)
+	}
+	if app.statusKind != statusWarn {
+		t.Fatalf("statusKind = %v; a near-success is a warning, not an alarm", app.statusKind)
 	}
 }
 
@@ -1070,6 +1088,9 @@ func TestArtistsPartialAcceptsBatchCap(t *testing.T) {
 	}
 	if !strings.Contains(app.status, "library:") {
 		t.Fatalf("status = %q; the partial note must be surfaced", app.status)
+	}
+	if app.statusKind != statusWarn {
+		t.Fatalf("statusKind = %v; a partial follow list is a warning", app.statusKind)
 	}
 	if app.indexState != indexBuilding {
 		t.Fatalf("indexState = %v; the readable artists still walk", app.indexState)

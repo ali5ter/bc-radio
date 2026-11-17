@@ -8,6 +8,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/ali5ter/bc-radio/internal/contract"
+	"github.com/charmbracelet/colorprofile"
 )
 
 func TestFormatDuration(t *testing.T) {
@@ -232,6 +233,45 @@ func TestRenderStatusFallback(t *testing.T) {
 	a.indexState = indexFailed
 	if got := stripANSI(a.renderStatus()); got != "track index unavailable — the radio plays the queue only" {
 		t.Errorf("renderStatus(failed) = %q; want the unavailable line", got)
+	}
+}
+
+// TestStatusOfIndex pins the standing line's severity: only a failed walk is
+// a hard failure (the radio has no pool); every other state reads quiet.
+func TestStatusOfIndex(t *testing.T) {
+	for s, want := range map[indexState]statusKind{
+		indexIdle:     statusInfo,
+		indexBuilding: statusInfo,
+		indexReady:    statusInfo,
+		indexFailed:   statusBad,
+	} {
+		if got := statusOfIndex(s); got != want {
+			t.Errorf("statusOfIndex(%v) = %v; want %v", s, got, want)
+		}
+	}
+}
+
+// TestStatusSeverityStyles pins that each severity maps to its own colour of
+// the resolved palette — the warning is its own hue, never the alarm and
+// never the quiet. The explicit dark theme resolves the colour palette
+// regardless of the terminal, so the comparison is deterministic.
+func TestStatusSeverityStyles(t *testing.T) {
+	a := &App{width: 80, playlist: newPlaylist(), theme: themeDark}
+	a.profile = colorprofile.TrueColor
+	a.bgDark = true
+	a.applyThemeNow()
+
+	if got := styleForStatus(statusInfo).GetForeground(); got != current.dim {
+		t.Errorf("info style = %v; want the dim colour", got)
+	}
+	if got := styleForStatus(statusWarn).GetForeground(); got != current.warn {
+		t.Errorf("warn style = %v; want the warn colour", got)
+	}
+	if got := styleForStatus(statusBad).GetForeground(); got != current.bad {
+		t.Errorf("bad style = %v; want the bad colour", got)
+	}
+	if w := styleForStatus(statusWarn).GetForeground(); w == current.dim || w == current.bad {
+		t.Errorf("the warn colour %v must be distinct from dim and bad", w)
 	}
 }
 
