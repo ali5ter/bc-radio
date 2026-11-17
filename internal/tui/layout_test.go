@@ -391,7 +391,7 @@ func TestFitHints(t *testing.T) {
 func TestFitHintsLibrary(t *testing.T) {
 	a := &App{width: 80}
 	out := stripANSI(a.renderLibraryHelp())
-	for _, want := range []string{"↑/↓ select", "←/→ column", "enter open / queue", "l or esc back"} {
+	for _, want := range []string{"↑/↓ select", "←/→ column", "enter queue (starts if idle)", "l or esc back"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("library help row lost %q: %q", want, out)
 		}

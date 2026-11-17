@@ -400,6 +400,10 @@ func (a *App) renderHelp() string {
 }
 
 // renderLibraryHelp is the library's bottom hint row, fitted the same way.
+// The enter hint names what actually happens: queueing from the library
+// starts at once when the engine is idle (the contract's Queue-on-idle
+// behaviour), so the wording primes that expectation instead of the older
+// "open / queue", which read as queue-and-carry-on-browsing (issue #10).
 // At 80 columns the "x remove from queue" hint drops (it is documented in
 // the help overlay) so the navigation hints, including "l or esc back",
 // stay whole; the select/queue hints are the last to go.
@@ -407,7 +411,7 @@ func (a *App) renderLibraryHelp() string {
 	return fitHints(a.width, "   ",
 		hint{"↑/↓ select", 90},
 		hint{"←/→ column", 80},
-		hint{"enter open / queue", 85},
+		hint{"enter queue (starts if idle)", 85},
 		hint{"x remove from queue", 50},
 		hint{"l or esc back", 60},
 	)
