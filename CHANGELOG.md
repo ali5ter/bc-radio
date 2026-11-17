@@ -3,6 +3,20 @@
 All notable changes to bc-radio are recorded here. Each release follows
 [Semantic Versioning](https://semver.org/).
 
+## [v1.1.2] - 2026-11-16
+
+### Changed
+
+- First launch no longer opens on a blank status line: while nothing is
+  playing, the progress line now says what space will do — start the radio,
+  or play the queue if one is loaded (#1).
+- The library build is no longer a frozen screen: while the index walks the
+  cached discographies, the status line runs a spinner and a per-band
+  counter (… 7/20 bands), so a cold-cache build of a minute no longer looks
+  hung (#2).
+- The demo reel in `examples/` re-rendered against the new lines; it also
+  waits for the index build to finish before starting the radio.
+
 ## [v1.1.1] - 2026-11-16
 
 ### Added
