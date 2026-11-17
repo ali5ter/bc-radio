@@ -268,6 +268,63 @@ func TestParticlesLaneMapping(t *testing.T) {
 	}
 }
 
+// At rest the radial is the centre dot and the ghost ring at full radius:
+// the meter's constant silhouette in quiet passages. The ring is one dot
+// thick, passes through the four cardinal points, and is a dense outline —
+// far more than the 16 spoke directions.
+func TestRadialRestRing(t *testing.T) {
+	const w, h = 21, 11 // maxR = min(10, 10, 5, 5) = 5
+	got := stripANSI(newRadial().Render(bandFrame(zeroBands(), w, h)))
+	lines := strings.Split(got, "\n")
+	if len(lines) != h {
+		t.Fatalf("got %d rows; want %d", len(lines), h)
+	}
+	cx, cy := (w-1)/2, (h-1)/2
+	cell := func(x, y int) rune {
+		rs := []rune(lines[y])
+		if len(rs) != w {
+			t.Fatalf("row %d is %d cells; want %d", y, len(rs), w)
+		}
+		return rs[x]
+	}
+	if got := cell(cx, cy); got != '•' {
+		t.Errorf("centre = %q; want the centre dot", got)
+	}
+	for _, p := range [][2]int{{cx, cy - 5}, {cx, cy + 5}, {cx - 5, cy}, {cx + 5, cy}} {
+		if got := cell(p[0], p[1]); got != '·' {
+			t.Errorf("ring at (%d,%d) = %q; want the ghost dot", p[0], p[1], got)
+		}
+	}
+	if got := cell(cx, cy-3); got != ' ' {
+		t.Errorf("interior cell (cx, cy-3) = %q; want clear air", got)
+	}
+	dots := 0
+	for _, r := range got {
+		if r == '·' {
+			dots++
+		}
+	}
+	if dots < 24 {
+		t.Errorf("ring holds %d dots; want a dense outline (>= 24)", dots)
+	}
+}
+
+// A spoke at full scale ends exactly on its ring dot and replaces it: the
+// live data always wins the cell, so the ghost never double-draws.
+func TestRadialFullScaleOverwritesRing(t *testing.T) {
+	const w, h = 21, 11
+	b := zeroBands()
+	for k := range b {
+		b[k] = 1.0
+	}
+	lines := strings.Split(stripANSI(newRadial().Render(bandFrame(b, w, h))), "\n")
+	rs := []rune(lines[0]) // the top row: band 0's full-scale tip
+	cx := (w - 1) / 2
+	if rs[cx] != '•' {
+		t.Errorf("full-scale band 0 tip = %q; want the live dot over the ghost", rs[cx])
+	}
+}
+
 // Renders must be a pure function of the input frames: two fresh instances
 // fed the same sequence draw identical frames.
 func TestVisualizersDeterministic(t *testing.T) {
