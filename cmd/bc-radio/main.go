@@ -159,7 +159,12 @@ func main() {
 	}
 
 	app := tui.New(bc, engine, o.theme)
-	if err := app.Run(); err != nil {
+	if err := app.Run(); err == nil {
+		// Clean exit, alternate screen restored: the banner is the last
+		// thing the terminal shows. A failed launch goes to its error
+		// line instead — no wordmark over a fault.
+		fmt.Fprint(os.Stdout, app.ExitBanner())
+	} else {
 		fatal(fmt.Errorf("tui: %w", err))
 	}
 }
