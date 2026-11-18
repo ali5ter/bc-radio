@@ -160,5 +160,5 @@ of in step with the buffer. The interface eases each band toward its target at t
 terminal's clock rate, and the oscilloscope draws the analyser's most recent samples raw,
 sample by sample.
 
-The terminal needs to be at least 30 × 8 for the player screen and 60 × 10 for the library;
+The terminal needs to be at least 30 × 10 for the player screen and 60 × 10 for the library;
 below that, bc-radio shows a notice instead of a broken layout.
