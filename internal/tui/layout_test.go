@@ -142,10 +142,12 @@ func TestIndexLine(t *testing.T) {
 	}
 }
 
-// TestRenderTitleFits pins the F9 fix: the now-playing fields share the row
-// and clip inside their share, so a long title ellipses in the middle of the
-// row instead of pushing the volume readout past the terminal edge.
-func TestRenderTitleFits(t *testing.T) {
+// TestHeaderFits pins the wordmark header's geometry: every one of the six
+// rows is exactly the terminal width — the art, the dash gap and the
+// right-justified info block — so an overflowing title ellipses inside its
+// budget instead of running off the edge. The volume readout is not among
+// them: it reads once, in the status footer.
+func TestHeaderFits(t *testing.T) {
 	a := &App{
 		width: 80,
 		state: contract.State{
@@ -158,22 +160,37 @@ func TestRenderTitleFits(t *testing.T) {
 			Volume: 1,
 		},
 	}
-	row := a.renderTitle()
-	if w, _ := lipgloss.Size(row); w != 80 {
-		t.Fatalf("title row is %d cells; want exactly 80: %q", w, stripANSI(row))
+	rows := a.playerHeader()
+	if len(rows) != headerRows {
+		t.Fatalf("playerHeader returned %d rows; want %d", len(rows), headerRows)
 	}
-	got := stripANSI(row)
-	if !strings.Contains(got, "vol 100%") {
-		t.Fatalf("title row lost the volume readout at 80 cols: %q", got)
+	for i, row := range rows {
+		if w, _ := lipgloss.Size(row); w != 80 {
+			t.Fatalf("header row %d is %d cells; want exactly 80: %q", i, w, stripANSI(row))
+		}
 	}
-	if !strings.Contains(got, "…") {
-		t.Fatalf("an overflowing name should ellipsize, not cut: %q", got)
+	// The overflowing title ellipses inside its budget…
+	if got := stripANSI(rows[1]); !strings.Contains(got, "…") {
+		t.Errorf("an overflowing title should ellipsize, not cut: %q", got)
+	}
+	// …and the info block is pinned to the right edge: the title row's
+	// final cell is the title's closing quote, with no trailing gap.
+	if got := stripANSI(rows[1]); got[len(got)-1] != '\'' {
+		t.Errorf("title row ends in %q; the info block must sit on the right edge: %q", got[len(got)-1], got)
+	}
+	// No header row carries a volume readout.
+	for i, row := range rows {
+		if got := stripANSI(row); strings.Contains(got, "vol ") || strings.Contains(got, "volume") {
+			t.Errorf("header row %d carries a volume readout: %q", i, got)
+		}
 	}
 }
 
-// The readout survives the narrow end too: at the 30-column minimum the
-// name fields shrink to nothing before the volume is cut.
-func TestRenderTitleNarrow(t *testing.T) {
+// TestNarrowTitle pins the single-row fallback below the wordmark width:
+// at the 30-column minimum the row holds the app name, the transport verb
+// and the now-playing fields — and no volume (the footer's status tail
+// reads it, so the row no longer doubles the readout).
+func TestNarrowTitle(t *testing.T) {
 	a := &App{
 		width: 30,
 		state: contract.State{
@@ -181,12 +198,19 @@ func TestRenderTitleNarrow(t *testing.T) {
 			Volume: 1,
 		},
 	}
-	row := a.renderTitle()
-	if w, _ := lipgloss.Size(row); w != 30 {
-		t.Fatalf("title row is %d cells; want exactly 30: %q", w, stripANSI(row))
+	rows := a.playerHeader()
+	if len(rows) != 1 {
+		t.Fatalf("playerHeader at 30 cols returned %d rows; want the single-row title", len(rows))
 	}
-	if got := stripANSI(row); !strings.Contains(got, "vol 100%") {
-		t.Fatalf("title row lost the volume readout at 30 cols: %q", got)
+	if w, _ := lipgloss.Size(rows[0]); w != 30 {
+		t.Fatalf("title row is %d cells; want exactly 30: %q", w, stripANSI(rows[0]))
+	}
+	got := stripANSI(rows[0])
+	if strings.Contains(got, "vol ") || strings.Contains(got, "volume") {
+		t.Fatalf("narrow title carries a volume readout; it moved to the status footer: %q", got)
+	}
+	if !strings.Contains(got, "bc-radio") {
+		t.Fatalf("narrow title lost the app name: %q", got)
 	}
 }
 
@@ -231,23 +255,25 @@ func TestRenderStatusMuteHint(t *testing.T) {
 }
 
 // TestRenderStatusFallback pins that the status row shows the transient
-// status when set and the radio's standing line when not.
+// status when set and the radio's standing line when not — and that the
+// dim volume tail rides whole at the row's edge in both cases (the volume
+// reads once, here, since the header carries no readout).
 func TestRenderStatusFallback(t *testing.T) {
 	a := &App{width: 80, playlist: newPlaylist()}
 	a.status = "now: A — B"
-	if got := stripANSI(a.renderStatus()); got != "now: A — B" {
-		t.Errorf("renderStatus = %q; want the transient status", got)
+	if got := stripANSI(a.renderStatus()); got != "now: A — B · volume 0%" {
+		t.Errorf("renderStatus = %q; want the transient status with the volume tail", got)
 	}
 	a.status = ""
 	a.indexState = indexReady
 	a.playlist.SetIndex([]contract.Track{{ID: "a1", BandID: 1}})
 	a.playlist.radio = true
-	if got := stripANSI(a.renderStatus()); got != "◉ radio on · 1 tracks · 1 bands" {
-		t.Errorf("renderStatus fallback = %q; want the standing radio line", got)
+	if got := stripANSI(a.renderStatus()); got != "◉ radio on · 1 tracks · 1 bands · volume 0%" {
+		t.Errorf("renderStatus fallback = %q; want the standing radio line with the tail", got)
 	}
 	a.indexState = indexFailed
-	if got := stripANSI(a.renderStatus()); got != "track index unavailable — the radio plays the queue only" {
-		t.Errorf("renderStatus(failed) = %q; want the unavailable line", got)
+	if got := stripANSI(a.renderStatus()); got != "track index unavailable — the radio plays the queue only · volume 0%" {
+		t.Errorf("renderStatus(failed) = %q; want the unavailable line with the tail", got)
 	}
 }
 
@@ -320,8 +346,9 @@ func TestStatusScreenScope(t *testing.T) {
 	if got := stripANSI(a.libraryStatus()); got != "volume 90%" {
 		t.Errorf("library title = %q; want the transient on its own screen", got)
 	}
-	// …and the player row falls back to the standing radio line.
-	if got := stripANSI(a.renderStatus()); got != "◉ radio on · 1 tracks · 1 bands" {
+	// …and the player row falls back to the standing radio line (with the
+	// volume tail: no track is loaded, so the mute branch does not apply).
+	if got := stripANSI(a.renderStatus()); got != "◉ radio on · 1 tracks · 1 bands · volume 0%" {
 		t.Errorf("player row = %q; want the standing radio line, not a foreign transient", got)
 	}
 }
@@ -330,21 +357,23 @@ func TestStatusScreenScope(t *testing.T) {
 // fits the width, keeps its display order, and the quit/help hints are the
 // floor nothing drops past. The regression it guards: at 80 columns the
 // old static player row (123 cells) was MaxWidth-cut by place(), losing
-// "l library", "+/− vol", "? help" and "q quit" past the terminal edge.
+// "l library", "+/- vol", "? help" and "q quit" past the terminal edge.
+// The cells render in the house style — key in the accent, description in
+// dim, no leading space — so the joined text is what the design shows.
 func TestFitHints(t *testing.T) {
 	player := []hint{
-		{"space play/pause", 90},
-		{"n next", 85},
-		{"p prev", 70},
-		{"s shuffle", 40},
-		{"r repeat", 45},
-		{"d radio", 80},
-		{"v visual", 30},
-		{"f fullscreen", 20},
-		{"l library", 60},
-		{"+/− vol", 35},
-		{"? help", mustKeepHint},
-		{"q quit", mustKeepHint},
+		{"space", "play/pause", 90},
+		{"n", "next", 85},
+		{"p", "prev", 70},
+		{"s", "shuffle", 40},
+		{"r", "repeat", 45},
+		{"d", "radio", 80},
+		{"v", "visual", 30},
+		{"f", "fullscreen", 20},
+		{"l", "library", 60},
+		{"+/-", "vol", 35},
+		{"?", "help", mustKeepHint},
+		{"q", "quit", mustKeepHint},
 	}
 	cases := []struct {
 		w    int
@@ -352,7 +381,7 @@ func TestFitHints(t *testing.T) {
 		drop []string
 	}{
 		// 80 columns: the convenience keys drop; the transport keys, the
-		// radio, the library and the must-keep pair survive (79 cells).
+		// radio, the library and the must-keep pair survive (78 cells).
 		{80,
 			[]string{"space play/pause", "n next", "p prev", "r repeat", "d radio", "l library", "? help", "q quit"},
 			[]string{"shuffle", "visual", "fullscreen", "vol"}},
@@ -401,89 +430,187 @@ func TestFitHintsLibrary(t *testing.T) {
 	}
 }
 
-func TestRenderQueueRadioHint(t *testing.T) {
+// TestUpNextRadioHint pins the footer's up-next row when the queue is
+// empty: the radio previews itself when it has a pool to draw from,
+// otherwise the row points at the library — the one place tracks come
+// from (and the one place space would not look).
+func TestUpNextRadioHint(t *testing.T) {
 	a := &App{width: 80, playlist: newPlaylist()}
 	// Radio on with a non-empty index: the empty queue previews the radio.
 	a.playlist.SetIndex([]contract.Track{{ID: "a1"}})
 	a.playlist.radio = true
-	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "the radio plays next") {
+	if got := stripANSI(a.upNextRow()); !strings.Contains(got, "the radio plays next") {
 		t.Fatalf("empty queue = %q; want the radio hint", got)
 	}
-	// Radio off (or empty index): the old add-tracks hint.
+	// Radio off: the library is where tracks come from.
 	a.playlist.radio = false
-	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "add tracks") {
-		t.Fatalf("empty queue, radio off = %q; want the add-tracks hint", got)
+	if got := stripANSI(a.upNextRow()); !strings.Contains(got, "open the library (l) to queue tracks") {
+		t.Fatalf("empty queue, radio off = %q; want the library hint", got)
 	}
+	// Radio on but the index empty (still building): space would start
+	// nothing, so the library hint stands instead of a false preview.
 	a.playlist.radio = true
 	a.playlist.SetIndex(nil)
-	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "add tracks") {
-		t.Fatalf("empty queue, empty index = %q; want the add-tracks hint", got)
+	if got := stripANSI(a.upNextRow()); !strings.Contains(got, "open the library (l) to queue tracks") {
+		t.Fatalf("empty queue, empty index = %q; want the library hint", got)
 	}
 }
 
-func TestRenderQueue(t *testing.T) {
+// TestUpNext pins the up-next row with a queue: it shows only the head —
+// the one track that plays next — not the old multi-track preview list.
+func TestUpNext(t *testing.T) {
 	a := &App{width: 80, playlist: newPlaylist()}
-	// The radio is on by default but the index is empty here, so the empty
-	// queue still previews the add-tracks hint, not the radio.
-	if got := stripANSI(a.renderQueue()); !strings.Contains(got, "add tracks") {
-		t.Fatalf("empty queue preview = %q; want the add-tracks hint", got)
-	}
-	a.playlist.Add(contract.Track{ID: "1", Title: "T1", BandName: "B1"})
+	a.playlist.Add(contract.Track{ID: "1", Title: "T1", BandName: "B1", AlbumTitle: "A1"})
 	a.playlist.Add(contract.Track{ID: "2", Title: "T2", BandName: "B2"})
-	a.playlist.Add(contract.Track{ID: "3", Title: "T3", BandName: "B3"})
-	a.playlist.Add(contract.Track{ID: "4", Title: "T4", BandName: "B4"})
-	got := stripANSI(a.renderQueue())
-	for _, want := range []string{"T1", "T2", "T3", "+1 more"} {
-		if !strings.Contains(got, want) {
-			t.Errorf("queue preview missing %q: %q", want, got)
-		}
+	got := stripANSI(a.upNextRow())
+	if got != "└─ Up next: 'T1' by B1 from 'A1'" {
+		t.Fatalf("up next = %q; want the queue head with band and album", got)
+	}
+	if strings.Contains(got, "T2") {
+		t.Fatalf("up next shows only the head, not the whole queue: %q", got)
 	}
 }
 
-func TestRenderProgress(t *testing.T) {
+// TestHeaderTimeBar pins the header's fourth row: the elapsed time, the
+// filled/empty bar, the total and the percent. The bar takes exactly the
+// cells the info block's budget leaves after the times, so the row fills
+// the budget and never overruns the terminal edge.
+func TestHeaderTimeBar(t *testing.T) {
 	a := &App{
-		width: 80,
+		width: 84,
 		pos:   75 * time.Second,
 		state: contract.State{
 			Track: contract.Track{ID: "A", Title: "A", Duration: 300 * time.Second},
 		},
 	}
-	got := stripANSI(a.renderProgress())
-	for _, want := range []string{"1:15", "5:00"} {
+	got := stripANSI(a.headerTimeRow())
+	for _, want := range []string{"1:15 / 5:00", "(25%)"} {
 		if !strings.Contains(got, want) {
-			t.Errorf("progress missing %q: %q", want, got)
+			t.Fatalf("time bar missing %q: %q", want, got)
 		}
 	}
-
-	// Idle: just the waiting marker — the playlist has an empty index and
-	// an empty queue, so there is nothing to name.
-	a = &App{width: 80, playlist: newPlaylist()}
-	if got := stripANSI(a.renderProgress()); got != "  waiting" {
-		t.Errorf("idle progress = %q; want the plain waiting line", got)
+	// 75/300 of the 12-cell bar (the 33-cell budget minus the 21 cells of
+	// times and percent) is 3 filled; the rest stays dim.
+	if n := strings.Count(got, "━"); n != 3 {
+		t.Errorf("bar has %d filled cells; want 3: %q", n, got)
+	}
+	if n := strings.Count(got, "─"); n != 9 {
+		t.Errorf("bar has %d empty cells; want 9: %q", n, got)
+	}
+	if w, _ := lipgloss.Size(a.headerTimeRow()); w != a.headerMax() {
+		t.Errorf("time bar is %d cells; want the full %d-cell budget: %q", w, a.headerMax(), got)
+	}
+	// An unknown duration shows only the elapsed time, no bar.
+	a.state.Track.Duration = 0
+	if got := stripANSI(a.headerTimeRow()); got != " ∿ 1:15" {
+		t.Fatalf("unknown-duration time bar = %q; want the elapsed time only", got)
 	}
 }
 
-// TestRenderProgressIdleHint is the first-run gap: the idle screen
-// previously pointed only at the library, never at space — the radio is the
-// app's primary action. Name only what space would actually start: the
-// queue beats the radio in Start, and the radio needs its index.
-func TestRenderProgressIdleHint(t *testing.T) {
-	// Radio on with a non-empty index: the idle line names space.
-	a := &App{width: 80, playlist: newPlaylist()}
+// TestHeaderIdle is the first-run gap, now in the header's title row: the
+// idle art is never a silent rectangle, so the row names what space would
+// actually start — the queue beats the radio in Start, and the radio needs
+// its index (space while the walk is building starts nothing). The narrow
+// single-row title carries the same affordance.
+func TestHeaderIdle(t *testing.T) {
+	// Radio on with a non-empty index: the idle row names space.
+	a := &App{width: 100, playlist: newPlaylist()}
 	a.playlist.SetIndex([]contract.Track{{ID: "a1"}})
-	if got := stripANSI(a.renderProgress()); !strings.Contains(got, "press space to start the radio") {
-		t.Errorf("idle, radio on = %q; want the radio hint", got)
+	a.playlist.radio = true
+	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — press space to start the radio") {
+		t.Fatalf("idle, radio on = %q; want the radio hint", got)
 	}
 	// Radio on but the index empty (still building): space would start
-	// nothing, so the hint stays plain.
-	a = &App{width: 80, playlist: newPlaylist()}
-	if got := stripANSI(a.renderProgress()); got != "  waiting" {
-		t.Errorf("idle, radio on, no index = %q; want the plain waiting line", got)
+	// nothing, so the row points at the library instead.
+	a = &App{width: 100, playlist: newPlaylist()}
+	a.playlist.radio = true
+	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — open the library (l)") {
+		t.Fatalf("idle, radio on, no index = %q; want the library hint", got)
 	}
 	// The queue beats the radio in Start: it gets the hint instead.
-	a = &App{width: 80, playlist: newPlaylist()}
+	a = &App{width: 100, playlist: newPlaylist()}
 	a.playlist.Add(contract.Track{ID: "1", Title: "T1"})
-	if got := stripANSI(a.renderProgress()); !strings.Contains(got, "press space to play the queue") {
-		t.Errorf("idle, queued = %q; want the queue hint", got)
+	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — press space to play the queue") {
+		t.Fatalf("idle, queued = %q; want the queue hint", got)
+	}
+	// Below the wordmark width the same wording rides the single-row title.
+	a = &App{width: 30, playlist: newPlaylist()}
+	if got := stripANSI(a.playerHeader()[0]); !strings.Contains(got, "nothing playing") {
+		t.Fatalf("narrow idle title = %q; want the affordance", got)
+	}
+}
+
+// TestCheckOutRow pins the footer's second row: the playing track's band
+// and its Bandcamp home, all dim, so a listener can find the release to
+// support. Blank when nothing with a band is playing; a long band clips
+// and the row stays at the terminal width.
+func TestCheckOutRow(t *testing.T) {
+	a := &App{width: 80}
+	a.state.Track = contract.Track{Title: "T", BandName: "The Band", Subdomain: "theband.bandcamp.com"}
+	if got := stripANSI(a.checkOutRow()); got != "├─ Check out The Band at https://theband.bandcamp.com/" {
+		t.Fatalf("checkOutRow = %q; want the name and the link", got)
+	}
+	// No subdomain: the name stands alone, never a broken URL.
+	a.state.Track.Subdomain = ""
+	if got := stripANSI(a.checkOutRow()); got != "├─ Check out The Band" {
+		t.Fatalf("checkOutRow = %q; want the name without a URL", got)
+	}
+	// Nothing with a band name: the row stays blank.
+	a.state.Track.BandName = ""
+	if got := stripANSI(a.checkOutRow()); got != "" {
+		t.Fatalf("checkOutRow = %q; want blank without a band", got)
+	}
+	// A long band ellipses; the row never overruns the terminal.
+	a.width = 50
+	a.state.Track = contract.Track{Title: "T", BandName: strings.Repeat("B", 60)}
+	got := stripANSI(a.checkOutRow())
+	if w, _ := lipgloss.Size(got); w > 50 {
+		t.Fatalf("checkOutRow is %d cells; must not overflow: %q", w, got)
+	}
+	if !strings.Contains(got, "…") {
+		t.Fatalf("an overflowing band should ellipsize: %q", got)
+	}
+}
+
+// TestVolumeTail pins the status row's volume readout: it rides at the
+// row's edge unless the mute hint already owns the row (volume zero with
+// a track) or the row is the "volume N%" confirmation itself — the tail
+// would then read "volume 90% · volume 90%". The readout survives a
+// "volume" message raised on another screen or at another severity.
+func TestVolumeTail(t *testing.T) {
+	a := &App{width: 80, playlist: newPlaylist()}
+	a.state.Volume = 0.9
+	if got := stripANSI(a.volumeTail()); got != " · volume 90%" {
+		t.Fatalf("volumeTail = %q; want the readout", got)
+	}
+	// Muted with a track: the mute hint owns the row; the tail would
+	// repeat it.
+	a.state = contract.State{Track: contract.Track{ID: "A", Title: "A"}, Volume: 0}
+	if got := a.volumeTail(); got != "" {
+		t.Fatalf("muted volumeTail = %q; want suppressed", stripANSI(got))
+	}
+	// Volume zero with no track: no hint to ride on, so the readout stays.
+	a.state = contract.State{Volume: 0}
+	if got := stripANSI(a.volumeTail()); got != " · volume 0%" {
+		t.Fatalf("idle volumeTail = %q; want the readout", got)
+	}
+	// The confirmation itself: no doubled readout…
+	a.state.Volume = 0.9
+	a.status = "volume 90%"
+	a.statusKind = statusInfo
+	a.statusOn = screenPlayer
+	if got := a.volumeTail(); got != "" {
+		t.Fatalf("confirmation volumeTail = %q; want suppressed", stripANSI(got))
+	}
+	// …but the same wording raised on another screen keeps the tail.
+	a.statusOn = screenLibrary
+	if got := stripANSI(a.volumeTail()); got != " · volume 90%" {
+		t.Fatalf("foreign-screen volumeTail = %q; want the readout", got)
+	}
+	// …and so does a "volume" message at a non-info severity.
+	a.statusOn = screenPlayer
+	a.statusKind = statusWarn
+	if got := stripANSI(a.volumeTail()); got != " · volume 90%" {
+		t.Fatalf("warn-severity volumeTail = %q; want the readout", got)
 	}
 }

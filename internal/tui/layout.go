@@ -7,9 +7,16 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// fixedRows is the number of rows outside the visualizer the player screen
-// reserves: title, separator, status, progress, queue, help.
-const fixedRows = 6
+// headerRows is the wordmark header's row count: six — the drawing's top
+// and bottom rules, the title, the band, the album and the time. The
+// single-row title is the only narrower form. headerRows + footerRows is
+// the player screen's fixed floor: the minimum height is 10 rows because
+// the view must equal the terminal height, or the frame tears.
+const headerRows = 6
+
+// footerRows is the player footer's row count: status, check-out link,
+// up-next preview and the keybinding hints.
+const footerRows = 4
 
 // spinFrames is the braille spinner the building line cycles through on the
 // render tick: steady motion, so a cold build never reads as a hung screen.
@@ -58,75 +65,215 @@ func place(w int, s string) string {
 	return strings.Join(lines, "\n")
 }
 
-// viewPlayer assembles the player screen: title, separator, the visualizer
-// region, then status, progress, queue and help — or just title plus
-// visualizer in fullscreen.
+// viewPlayer assembles the player screen: the header block, the
+// visualizer region, then the four footer rows — or just header and
+// visualizer in fullscreen (it drops the footer, not the wordmark). The
+// view is exactly the terminal's size: header and footer reserve their
+// rows, the visualizer gets the rest, and when the terminal is too
+// small for the floor the layout is the tooSmall notice rather than a
+// torn frame.
 func (a *App) viewPlayer() string {
 	w, h := a.width, a.height
-	if w < 30 || h < 8 {
-		// Short on purpose: below the 30-column minimum the notice has to
-		// fit the very terminal it is apologising for, so it names the
-		// app and the requirement ("bc-radio needs 30 × 8") and nothing
-		// else — the longer wording ellipsised its own tail at 25 columns.
-		return tooSmall(w, h, "bc-radio needs 30 × 8")
+	if w < 30 || h < headerRows+footerRows {
+		// Short on purpose: below the 30-column, 10-row floor the notice
+		// has to fit the very terminal it is apologising for, so it
+		// names the app and the requirement ("bc-radio needs 30 × 10")
+		// and nothing else — the longer wording ellipsised its own tail
+		// at 25 columns.
+		return tooSmall(w, h, "bc-radio needs 30 × 10")
 	}
-	// Fullscreen keeps the title and separator rows, so the visualizer gets
-	// everything but those two.
-	visH := h - fixedRows
-	if a.fullscreen {
-		visH = h - 2
+	header := a.playerHeader()
+	fixed := len(header)
+	if !a.fullscreen {
+		fixed += footerRows
 	}
-	if visH < 1 {
-		visH = 1
-	}
-	lines := []string{
-		a.renderTitle(),
-		place(w, styleDim.Render(strings.Repeat("─", w))),
-		place(w, a.visualizers[a.visIdx].Render(frame{bands: a.bands, scope: a.scope, w: w, h: visH})),
+	visH := h - fixed
+	lines := append([]string(nil), header...)
+	if visH >= 1 {
+		lines = append(lines,
+			place(w, a.visualizers[a.visIdx].Render(frame{bands: a.bands, scope: a.scope, w: w, h: visH})))
 	}
 	if !a.fullscreen {
 		lines = append(lines,
 			place(w, a.renderStatus()),
-			place(w, a.renderProgress()),
-			place(w, a.renderQueue()),
+			place(w, a.checkOutRow()),
+			place(w, a.upNextRow()),
 			place(w, a.renderHelp()),
 		)
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
-// titleFixed is the title row's fixed cells: the app name with its gap, the
-// transport verb (2 only when a track is loaded), and the volume readout.
-// The name fields get whatever is left, so the volume can never be the part
-// that is cut at the terminal edge (F9).
-func titleFixed(withTrack bool) int {
-	n := 11 + 11 // "bc-radio   " + "   vol %3d%%"
-	if withTrack {
-		n += 2 // "▶ " or "⏸ "
+// playerHeader renders the player screen's header block: the 48-cell
+// wordmark with its right-justified info block (title, band, album,
+// time) when the terminal is wide enough, and the single-row title
+// below that. It returns the block's rows, so the caller hands the
+// visualizer exactly the rows that remain.
+func (a *App) playerHeader() []string {
+	if a.width >= wordmarkWidth {
+		arts := wordmarkRows()
+		rows := make([]string, headerRows)
+		rows[0] = a.headerArtRow(arts[0])
+		rows[1] = a.headerInfoRow(arts[1], a.headerTrackRow())
+		rows[2] = a.headerInfoRow(arts[2], a.headerBandRow())
+		rows[3] = a.headerInfoRow(arts[3], a.headerAlbumRow())
+		rows[4] = a.headerInfoRow(arts[4], a.headerTimeRow())
+		rows[5] = a.headerArtRow(arts[5])
+		return rows
 	}
-	return n
+	return []string{a.narrowTitle()}
 }
 
-// renderTitle is the top row: app name, transport glyph, now playing,
-// volume. The now-playing fields are allocated a share of the middle and
-// clipped inside their share (the way the library columns clip), so a long
-// title ellipses in the middle of the row instead of silently costing the
-// volume readout at the edge.
-func (a *App) renderTitle() string {
+// headerArtRow renders the wordmark's top or bottom rule: the drawing in
+// the accent, then dim dashes to the terminal edge — the art begins and
+// ends on a run of ─, so the fill reads as the rule continuing.
+func (a *App) headerArtRow(art string) string {
+	fill := a.width - wordmarkWidth
+	if fill < 0 {
+		fill = 0
+	}
+	return styleAccentB.Render(art) + styleDim.Render(strings.Repeat("─", fill))
+}
+
+// headerMax is the info block's cell budget: the terminal minus the
+// wordmark and the three-dash gap minimum. It floors at zero at the
+// 48-cell minimum, where the drawing owns the row and the content earns
+// cells as the terminal widens.
+func (a *App) headerMax() int {
+	m := a.width - wordmarkWidth - 3
+	if m < 0 {
+		m = 0
+	}
+	return m
+}
+
+// headerInfoRow assembles one info-block row: the wordmark, a dim dash
+// gap (at least three cells, filling the rest), and the content pinned
+// to the terminal's right edge. The final MaxWidth is a safety net for a
+// content budget that overruns a very narrow wide-layout terminal.
+func (a *App) headerInfoRow(art, content string) string {
+	gap := a.width - wordmarkWidth - lipgloss.Width(content)
+	if gap < 3 {
+		gap = 3
+	}
+	row := styleAccentB.Render(art) + styleDim.Render(strings.Repeat("─", gap)) + content
+	return lipgloss.NewStyle().MaxWidth(a.width).Render(row)
+}
+
+// idleStartHint names what space would actually start: the queue beats
+// the radio in Start, and the radio needs its index (space while the
+// walk is still building starts nothing). Shared by the header's title
+// row and the narrow single-row title.
+func (a *App) idleStartHint() string {
+	switch {
+	case len(a.playlist.Queue()) > 0:
+		return "nothing playing — press space to play the queue"
+	case a.playlist.radio && len(a.playlist.Index()) > 0:
+		return "nothing playing — press space to start the radio"
+	}
+	return "nothing playing — open the library (l)"
+}
+
+// headerTrackRow is the info block's first row: the transport verb and
+// the quoted title — or the idle affordance when nothing is playing, so
+// the art is never a silent rectangle.
+func (a *App) headerTrackRow() string {
+	st := a.state
+	if st.Track.Title == "" {
+		return styleDim.Render(clip(a.idleStartHint(), a.headerMax()))
+	}
+	verb := "▶"
+	if !st.Playing {
+		verb = "⏸"
+	}
+	titleW := a.headerMax() - 4 // "▶ " and the two quotes
+	if titleW < 1 {
+		titleW = 1
+	}
+	return styleDim.Render(verb+" ") + styleAccent.Render("'"+clip(st.Track.Title, titleW)+"'")
+}
+
+// headerBandRow is the info block's second row: the band, dim, hanging
+// under the title.
+func (a *App) headerBandRow() string {
+	if a.state.Track.BandName == "" {
+		return ""
+	}
+	bw := a.headerMax() - 6 // "   by "
+	if bw < 1 {
+		bw = 1
+	}
+	return styleDim.Render("   by " + clip(a.state.Track.BandName, bw))
+}
+
+// headerAlbumRow is the info block's third row: the album, dim, hanging
+// under the band.
+func (a *App) headerAlbumRow() string {
+	if a.state.Track.AlbumTitle == "" {
+		return ""
+	}
+	aw := a.headerMax() - 8 // "   on " and the two quotes
+	if aw < 1 {
+		aw = 1
+	}
+	return styleDim.Render("   on '" + clip(a.state.Track.AlbumTitle, aw) + "'")
+}
+
+// headerTimeRow is the info block's fourth row: the position bar — the
+// elapsed time, the filled/empty bar, the track percent and the total.
+// With an unknown duration only the elapsed time shows.
+func (a *App) headerTimeRow() string {
+	st := a.state
+	if st.Track.Title == "" {
+		return ""
+	}
+	cur := formatDuration(int(a.pos.Seconds()))
+	if st.Track.Duration <= 0 {
+		return styleDim.Render(" ∿ " + cur)
+	}
+	dur := formatDuration(int(st.Track.Duration.Seconds()))
+	suffix := fmt.Sprintf(" (%d%%)", int(a.pos.Seconds()/st.Track.Duration.Seconds()*100+0.5))
+	prefix := " ∿ " + cur + " / " + dur + " "
+	bar := ""
+	barW := a.headerMax() - lipgloss.Width(prefix) - lipgloss.Width(suffix)
+	if barW >= 1 {
+		frac := a.pos.Seconds() / st.Track.Duration.Seconds()
+		if frac < 0 {
+			frac = 0
+		}
+		if frac > 1 {
+			frac = 1
+		}
+		filled := int(frac*float64(barW) + 0.5)
+		bar = styleVisual.Render(strings.Repeat("━", filled)) +
+			styleDim.Render(strings.Repeat("─", barW-filled))
+	}
+	return styleDim.Render(prefix) + bar + styleDim.Render(suffix)
+}
+
+// narrowTitle is the single-row title for terminals narrower than the
+// wordmark: app name, transport glyph, now playing — the volume reads
+// in the footer's status tail, so the row carries no volume field. The
+// now-playing fields are allocated a share of the middle and clipped
+// inside their share (the way the library columns clip), so a long title
+// ellipses in the middle of the row instead of running off the edge.
+func (a *App) narrowTitle() string {
 	st := a.state
 	var sb strings.Builder
 	sb.WriteString(styleAccentB.Render("bc-radio"))
 	sb.WriteString(styleDim.Render("   "))
+	fixed := 11 // "bc-radio   "
 	if st.Track.Title != "" {
 		verb := "▶"
 		if !st.Playing {
 			verb = "⏸"
 		}
 		sb.WriteString(styleAccentB.Render(verb + " "))
+		fixed += 2 // "▶ " or "⏸ "
 		// band : title : album as 2 : 3 : 2 of what the separators leave —
 		// the title is the field that overflows in practice, so it gets
 		// the largest share.
-		mid := a.width - titleFixed(true)
+		mid := a.width - fixed
 		if mid < 6 {
 			mid = 6
 		}
@@ -153,13 +300,12 @@ func (a *App) renderTitle() string {
 			sb.WriteString(styleAccent.Render(clip(st.Track.Title, cw-bw)))
 		}
 	} else {
-		mid := a.width - titleFixed(false)
+		mid := a.width - fixed
 		if mid < 1 {
 			mid = 1
 		}
-		sb.WriteString(styleDim.Render(clip("nothing playing — open the library (l)", mid)))
+		sb.WriteString(styleDim.Render(clip(a.idleStartHint(), mid)))
 	}
-	sb.WriteString(styleDim.Render(fmt.Sprintf("   vol %3d%%", int(st.Volume*100+0.5))))
 	return place(a.width, sb.String())
 }
 
@@ -191,17 +337,45 @@ func styleForStatus(k statusKind) lipgloss.Style {
 // visualizer back.
 const muteSuffix = " — muted: +/− raises the volume"
 
-// renderStatus composes the player's status row. A transient is only this
-// row's when it was raised on this screen (statusOn) — one set on the
-// library must not surface here, and the standing line takes the row
-// instead. At volume zero the mute hint owns the row over an *info*
-// transient: the "volume 0%" confirmation is redundant with the vol
-// readout in the title row, while the hint explains the blank visualizer —
-// the exact moment it is needed most. A warn or bad transient keeps the row
-// (an alarm is never masked by a hint); the hint rides at its tail, where a
-// wide line clips the hint first, never the alarm. With neither, the radio's
-// standing line. The style comes from the severity recorded when the
-// message was raised, never from its words.
+// volumeTail is the status row's dim volume readout: the volume is
+// read once, here, so the header carries no volume field. The tail is
+// omitted when muted (the mute hint already says the volume is down)
+// and for the "volume N%" confirmation itself (that would read "volume
+// 90% · volume 90%").
+func (a *App) volumeTail() string {
+	if a.state.Volume < 0.001 && a.state.Track.Title != "" {
+		return ""
+	}
+	if a.status != "" && a.statusOn == screenPlayer &&
+		a.statusKind == statusInfo && strings.HasPrefix(a.status, "volume ") {
+		return ""
+	}
+	return styleDim.Render(fmt.Sprintf(" · volume %d%%", int(a.state.Volume*100+0.5)))
+}
+
+// statusRow appends the volume tail, clipping the message to the width
+// left so the readout at the edge stays whole.
+func (a *App) statusRow(msg string) string {
+	tail := a.volumeTail()
+	if tail == "" {
+		return msg
+	}
+	return lipgloss.NewStyle().MaxWidth(a.width-lipgloss.Width(tail)).Render(msg) + tail
+}
+
+// renderStatus composes the player's status row (the footer's first):
+// the severity-coloured message and the dim volume tail, where one
+// applies. A transient is only this row's when it was raised on this
+// screen (statusOn) — one set on the library must not surface here, and
+// the standing line takes the row instead. At volume zero the mute hint
+// owns the row over an *info* transient: the "volume 0%" confirmation
+// is redundant with the tail, while the hint explains the blank
+// visualizer — the exact moment it is needed most. A warn or bad
+// transient keeps the row (an alarm is never masked by a hint); the
+// hint rides at its tail, where a wide line clips the hint first, never
+// the alarm. With neither, the radio's standing line. The style comes
+// from the severity recorded when the message was raised, never from its
+// words.
 func (a *App) renderStatus() string {
 	transient := ""
 	kind := statusInfo
@@ -209,8 +383,7 @@ func (a *App) renderStatus() string {
 		transient = a.status
 		kind = a.statusKind
 	}
-	muted := a.state.Volume < 0.001 && a.state.Track.Title != ""
-	if muted {
+	if a.state.Volume < 0.001 && a.state.Track.Title != "" {
 		base := styleForStatus(statusOfIndex(a.indexState)).Render(a.indexLine())
 		if transient == "" || kind == statusInfo {
 			return base + styleAccent.Render(muteSuffix)
@@ -218,9 +391,9 @@ func (a *App) renderStatus() string {
 		return styleForStatus(kind).Render(transient) + styleAccent.Render(muteSuffix)
 	}
 	if transient != "" {
-		return styleForStatus(kind).Render(transient)
+		return a.statusRow(styleForStatus(kind).Render(transient))
 	}
-	return styleForStatus(statusOfIndex(a.indexState)).Render(a.indexLine())
+	return a.statusRow(styleForStatus(statusOfIndex(a.indexState)).Render(a.indexLine()))
 }
 
 // indexLine is the standing status-row content: the radio's state and the
@@ -256,79 +429,66 @@ func (a *App) buildingLine() string {
 	return spinFrames[a.spin%len(spinFrames)] + " " + line
 }
 
-// renderProgress is the position bar: 1:23 ━━━━──── 4:56.
-func (a *App) renderProgress() string {
-	st := a.state
-	if st.Track.Title == "" {
-		// Idle: say what space will do — the radio is the app's primary
-		// action, and the idle screen otherwise points only at the library.
-		// Name only what space would actually start: the queue beats the
-		// radio in Start, and the radio needs its index (space while the
-		// index is still building starts nothing).
-		switch {
-		case len(a.playlist.Queue()) > 0:
-			return styleDim.Render("  waiting — press space to play the queue")
-		case a.playlist.radio && len(a.playlist.Index()) > 0:
-			return styleDim.Render("  waiting — press space to start the radio")
-		}
-		return styleDim.Render("  waiting")
+// checkOutRow is the footer's second row: where the playing track's band
+// lives on Bandcamp, so a listener can find the release to support. All
+// dim; blank when nothing with a band name is playing. The band clips to
+// fit, the URL stays whole.
+func (a *App) checkOutRow() string {
+	t := a.state.Track
+	if t.Title == "" || t.BandName == "" {
+		return ""
 	}
-	var sb strings.Builder
-	sb.WriteString(styleDim.Render("  "))
-	sb.WriteString(styleText.Render(formatDuration(int(a.pos.Seconds()))))
-	if st.Track.Duration > 0 {
-		barW := a.width/2 - 12
-		if barW < 10 {
-			barW = 10
-		}
-		frac := a.pos.Seconds() / st.Track.Duration.Seconds()
-		if frac < 0 {
-			frac = 0
-		}
-		if frac > 1 {
-			frac = 1
-		}
-		filled := int(frac*float64(barW) + 0.5)
-		sb.WriteString(styleVisual.Render(strings.Repeat("━", filled)))
-		sb.WriteString(styleDim.Render(strings.Repeat("─", barW-filled)))
-		sb.WriteString(styleText.Render(" " + formatDuration(int(st.Track.Duration.Seconds()))))
+	urlPart := ""
+	if t.Subdomain != "" {
+		urlPart = " at https://" + t.Subdomain + "/"
 	}
-	return sb.String()
+	const prefix = "├─ Check out "
+	bandW := a.width - len(prefix) - len(urlPart)
+	if bandW < 1 {
+		bandW = 1
+	}
+	row := prefix + clip(t.BandName, bandW) + urlPart
+	return styleDim.Render(lipgloss.NewStyle().MaxWidth(a.width).Render(row))
 }
 
-// renderQueue previews the head of the queue.
-func (a *App) renderQueue() string {
+// upNextRow is the footer's third row: what plays next — the head of the
+// queue when there is one, otherwise what the radio draws (or the
+// library, when the radio has no pool). The title is accent and shrinks
+// first on overflow; the band and album ride dim at its tail.
+func (a *App) upNextRow() string {
+	const prefix = "└─ Up next: "
 	q := a.playlist.Queue()
-	var sb strings.Builder
-	sb.WriteString(styleDimB.Render("  up next "))
 	if len(q) == 0 {
+		msg := "open the library (l) to queue tracks"
 		if a.playlist.radio && len(a.playlist.Index()) > 0 {
-			sb.WriteString(styleDim.Render(" — the radio plays next"))
-		} else {
-			sb.WriteString(styleDim.Render(" — add tracks from the library (l)"))
+			msg = "the radio plays next"
 		}
-		return sb.String()
+		return styleDim.Render(prefix + msg)
 	}
-	max := len(q)
-	if max > 3 {
-		max = 3
+	t := q[0]
+	bandPart := ""
+	if t.BandName != "" {
+		bandPart = " by " + clip(t.BandName, 20)
 	}
-	for i := 0; i < max; i++ {
-		t := q[i]
-		sb.WriteString(styleAccent.Render(clip(t.Title, 24)))
-		sb.WriteString(styleDim.Render(" — " + clip(t.BandName, 20) + "   "))
+	albumPart := ""
+	if t.AlbumTitle != "" {
+		albumPart = " from '" + clip(t.AlbumTitle, 20) + "'"
 	}
-	if len(q) > 3 {
-		sb.WriteString(styleDim.Render(fmt.Sprintf("+%d more", len(q)-3)))
+	titleW := a.width - len(prefix) - len(bandPart) - len(albumPart) - 2 // the two quotes
+	if titleW < 1 {
+		titleW = 1
 	}
-	return sb.String()
+	row := styleAccent.Render(prefix+"'"+clip(t.Title, titleW)+"'") +
+		styleDim.Render(bandPart+albumPart)
+	return lipgloss.NewStyle().MaxWidth(a.width).Render(row)
 }
 
-// hint is one keybinding on a bottom help row: its text and how much it
-// matters. fitHints drops the least important hints first when the row
-// cannot fit the terminal width.
+// hint is one keybinding on a bottom help row: its key, its description,
+// and how much it matters. fitHints drops the least important hints first
+// when the row cannot fit the terminal width.
 type hint struct {
-	text     string
+	key      string
+	desc     string
 	priority int
 }
 
@@ -337,33 +497,36 @@ type hint struct {
 // how to quit or open the help overlay is worse than a short one.
 const mustKeepHint = 100
 
-// fitHints joins the hints with sep (after a leading space) and, while the
-// result is wider than w cells, drops one whole hint at a time, the lowest
-// priority first. Display order is preserved, so the keys read in the same
-// order at every width, and no surviving key or label is ever cut
-// mid-word. That is the point: the alternative (letting place() MaxWidth-
-// cut the static row) silently hides whatever keys sit past the terminal
-// edge — at 80 columns the old player row lost "l library", "+/− vol",
-// "? help" and "q quit" to it. If even the must-keep hints do not fit, the
-// row is clipped with an ellipsis rather than overflowing the row width
-// the layout relies on.
+// fitHints joins the hints with sep and, while the result is wider than w
+// cells, drops one whole hint at a time, the lowest priority first.
+// Display order is preserved, so the keys read in the same order at every
+// width, and no surviving key or label is ever cut mid-word. That is the
+// point: the alternative (letting place() MaxWidth-cut the static row)
+// silently hides whatever keys sit past the terminal edge — at 80 columns
+// the old player row lost "l library", "+/- vol", "? help" and "q quit"
+// to it. If even the must-keep hints do not fit, the row is clipped
+// (ANSI-aware, with no ellipsis to spare cells for) rather than
+// overflowing the row width the layout relies on.
 func fitHints(w int, sep string, hints ...hint) string {
-	join := func(hs []hint) string {
-		s := " "
-		for i, h := range hs {
-			if i > 0 {
-				s += sep
-			}
-			s += h.text
-		}
-		return s
+	cell := func(h hint) string {
+		return styleAccentB.Render(h.key) + styleDim.Render(" "+h.desc)
 	}
 	// Copy: the drop loop rewrites the slice in place, and the caller's
 	// backing array must not be clobbered (the hints are usually a
 	// freshly built variadic slice, but a reused one would be corrupted).
 	live := make([]hint, len(hints))
 	copy(live, hints)
-	for lipgloss.Width(join(live)) > w {
+	width := func(hs []hint) int {
+		n := 0
+		for i, h := range hs {
+			if i > 0 {
+				n += len(sep)
+			}
+			n += lipgloss.Width(cell(h))
+		}
+		return n
+	}
+	for width(live) > w {
 		drop := -1
 		for i, h := range live {
 			if h.priority < mustKeepHint && (drop == -1 || h.priority < live[drop].priority) {
@@ -375,27 +538,36 @@ func fitHints(w int, sep string, hints ...hint) string {
 		}
 		live = append(live[:drop], live[drop+1:]...)
 	}
-	return styleDim.Render(clip(join(live), w))
+	var sb strings.Builder
+	for i, h := range live {
+		if i > 0 {
+			sb.WriteString(sep)
+		}
+		sb.WriteString(cell(h))
+	}
+	return lipgloss.NewStyle().MaxWidth(w).Render(sb.String())
 }
 
 // renderHelp is the player's bottom keybinding hint row, fitted to the
-// terminal width. The transport keys, the radio (the app's identity) and
-// the library drop in that order; shuffle, repeat, volume, the visualizer
-// and fullscreen are the first casualties, quit and help never drop.
+// terminal width. The keys read in the app's house style: the key in the
+// bold accent, the description in dim. The transport keys, the radio (the
+// app's identity) and the library drop in that order; shuffle, repeat,
+// volume, the visualizer and fullscreen are the first casualties, quit and
+// help never drop.
 func (a *App) renderHelp() string {
 	return fitHints(a.width, "  ",
-		hint{"space play/pause", 90},
-		hint{"n next", 85},
-		hint{"p prev", 70},
-		hint{"s shuffle", 40},
-		hint{"r repeat", 45},
-		hint{"d radio", 80},
-		hint{"v visual", 30},
-		hint{"f fullscreen", 20},
-		hint{"l library", 60},
-		hint{"+/− vol", 35},
-		hint{"? help", mustKeepHint},
-		hint{"q quit", mustKeepHint},
+		hint{"space", "play/pause", 90},
+		hint{"n", "next", 85},
+		hint{"p", "prev", 70},
+		hint{"s", "shuffle", 40},
+		hint{"r", "repeat", 45},
+		hint{"d", "radio", 80},
+		hint{"v", "visual", 30},
+		hint{"f", "fullscreen", 20},
+		hint{"l", "library", 60},
+		hint{"+/-", "vol", 35},
+		hint{"?", "help", mustKeepHint},
+		hint{"q", "quit", mustKeepHint},
 	)
 }
 
@@ -409,11 +581,11 @@ func (a *App) renderHelp() string {
 // stay whole; the select/queue hints are the last to go.
 func (a *App) renderLibraryHelp() string {
 	return fitHints(a.width, "   ",
-		hint{"↑/↓ select", 90},
-		hint{"←/→ column", 80},
-		hint{"enter queue (starts if idle)", 85},
-		hint{"x remove from queue", 50},
-		hint{"l or esc back", 60},
+		hint{"↑/↓", "select", 90},
+		hint{"←/→", "column", 80},
+		hint{"enter", "queue (starts if idle)", 85},
+		hint{"x", "remove from queue", 50},
+		hint{"l or esc", "back", 60},
 	)
 }
 

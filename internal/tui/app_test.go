@@ -348,9 +348,9 @@ func TestViewTooSmall(t *testing.T) {
 	if w != 20 || h != 4 {
 		t.Fatalf("tiny view is %dx%d; want 20x4", w, h)
 	}
-	// The notice is deliberately short ("bc-radio needs 30 × 8") so it
+	// The notice is deliberately short ("bc-radio needs 30 × 10") so it
 	// displays in full even below the minimum width: at 20 columns the
-	// ellipsis eats only the trailing "× 8".
+	// ellipsis eats only the trailing "× 10".
 	if got := stripANSI(v); !strings.Contains(got, "bc-radio") || !strings.Contains(got, "needs 30") {
 		t.Fatalf("tiny view should name the app and its minimum size: %q", got)
 	}

@@ -6,8 +6,8 @@
 //   - the queue policy — shuffle, repeat, history, the pool that repeat
 //     loops, and the radio: a random pick from the flat index of every
 //     followed band (playlist.go);
-//   - the two screens — the player (title, visualizer, progress, queue
-//     preview, controls) and the three-column library browser
+//   - the two screens — the player (wordmark header, visualizer, status
+//     and footer rows, controls) and the three-column library browser
 //     (layout.go, library.go);
 //   - the four visualizers — the band-driven spectrum, particles and radial,
 //     and the sample-driven scope (visualizer.go and the visual_*.go files);
