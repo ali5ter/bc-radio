@@ -91,16 +91,18 @@ func signedURLExpiry(u string) time.Time {
 // The resolution chain, per the verified stream-URL lifecycle:
 //
 //  1. the in-memory URL cache, while the signed URL is still valid;
-//  2. the album page (disk page cache), re-parsing data-tralbum;
-//  3. a forced fresh album-page fetch, when the cached page's URL has
-//     already expired;
+//  2. the release page (disk page cache) — the album page for an album
+//     track, the /track/ page for a single — re-parsing data-tralbum;
+//  3. a forced fresh page fetch, when the cached page's URL has already
+//     expired;
 //  4. if the stream fetch itself fails, the URL is invalidated and the
 //     chain runs once more.
 //
-// A track must carry its location (Subdomain host + AlbumSlug + ID); a
-// track built anywhere else is rejected with a clear error.
+// A track must carry its location (Subdomain host + a release slug of
+// either kind + ID); a track built anywhere else is rejected with a
+// clear error.
 func (c *Client) Open(ctx context.Context, t contract.Track) (contract.AudioStream, error) {
-	if t.Subdomain == "" || t.AlbumSlug == "" || t.ID == "" {
+	if t.Subdomain == "" || (t.AlbumSlug == "" && t.TrackSlug == "") || t.ID == "" {
 		return contract.AudioStream{}, fmt.Errorf(
 			"bandcamp: track %q carries no location (subdomain/slug/id); only tracks built by this client can be opened", t.Title)
 	}
@@ -141,7 +143,7 @@ func urlKeyFor(t contract.Track) (urlKey, error) {
 
 // streamURL returns a currently valid signed stream URL for a track.
 //
-// Resolution is: URL cache, then the album page (via the disk page cache
+// Resolution is: URL cache, then the release page (via the disk page cache
 // unless force is set), then the URL cache again. If the page parses but
 // carries no usable URL for the track — the signature expired while the
 // page sat in the cache, or the release is private or removed — and force
@@ -159,7 +161,7 @@ func (c *Client) streamURL(ctx context.Context, t contract.Track, key urlKey, fo
 			return u, nil
 		}
 	}
-	pageURL := c.pageURL(t.Subdomain, "/album/"+t.AlbumSlug)
+	pageURL := c.pageURL(t.Subdomain, releasePagePath(t))
 	var (
 		page string
 		err  error
@@ -167,7 +169,7 @@ func (c *Client) streamURL(ctx context.Context, t contract.Track, key urlKey, fo
 	if force {
 		page, err = c.freshPage(ctx, pageURL)
 	} else {
-		page, err = c.getHTML(ctx, pageURL, false)
+		page, _, err = c.getHTML(ctx, pageURL, false)
 	}
 	if err != nil {
 		return "", err
@@ -203,11 +205,11 @@ func (c *Client) streamURL(ctx context.Context, t contract.Track, key urlKey, fo
 // get the fresh page (with its freshly signed URLs) instead of the stale
 // one.
 func (c *Client) freshPage(ctx context.Context, u string) (string, error) {
-	page, err := c.fetchHTML(ctx, cacheBust(u))
+	page, final, err := c.fetchHTML(ctx, cacheBust(u))
 	if err != nil {
 		return "", err
 	}
-	c.cache.put(u, page)
+	c.cache.put(u, page, final)
 	return page, nil
 }
 
@@ -221,7 +223,7 @@ func cacheBust(u string) string {
 	return u + sep + "_=" + strconv.FormatInt(time.Now().UnixNano(), 10)
 }
 
-// resolveFromPage parses an album page, caches every signed stream URL it
+// resolveFromPage parses a release page, caches every signed stream URL it
 // finds, and reports whether the target track now has a usable one. A
 // (zero, false, nil) result means the page parsed but had nothing usable
 // for the track.
@@ -237,9 +239,19 @@ func (c *Client) resolveFromPage(t contract.Track, key urlKey, page string) (str
 	return u, ok, nil
 }
 
-// noValidStreamURL is the error reported when even a freshly fetched album
-// page carries no usable stream URL for a track.
+// releasePagePath is the page path that carries t's stream URL: the
+// album page for an album track, the /track/ page for a single (the
+// single's own page is its data-tralbum source).
+func releasePagePath(t contract.Track) string {
+	if t.TrackSlug != "" {
+		return "/track/" + t.TrackSlug
+	}
+	return "/album/" + t.AlbumSlug
+}
+
+// noValidStreamURL is the error reported when even a freshly fetched
+// release page carries no usable stream URL for a track.
 func noValidStreamURL(t contract.Track) error {
-	return fmt.Errorf("bandcamp: no valid stream URL for %q (%s/album/%s); the release may be private or removed",
-		t.Title, t.Subdomain, t.AlbumSlug)
+	return fmt.Errorf("bandcamp: no valid stream URL for %q (%s%s); the release may be private or removed",
+		t.Title, t.Subdomain, releasePagePath(t))
 }

@@ -188,7 +188,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case tea.WindowSizeMsg:
 		a.width, a.height = m.Width, m.Height
-		a.browser.viewH = a.height - 3 // title, columns, help
+		// The library's column viewport: the wordmark header, the blank
+		// row, the section title and the help row are fixed, the columns
+		// take the rest (the -4 is the same arithmetic viewLibrary uses
+		// for its body rows).
+		a.browser.viewH = a.height - headerRows - 4
 		return a, nil
 
 	case tea.BackgroundColorMsg:
@@ -229,6 +233,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		skipFrom := a.skipFrom
 		a.skipFrom = contract.Track{}
 		if m.err != nil {
+			// A failed start may have consumed the radio's prepared draw
+			// (Start does); redraw it so the footer previews something.
+			a.playlist.prepareRadioNext()
 			a.statusfBad("playback failed: %v", m.err)
 			return a, nil
 		}
@@ -238,6 +245,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.pos = 0
 		a.statusf("now: %s — %s", m.track.BandName, m.track.Title)
 		a.syncNext()
+		a.playlist.prepareRadioNext()
 		return a, nil
 
 	case artistsMsg:
@@ -326,6 +334,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case indexMsg:
 		a.indexDone, a.indexTotal = 0, 0
 		a.playlist.SetIndex(m.tracks)
+		a.playlist.prepareRadioNext()
 		switch {
 		case m.err != nil && len(m.tracks) == 0:
 			a.indexState = indexFailed
@@ -339,6 +348,20 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			a.indexState = indexReady
 			a.statusf("track index: %d tracks from %d bands", len(m.tracks), a.playlist.IndexBands())
+		}
+		// The autoplay (issue #16): the index is the radio's fuel, and the
+		// radio is on by default — when it lands with the engine idle, the
+		// radio starts without a keypress. The index status above explains
+		// the start, and the loadedMsg's "now:" names the track when the
+		// stream lands. A failed or empty walk keeps the v1.0 silence rule:
+		// the hint stands, and the user's space starts it.
+		if a.indexState == indexReady && a.playlist.radio &&
+			len(a.playlist.Index()) > 0 && !a.pendingLoad && a.state.Track.ID == "" {
+			if t, ok := a.playlist.Start(); ok {
+				a.pendingLoad = true
+				a.skipFrom = contract.Track{}
+				return a, a.loadCmd(t)
+			}
 		}
 		return a, nil
 
@@ -361,14 +384,17 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (a *App) View() tea.View {
-	var s string
-	switch {
-	case a.help:
-		s = a.viewHelp()
-	case a.screen == screenLibrary:
-		s = a.viewLibrary()
-	default:
-		s = a.viewPlayer()
+	var base string
+	if a.screen == screenLibrary {
+		base = a.viewLibrary()
+	} else {
+		base = a.viewPlayer()
+	}
+	// The help overlay composites over the live screen (issue #19): the
+	// modal centred on top, the playback visible around it.
+	s := base
+	if a.help {
+		s = a.composeHelp(base, a.viewHelp())
 	}
 	v := tea.NewView(s)
 	v.AltScreen = true
@@ -590,6 +616,7 @@ func (a *App) onEvent(ev contract.Event) {
 		}
 		a.statusf("now: %s — %s", ev.Track.BandName, ev.Track.Title)
 		a.syncNext()
+		a.playlist.prepareRadioNext()
 	case contract.EventTrackEnded:
 		if st.Track.ID != "" {
 			// The engine advanced to its prepared track; the TrackStarted
@@ -609,13 +636,17 @@ func (a *App) onEvent(ev contract.Event) {
 }
 
 // autoAdvance picks the next track for an idle engine and starts it. A
-// failed track is never retried: with a one-track pool the policy would
-// hand it straight back, so that case ends the queue instead.
+// failed track is never retried: the repeat-one branch (or the queue head)
+// could hand it straight back, so that case ends the run instead — keeping
+// the failure status the caller already raised rather than overwriting it
+// with "end of queue", which would hide why the run stopped.
 func (a *App) autoAdvance(ended contract.Track, failErr error) {
 	a.playlist.OnEnded()
 	t, ok := a.playlist.Next()
 	if !ok {
-		a.statusf("end of queue")
+		if failErr == nil {
+			a.statusf("end of queue")
+		}
 		return
 	}
 	if failErr != nil && t.ID == ended.ID {
@@ -625,6 +656,7 @@ func (a *App) autoAdvance(ended contract.Track, failErr error) {
 	a.statusf("now: %s — %s", t.BandName, t.Title)
 	a.player.Queue(t) // idle engine: starts at once
 	a.engineNextID = ""
+	a.playlist.prepareRadioNext()
 }
 
 // handleKey dispatches a key action to the right screen.
@@ -657,9 +689,11 @@ func (a *App) handlePlayerKey(act action) tea.Cmd {
 		a.statusfBrief("shuffle %s", onOff(a.playlist.shuffle))
 	case actRepeat:
 		a.playlist.repeat = !a.playlist.repeat
+		a.playlist.prepareRadioNext()
 		a.statusfBrief("repeat %s", onOff(a.playlist.repeat))
 	case actRadio:
 		a.playlist.radio = !a.playlist.radio
+		a.playlist.prepareRadioNext()
 		a.statusfBrief("radio %s", onOff(a.playlist.radio))
 	case actVisual:
 		a.visIdx = (a.visIdx + 1) % len(a.visualizers)
@@ -705,27 +739,35 @@ func (a *App) setVolume(v float64) {
 	a.statusfBrief("volume %d%%", int(v*100+0.5))
 }
 
+// startFromIdle starts whatever the policy says comes first for an idle
+// engine (queue head, then repeat-one, then the radio) and reports it: the
+// shared body of space and of the autoplay when the index lands. A start
+// that cannot happen raises the hint that names what space would do.
+func (a *App) startFromIdle() tea.Cmd {
+	if a.pendingLoad {
+		return nil // a start is already in flight; the radio re-picks on failure
+	}
+	if t, ok := a.playlist.Start(); ok {
+		a.pendingLoad = true
+		a.skipFrom = contract.Track{}
+		a.statusf("play: %s — %s", t.BandName, t.Title)
+		return a.loadCmd(t)
+	}
+	if a.playlist.radio {
+		a.statusf("nothing to play — add tracks with l") // the radio is on but the index is empty
+	} else {
+		a.statusf("queue is empty, radio off — l adds tracks, d starts the radio")
+	}
+	return nil
+}
+
 // togglePlayPause implements space: play/pause, or — when the engine is
-// idle — start whatever the policy says comes first (queue head, then
-// repeat-one, then the radio).
+// idle — startFromIdle.
 func (a *App) togglePlayPause() tea.Cmd {
 	st := a.state
 	switch {
 	case st.Track.ID == "":
-		if a.pendingLoad {
-			return nil // a start is already in flight; the radio re-picks on failure
-		}
-		if t, ok := a.playlist.Start(); ok {
-			a.pendingLoad = true
-			a.skipFrom = contract.Track{}
-			a.statusf("play: %s — %s", t.BandName, t.Title)
-			return a.loadCmd(t)
-		}
-		if a.playlist.radio {
-			a.statusf("nothing to play — add tracks with l") // the radio is on but the index is empty
-		} else {
-			a.statusf("queue is empty, radio off — l adds tracks, d starts the radio")
-		}
+		return a.startFromIdle()
 	case st.Playing:
 		if err := a.player.Pause(context.Background()); err != nil {
 			a.statusfBad("pause failed: %v", err)
@@ -885,6 +927,7 @@ func (a *App) queueAlbumTracks(ts []contract.Track) {
 	}
 	a.statusf("queued %d tracks from %s", n, clip(ts[0].AlbumTitle, 24))
 	a.syncNext()
+	a.playlist.prepareRadioNext()
 }
 
 // queueTrack adds t to the queue and fills the engine's pending slot.
@@ -892,6 +935,7 @@ func (a *App) queueTrack(t contract.Track) {
 	a.playlist.Add(t)
 	a.statusf("queued %s — %s", clip(t.Title, 24), clip(t.BandName, 20))
 	a.syncNext()
+	a.playlist.prepareRadioNext()
 }
 
 // removeBrowserTrack drops the selected track from the queue. A track that
@@ -907,6 +951,7 @@ func (a *App) removeBrowserTrack() {
 	t := b.tracks[b.selTrack]
 	if a.playlist.removeQueued(t) {
 		a.statusf("removed from queue: %s", t.Title)
+		a.playlist.prepareRadioNext()
 	} else {
 		a.statusfBrief("not in queue: %s", t.Title)
 	}

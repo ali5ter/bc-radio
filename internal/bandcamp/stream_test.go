@@ -27,6 +27,58 @@ func demoPage(srvBase string, expires time.Time) string {
 	}`)
 }
 
+// singlePage is demoPage for a /track/ release: item_type "track", a
+// canonical /track/ URL, one track.
+func singlePage(srvBase string, expires time.Time) string {
+	ts := strconv.FormatInt(expires.Unix(), 10)
+	streamURL := srvBase + "/stream/100?ts=" + ts
+	return tralbumPage(`{
+		"id": 42, "item_type": "track", "artist": "Synth Band",
+		"url": "https://tontrakul.bandcamp.com/track/earn",
+		"current": {"title": "Earn", "band_id": 7, "art_id": 1, "release_date": "01 Jan 2020 00:00:00 GMT"},
+		"trackinfo": [
+			{"id": 100, "track_id": 100, "title": "Earn", "track_num": 1, "duration": 10.5, "file": {"mp3-128": "` + streamURL + `"}}
+		]
+	}`)
+}
+
+// TestOpenSingle pins the single's stream path: a track with TrackSlug
+// (and no AlbumSlug) resolves from its /track/ page, not /album/.
+func TestOpenSingle(t *testing.T) {
+	t.Parallel()
+	// The track page is set after the server exists because the signed
+	// stream URL embeds the server's own address.
+	var page string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/tontrakul/track/earn", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(page))
+	})
+	mux.HandleFunc("/stream/100", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("MP3DATA"))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	page = singlePage(srv.URL, time.Now().Add(24*time.Hour))
+
+	c := testClient(t, srv, "deerhoof")
+	tr := contract.Track{
+		ID:        "100",
+		Title:     "Earn",
+		AlbumID:   42,
+		TrackSlug: "earn", // a single: its /track/ page carries the stream URL
+		Subdomain: "tontrakul",
+	}
+	stream, err := c.Open(context.Background(), tr)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer stream.Body.Close()
+	body, _ := io.ReadAll(stream.Body)
+	if string(body) != "MP3DATA" {
+		t.Errorf("body = %q, want MP3DATA", body)
+	}
+}
+
 func TestOpenHappyPath(t *testing.T) {
 	t.Parallel()
 	// The album page is set after the server exists because the signed

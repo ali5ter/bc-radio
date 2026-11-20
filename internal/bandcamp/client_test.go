@@ -170,7 +170,7 @@ func TestGetHTMLCachesToDisk(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 	for i := 0; i < 2; i++ {
-		page, err := c.getHTML(context.Background(), srv.URL+"/p", false)
+		page, _, err := c.getHTML(context.Background(), srv.URL+"/p", false)
 		if err != nil {
 			t.Fatalf("getHTML: %v", err)
 		}
@@ -194,10 +194,10 @@ func TestGetHTMLForceBypassesCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	if _, err := c.getHTML(context.Background(), srv.URL+"/p", false); err != nil {
+	if _, _, err := c.getHTML(context.Background(), srv.URL+"/p", false); err != nil {
 		t.Fatalf("getHTML: %v", err)
 	}
-	if _, err := c.getHTML(context.Background(), srv.URL+"/p", true); err != nil {
+	if _, _, err := c.getHTML(context.Background(), srv.URL+"/p", true); err != nil {
 		t.Fatalf("getHTML (force): %v", err)
 	}
 	if hits != 2 {
@@ -213,7 +213,7 @@ func TestGetHTML404(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	_, err = c.getHTML(context.Background(), srv.URL+"/missing", false)
+	_, _, err = c.getHTML(context.Background(), srv.URL+"/missing", false)
 	if err == nil || !strings.Contains(err.Error(), "page not found") {
 		t.Errorf("err = %v, want a page-not-found error", err)
 	}
@@ -240,13 +240,13 @@ func TestPageCache(t *testing.T) {
 				pc.dir = ""
 			}
 			if tt.name == "absent entry" {
-				_, ok := pc.get("https://x/y")
+				_, _, ok := pc.get("https://x/y")
 				if ok {
 					t.Fatal("get on a fresh cache = ok, want miss")
 				}
 				return
 			}
-			pc.put("https://x/y", "page")
+			pc.put("https://x/y", "page", "https://x/y-final")
 			if tt.age > 0 {
 				p := pc.path("https://x/y")
 				old := time.Now().Add(-tt.age)
@@ -254,12 +254,19 @@ func TestPageCache(t *testing.T) {
 					t.Fatalf("Chtimes: %v", err)
 				}
 			}
-			got, ok := pc.get("https://x/y")
+			got, final, ok := pc.get("https://x/y")
 			if ok != tt.want {
 				t.Fatalf("get ok = %v, want %v", ok, tt.want)
 			}
-			if tt.want && got != "page" {
-				t.Errorf("get = %q, want page", got)
+			if tt.want {
+				if got != "page" {
+					t.Errorf("get = %q, want page", got)
+				}
+				// The final URL round-trips: a cached read of a
+				// redirected request must still know where it ended.
+				if final != "https://x/y-final" {
+					t.Errorf("get final = %q, want the stored final URL", final)
+				}
 			}
 		})
 	}

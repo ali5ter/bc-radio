@@ -3,14 +3,15 @@
 // It consumes contract.Library and contract.Player and owns everything the
 // frozen contracts leave to the front end:
 //
-//   - the queue policy — shuffle, repeat, history, the pool that repeat
-//     loops, and the radio: a random pick from the flat index of every
-//     followed band (playlist.go);
+//   - the queue policy — shuffle, repeat, history, and the radio: a random
+//     pick from the flat index of every followed band (playlist.go). With
+//     the radio off the app stops picking on its own — the queue plays,
+//     then silence; shuffle is the explicit opt-in for a looping session;
 //   - the two screens — the player (wordmark header, visualizer, status
 //     and footer rows, controls) and the three-column library browser
 //     (layout.go, library.go);
-//   - the four visualizers — the band-driven spectrum, particles and radial,
-//     and the sample-driven scope (visualizer.go and the visual_*.go files);
+//   - the three visualizers — the band-driven spectrum and particles, and
+//     the sample-driven scope (visualizer.go and the visual_*.go files);
 //   - the keybindings (keys.go) and the colour and style palette
 //     (styles.go).
 //

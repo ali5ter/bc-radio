@@ -51,7 +51,7 @@ func fetchAlbums(lib contract.Library, a contract.Artist) tea.Cmd {
 
 func fetchAlbumFull(lib contract.Library, a contract.Artist, al contract.Album) tea.Cmd {
 	return func() tea.Msg {
-		album, err := lib.Album(context.Background(), a, al.Slug)
+		album, err := lib.Album(context.Background(), a, al)
 		return tracksMsg{album: album, slug: al.Slug, err: err}
 	}
 }

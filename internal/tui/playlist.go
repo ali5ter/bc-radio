@@ -40,6 +40,12 @@ type playlist struct {
 	index      []contract.Track
 	indexBands int
 
+	// radioNext is the radio's prepared next draw: made when the radio is
+	// the source that will play next, so the footer can preview the exact
+	// track (and Next consumes it, keeping preview and playback in
+	// agreement — a radio that announces A and plays B is not a radio).
+	radioNext contract.Track
+
 	shuffle bool
 	repeat  bool
 	radio   bool // on by default: random radio is what a radio does
@@ -164,9 +170,12 @@ func (p *playlist) radioPick(avoid ...contract.Track) (contract.Track, bool) {
 	return candidates[p.rng.Intn(len(candidates))], true
 }
 
-// pool is the tracks repeat can cycle through — the history in playback
-// order (oldest first) plus the current track, deduplicated by ID — so a
-// loop wraps in the order the tracks were played.
+// pool is the session the explicit looping switches can cycle through —
+// the history in playback order (oldest first) plus the current track,
+// deduplicated by ID, in the order the tracks were played. Next uses it
+// only when the user opted in with shuffle (a random draw); SkipNext uses
+// it (shuffled or chronological) for an explicit next, minus the
+// abandoned track.
 func (p *playlist) pool() []contract.Track {
 	seen := make(map[string]bool)
 	out := make([]contract.Track, 0, len(p.history)+1)
@@ -186,12 +195,64 @@ func (p *playlist) pool() []contract.Track {
 	return out
 }
 
+// prepareRadioNext (re)draws the radio's prepared next — the track the
+// footer previews when the queue is empty — or clears it when nothing
+// will come from the radio: the queue beats it, repeat-one beats it, the
+// radio is off, or the index is empty. The draw avoids the last played
+// track, exactly as the consumption in consumeRadioNext does. The App
+// calls it whenever any of those inputs change.
+func (p *playlist) prepareRadioNext() {
+	if len(p.queue) > 0 || p.repeat && p.last.ID != "" || !p.radio || len(p.index) == 0 {
+		p.radioNext = contract.Track{}
+		return
+	}
+	p.radioNext, _ = p.radioPick(p.last)
+}
+
+// upNext is the track that plays next, for the footer's preview: the
+// queued head when there is one, then repeat-one, then the prepared radio
+// draw, then nothing. It peeks — it never mutates the queue.
+func (p *playlist) upNext() contract.Track {
+	if n := len(p.queue); n > 0 {
+		return p.queue[0]
+	}
+	if p.repeat && p.last.ID != "" {
+		return p.last
+	}
+	if p.radio && len(p.index) > 0 {
+		return p.radioNext
+	}
+	return contract.Track{}
+}
+
+// consumeRadioNext returns the prepared radio draw when it is still the
+// right pick (it is not the track that just ended — a two-track pool can
+// turn the preview into the last played, which the radio must not play
+// twice), drawing a fresh one otherwise. The prepared draw is consumed
+// either way, so a stale preview is never played.
+func (p *playlist) consumeRadioNext() (contract.Track, bool) {
+	t := p.radioNext
+	p.radioNext = contract.Track{}
+	if t.ID != "" && t.ID != p.last.ID {
+		return t, true
+	}
+	return p.radioPick(p.last)
+}
+
 // Next picks the track that should play after the current one ends,
 // removing it from the queue where it came from. The order of preference:
-// the queued head, then repeat-one, then the radio (random index track,
-// avoiding the one that just ended), then the pool (shuffled or in
-// order), then nothing. With the radio on and a non-empty index it never
-// returns false — the pool below is the radio-off (or empty-index) path.
+// the queued head (the user's curation, always first), then repeat-one,
+// then the radio (random index track, avoiding the one that just ended),
+// then — only when the user opted in with shuffle — the session pool (the
+// played tracks, at random), then nothing.
+//
+// The pool is an opt-in, never a default: with the radio off and no
+// shuffle, the next after the current track is silence. That is what
+// "radio off" means — the app stops picking on its own (Alister,
+// 2026-11-19 re-test) — and it matches the cold start, which has no pool
+// fallback either (an empty queue with the radio off starts silence, not
+// noise). Repeat-one above is repeat's own job, so the pool in practice
+// fires on shuffle alone.
 func (p *playlist) Next() (contract.Track, bool) {
 	if n := len(p.queue); n > 0 {
 		t := p.queue[0]
@@ -201,25 +262,17 @@ func (p *playlist) Next() (contract.Track, bool) {
 	if p.repeat && p.last.ID != "" {
 		return p.last, true
 	}
-	if t, ok := p.radioPick(p.last); ok {
+	if t, ok := p.consumeRadioNext(); ok {
 		return t, true
+	}
+	if !p.shuffle {
+		return contract.Track{}, false // the app stops picking: queue, repeat and radio were the sources
 	}
 	pool := p.pool()
 	if len(pool) == 0 {
 		return contract.Track{}, false
 	}
-	if p.shuffle {
-		return pool[p.rng.Intn(len(pool))], true
-	}
-	// In order: the pool is chronological, so continue after the last
-	// played track, wrapping to the oldest. A pool of one replays itself —
-	// a single gathered track keeps playing.
-	for i, t := range pool {
-		if t.ID == p.last.ID {
-			return pool[(i+1)%len(pool)], true
-		}
-	}
-	return pool[0], true
+	return pool[p.rng.Intn(len(pool))], true
 }
 
 // SkipNext picks the track for an explicit next (the user pressed it),
@@ -228,7 +281,8 @@ func (p *playlist) Next() (contract.Track, bool) {
 // of repeating it, so the preference is the queued head, then the radio —
 // avoiding both the abandoned track (still current until the load lands)
 // and the last finished one, which is behind, not ahead — then the pool
-// (shuffled or chronological wrap), then nothing.
+// minus the abandoned track (a skip must never hand it straight back),
+// shuffled or chronological wrap, then nothing.
 func (p *playlist) SkipNext() (contract.Track, bool) {
 	if n := len(p.queue); n > 0 {
 		t := p.queue[0]
@@ -238,7 +292,12 @@ func (p *playlist) SkipNext() (contract.Track, bool) {
 	if t, ok := p.radioPick(p.last, p.current); ok {
 		return t, true
 	}
-	pool := p.pool()
+	pool := make([]contract.Track, 0, len(p.history))
+	for _, t := range p.pool() {
+		if t.ID != p.current.ID { // the abandoned track stays behind
+			pool = append(pool, t)
+		}
+	}
 	if len(pool) == 0 {
 		return contract.Track{}, false
 	}
@@ -259,7 +318,8 @@ func (p *playlist) SkipNext() (contract.Track, bool) {
 // retry, and a successful one removes it via SetCurrent. There is
 // deliberately no pool fallback at a cold start — the pool loops what has
 // already played, and nothing has, so an empty queue with the radio off
-// starts silence rather than noise.
+// starts silence rather than noise. The radio's pick consumes the
+// prepared draw, so the track that starts is the one the footer previewed.
 func (p *playlist) Start() (contract.Track, bool) {
 	if n := len(p.queue); n > 0 {
 		return p.queue[0], true
@@ -267,7 +327,7 @@ func (p *playlist) Start() (contract.Track, bool) {
 	if p.repeat && p.last.ID != "" {
 		return p.last, true
 	}
-	return p.radioPick(p.last)
+	return p.consumeRadioNext()
 }
 
 // Prev picks the previous track: the most recently finished one, removed

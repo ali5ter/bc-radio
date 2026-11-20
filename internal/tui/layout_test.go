@@ -100,6 +100,30 @@ func TestBrowserColumnsAreIndependent(t *testing.T) {
 	}
 }
 
+// TestBrowserPreviousRowDim pins the row above the selection: it must read
+// dim like every other unselected row. An earlier design rendered it in
+// the terminal's default colour, leaving a phantom highlight on the line
+// above the bar (Alister's 2026-11-19 screenshot); the bar alone marks
+// the position.
+func TestBrowserPreviousRowDim(t *testing.T) {
+	app, _, _ := newTestApp()
+	b := app.browser
+	b.artists = []contract.Artist{{Name: "Above"}, {Name: "Selected"}, {Name: "Below"}}
+	b.selArtist, b.focus = 1, 0
+	b.scroll = [3]int{}
+	lines := strings.Split(app.browserColumn(0, 30, 3), "\n")
+	// Line 0 is the column header; 1..3 are the data rows.
+	if got := lines[1]; !strings.Contains(got, styleDim.Render("  Above")) {
+		t.Errorf("the row above the selection must read dim like the other rows: %q", got)
+	}
+	if got := lines[3]; !strings.Contains(got, styleDim.Render("  Below")) {
+		t.Errorf("a plain row reads dim: %q", got)
+	}
+	if got := lines[2]; !strings.Contains(got, styleAccentB.Render("→ Selected")) {
+		t.Errorf("the selected row keeps its marker: %q", got)
+	}
+}
+
 func TestIndexLine(t *testing.T) {
 	a := &App{playlist: newPlaylist()}
 	// The not-yet-ready states (before the follows land, and while the walk
@@ -129,24 +153,54 @@ func TestIndexLine(t *testing.T) {
 	if got := a.indexLine(); got != "◉ radio on · 3 tracks · 2 bands" {
 		t.Errorf("indexLine(ready, on) = %q; want the on line", got)
 	}
+	// A loaded track that is not playing is a paused radio: the line says
+	// so, instead of claiming a playing radio over silence (2026-11-19).
+	a.state = contract.State{Track: contract.Track{ID: "a1"}}
+	if got := a.indexLine(); got != "◉ radio paused · 3 tracks · 2 bands" {
+		t.Errorf("indexLine(ready, paused) = %q; want the paused line", got)
+	}
+	// Resumed: back to on.
+	a.state.Playing = true
+	if got := a.indexLine(); got != "◉ radio on · 3 tracks · 2 bands" {
+		t.Errorf("indexLine(ready, resumed) = %q; want the on line", got)
+	}
+	a.state = contract.State{} // idle: the previous cases left a loaded track
 	a.playlist.radio = false
+	// Idle, off, empty queue: the app is quiet, so the line states what
+	// will start it — the library (2026-11-19 re-test: Alister's
+	// "play from library").
+	if got := a.indexLine(); got != "○ radio off — l opens the library · 3 tracks · 2 bands" {
+		t.Errorf("indexLine(ready, off) = %q; want the off line with its action", got)
+	}
+	// …or the queue, if one was built (space from idle starts its head).
+	a.playlist.queue = []contract.Track{{ID: "q1"}}
+	if got := a.indexLine(); got != "○ radio off — space plays the queue · 3 tracks · 2 bands" {
+		t.Errorf("indexLine(ready, off, queued) = %q; want the queue action", got)
+	}
+	// With a track loaded the line is the plain state: off means the app
+	// stops picking after it, and the up-next row says what comes next.
+	a.state = contract.State{Track: contract.Track{ID: "a1"}}
 	if got := a.indexLine(); got != "○ radio off · 3 tracks · 2 bands" {
-		t.Errorf("indexLine(ready, off) = %q; want the off line", got)
+		t.Errorf("indexLine(ready, off, loaded) = %q; want the plain off line", got)
 	}
 	// The on glyph needs a non-empty index: a radio on with nothing to draw
-	// from is shown off, so the line is honest.
+	// from is shown off, so the line is honest (hint included — the
+	// library is the only source left).
+	a.state = contract.State{}
+	a.playlist.queue = nil
 	a.playlist.radio = true
 	a.playlist.SetIndex(nil)
-	if got := a.indexLine(); got != "○ radio off · 0 tracks · 0 bands" {
+	if got := a.indexLine(); got != "○ radio off — l opens the library · 0 tracks · 0 bands" {
 		t.Errorf("indexLine(ready, on, empty) = %q; want the off line (no index)", got)
 	}
 }
 
 // TestHeaderFits pins the wordmark header's geometry: every one of the six
 // rows is exactly the terminal width — the art, the dash gap and the
-// right-justified info block — so an overflowing title ellipses inside its
-// budget instead of running off the edge. The volume readout is not among
-// them: it reads once, in the status footer.
+// info block, left-aligned at the block's fixed column (issue #13) — so
+// an overflowing title ellipses inside its budget instead of running off
+// the edge. The volume readout is not among them: it reads once, in the
+// status footer.
 func TestHeaderFits(t *testing.T) {
 	a := &App{
 		width: 80,
@@ -169,14 +223,22 @@ func TestHeaderFits(t *testing.T) {
 			t.Fatalf("header row %d is %d cells; want exactly 80: %q", i, w, stripANSI(row))
 		}
 	}
-	// The overflowing title ellipses inside its budget…
+	// The info block hangs from the wordmark's left edge across the dash
+	// gap — the title row reads art, gap, verb, title, and a right-
+	// justified block would instead show dash fill between them.
+	if got := stripANSI(rows[1]); !strings.HasPrefix(got, wordmarkR1+"─────") {
+		t.Errorf("title row must begin with the wordmark and its gap: %q", got)
+	}
+	// An overflowing title ellipses inside its budget…
 	if got := stripANSI(rows[1]); !strings.Contains(got, "…") {
 		t.Errorf("an overflowing title should ellipsize, not cut: %q", got)
 	}
-	// …and the info block is pinned to the right edge: the title row's
-	// final cell is the title's closing quote, with no trailing gap.
-	if got := stripANSI(rows[1]); got[len(got)-1] != '\'' {
-		t.Errorf("title row ends in %q; the info block must sit on the right edge: %q", got[len(got)-1], got)
+	// …and a short one stops where it ends: the row's remaining cells are
+	// quiet negative space, closing on the two-dash tail at the far right
+	// (the box's right edge), never dash fill or content reaching the edge.
+	a.state.Track.Title = "Short"
+	if got := stripANSI(a.playerHeader()[1]); !strings.HasSuffix(got, "──") {
+		t.Errorf("short-title row must close on the two-dash tail: %q", got)
 	}
 	// No header row carries a volume readout.
 	for i, row := range rows {
@@ -260,8 +322,10 @@ func TestRenderStatusMuteHint(t *testing.T) {
 // reads once, here, since the header carries no readout).
 func TestRenderStatusFallback(t *testing.T) {
 	a := &App{width: 80, playlist: newPlaylist()}
+	// A transient is a brief hint on its own background, padded full row
+	// width (issue #14): compare the text, not the padding.
 	a.status = "now: A — B"
-	if got := stripANSI(a.renderStatus()); got != "now: A — B · volume 0%" {
+	if got := strings.TrimRight(stripANSI(a.renderStatus()), " "); got != "now: A — B · volume 0%" {
 		t.Errorf("renderStatus = %q; want the transient status with the volume tail", got)
 	}
 	a.status = ""
@@ -328,22 +392,23 @@ func TestStatusScreenScope(t *testing.T) {
 	a.statusKind = statusInfo
 	a.statusOn = screenPlayer
 
-	// On the player the row shows the transient it was raised on.
-	if got := stripANSI(a.renderStatus()); got != "volume 90%" {
+	// On the player the row shows the transient it was raised on, on its
+	// full-row background (compare the text, not the padding).
+	if got := strings.TrimRight(stripANSI(a.renderStatus()), " "); got != "volume 90%" {
 		t.Errorf("player row = %q; want the transient", got)
 	}
 
 	// The user moves to the library (l): the title row must not inherit the
 	// player confirmation (the "Library   volume 90%" leak) — it reads the
-	// focused column's count instead.
+	// section title instead.
 	a.screen = screenLibrary
-	if got := stripANSI(a.libraryStatus()); got != "0 artists" {
-		t.Errorf("library title = %q; want the focused column's count, not a player transient", got)
+	if got := stripANSI(a.libraryTitleRow()); got != "Library (0 artists)" {
+		t.Errorf("library title = %q; want the section title, not a player transient", got)
 	}
 
 	// A transient raised on the library shows in the library row…
 	a.statusOn = screenLibrary
-	if got := stripANSI(a.libraryStatus()); got != "volume 90%" {
+	if got := stripANSI(a.libraryTitleRow()); got != "volume 90%" {
 		t.Errorf("library title = %q; want the transient on its own screen", got)
 	}
 	// …and the player row falls back to the standing radio line (with the
@@ -414,6 +479,41 @@ func TestFitHints(t *testing.T) {
 	}
 }
 
+// TestRenderHelp pins the player's hint row layout (issue #14): the
+// essentials read left, quit among them, and ? help sits at the right
+// edge, apart from them; the row is exactly the terminal width at every
+// size.
+func TestRenderHelp(t *testing.T) {
+	cases := []struct {
+		w    int
+		keep []string
+	}{
+		// 80 columns: all six essentials fit in the left group, apart from
+		// the right-aligned help.
+		{80, []string{"space play/pause", "d radio", "l library", "v visual", "f fullscreen", "q quit", "? help"}},
+		// 30 columns (the player minimum): the essentials fall away one by
+		// one; quit survives beside help.
+		{30, []string{"q quit", "? help"}},
+	}
+	for _, tc := range cases {
+		a := &App{width: tc.w}
+		got := stripANSI(a.renderHelp())
+		if w, _ := lipgloss.Size(a.renderHelp()); w != tc.w {
+			t.Errorf("renderHelp at %d cols is %d cells; want exactly %d: %q", tc.w, w, tc.w, got)
+		}
+		for _, s := range tc.keep {
+			if !strings.Contains(got, s) {
+				t.Errorf("renderHelp(%d) lost %q: %q", tc.w, s, got)
+			}
+		}
+		// The dropped transport keys are not advertised on this row
+		// (they are in the help overlay); help ends the row.
+		if !strings.HasSuffix(got, " ? help") && !strings.HasSuffix(got, "? help") {
+			t.Errorf("renderHelp(%d) must end in the help hint: %q", tc.w, got)
+		}
+	}
+}
+
 // TestFitHintsLibrary pins the library row's narrower trade: at 80 columns
 // the "x remove from queue" hint drops (it is in the help overlay) so the
 // back-navigation hint displays in full instead of being cut to "l or esc b".
@@ -430,29 +530,37 @@ func TestFitHintsLibrary(t *testing.T) {
 	}
 }
 
-// TestUpNextRadioHint pins the footer's up-next row when the queue is
-// empty: the radio previews itself when it has a pool to draw from,
-// otherwise the row points at the library — the one place tracks come
-// from (and the one place space would not look).
-func TestUpNextRadioHint(t *testing.T) {
+// TestUpNextBlank pins the footer's up-next row when nothing can be
+// known: no queue head, no prepared draw — the row is a quiet blank line
+// (the 2026-11-19 follow-up: the old pointers read as noise), and the
+// same blank holds with the radio off and with an empty index.
+func TestUpNextBlank(t *testing.T) {
 	a := &App{width: 80, playlist: newPlaylist()}
-	// Radio on with a non-empty index: the empty queue previews the radio.
+	// Radio on with a non-empty index: no prepared draw yet, no queue.
 	a.playlist.SetIndex([]contract.Track{{ID: "a1"}})
 	a.playlist.radio = true
-	if got := stripANSI(a.upNextRow()); !strings.Contains(got, "the radio plays next") {
-		t.Fatalf("empty queue = %q; want the radio hint", got)
+	if got := stripANSI(a.upNextRow()); got != "" {
+		t.Fatalf("empty queue = %q; want a blank row", got)
 	}
-	// Radio off: the library is where tracks come from.
+	// Radio off: nothing the row can promise.
 	a.playlist.radio = false
-	if got := stripANSI(a.upNextRow()); !strings.Contains(got, "open the library (l) to queue tracks") {
-		t.Fatalf("empty queue, radio off = %q; want the library hint", got)
+	if got := stripANSI(a.upNextRow()); got != "" {
+		t.Fatalf("empty queue, radio off = %q; want a blank row", got)
 	}
-	// Radio on but the index empty (still building): space would start
-	// nothing, so the library hint stands instead of a false preview.
+	// Radio on but the index empty (still building): no pool, no preview.
 	a.playlist.radio = true
 	a.playlist.SetIndex(nil)
-	if got := stripANSI(a.upNextRow()); !strings.Contains(got, "open the library (l) to queue tracks") {
-		t.Fatalf("empty queue, empty index = %q; want the library hint", got)
+	if got := stripANSI(a.upNextRow()); got != "" {
+		t.Fatalf("empty queue, empty index = %q; want a blank row", got)
+	}
+	// A prepared draw previews the real track it will play — the row
+	// promises A and the next slot plays A, never a different B.
+	a = &App{width: 80, playlist: newPlaylist()}
+	a.playlist.SetIndex([]contract.Track{{ID: "a1", Title: "Radio Track", BandName: "RB", AlbumTitle: "RA"}})
+	a.playlist.radio = true
+	a.playlist.prepareRadioNext()
+	if got := stripANSI(a.upNextRow()); got != "└─ Up next: 'Radio Track' by RB on 'RA'" {
+		t.Fatalf("prepared radio draw = %q; want the previewed track", got)
 	}
 }
 
@@ -463,7 +571,7 @@ func TestUpNext(t *testing.T) {
 	a.playlist.Add(contract.Track{ID: "1", Title: "T1", BandName: "B1", AlbumTitle: "A1"})
 	a.playlist.Add(contract.Track{ID: "2", Title: "T2", BandName: "B2"})
 	got := stripANSI(a.upNextRow())
-	if got != "└─ Up next: 'T1' by B1 from 'A1'" {
+	if got != "└─ Up next: 'T1' by B1 on 'A1'" {
 		t.Fatalf("up next = %q; want the queue head with band and album", got)
 	}
 	if strings.Contains(got, "T2") {
@@ -489,16 +597,31 @@ func TestHeaderTimeBar(t *testing.T) {
 			t.Fatalf("time bar missing %q: %q", want, got)
 		}
 	}
-	// 75/300 of the 12-cell bar (the 33-cell budget minus the 21 cells of
-	// times and percent) is 3 filled; the rest stays dim.
-	if n := strings.Count(got, "━"); n != 3 {
-		t.Errorf("bar has %d filled cells; want 3: %q", n, got)
+	// 75/300 of the 7-cell bar (the 29-cell content budget minus the 15
+	// cells of times, the 6 of the percent and the 1 of the space before
+	// the tail) is 2 filled; the remaining 5 dashes are the bar's empty
+	// cells.
+	if n := strings.Count(got, "━"); n != 2 {
+		t.Errorf("bar has %d filled cells; want 2: %q", n, got)
 	}
-	if n := strings.Count(got, "─"); n != 9 {
-		t.Errorf("bar has %d empty cells; want 9: %q", n, got)
+	if n := strings.Count(got, "─"); n != 5 {
+		t.Errorf("bar has %d empty cells; want 5: %q", n, got)
 	}
-	if w, _ := lipgloss.Size(a.headerTimeRow()); w != a.headerMax() {
-		t.Errorf("time bar is %d cells; want the full %d-cell budget: %q", w, a.headerMax(), got)
+	// The percent stops a space short of the tail: the row's last cell
+	// before the block's tail is that space.
+	if !strings.HasSuffix(got, " (25%) ") {
+		t.Errorf("time row should end with the percent and a space: %q", got)
+	}
+	if w, _ := lipgloss.Size(a.headerTimeRow()); w != a.headerMax()-2 {
+		t.Errorf("time bar is %d cells; want the %d-cell budget minus the tail: %q", w, a.headerMax()-2, got)
+	}
+	// Assembled in the block, the row closes with the block's standard
+	// two-dash tail like the other info rows: exactly two dashes at the
+	// edge, never the old doubled four (2026-11-19 screenshot).
+	row := stripANSI(a.headerInfoRow(4, a.headerTimeRow()))
+	trimmed := strings.TrimRight(row, "─")
+	if tail := row[len(trimmed):]; tail != "──" {
+		t.Errorf("time row tail = %q; want exactly two dashes: %q", tail, row)
 	}
 	// An unknown duration shows only the elapsed time, no bar.
 	a.state.Track.Duration = 0
@@ -513,11 +636,14 @@ func TestHeaderTimeBar(t *testing.T) {
 // its index (space while the walk is building starts nothing). The narrow
 // single-row title carries the same affordance.
 func TestHeaderIdle(t *testing.T) {
-	// Radio on with a non-empty index: the idle row names space.
+	// Radio on with a non-empty index: the idle row names space. (The full
+	// hint is 48 cells against a 47-cell budget at 100 columns, so the
+	// final word ellipses at exactly 100; pin the stable prefix, which
+	// carries the affordance.)
 	a := &App{width: 100, playlist: newPlaylist()}
 	a.playlist.SetIndex([]contract.Track{{ID: "a1"}})
 	a.playlist.radio = true
-	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — press space to start the radio") {
+	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — press space to start") {
 		t.Fatalf("idle, radio on = %q; want the radio hint", got)
 	}
 	// Radio on but the index empty (still building): space would start
@@ -527,11 +653,20 @@ func TestHeaderIdle(t *testing.T) {
 	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — open the library (l)") {
 		t.Fatalf("idle, radio on, no index = %q; want the library hint", got)
 	}
-	// The queue beats the radio in Start: it gets the hint instead.
+	// The queue beats the radio in Start: it gets the hint instead. (The
+	// full hint is 47 cells against the 44-cell budget at 100 columns, so
+	// the final word ellipses; pin the stable prefix, which carries the
+	// affordance — the hint reads on one line: a leading space, then the
+	// words, at the block's fixed column.)
 	a = &App{width: 100, playlist: newPlaylist()}
 	a.playlist.Add(contract.Track{ID: "1", Title: "T1"})
-	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — press space to play the queue") {
+	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "nothing playing — press space to play") {
 		t.Fatalf("idle, queued = %q; want the queue hint", got)
+	}
+	// The leading space holds at every width: the hint sits where the
+	// playing rows' verbs sit, never butting the dash gap.
+	if got := stripANSI(a.playerHeader()[1]); !strings.Contains(got, "───── ") {
+		t.Fatalf("idle row must carry the space after the gap: %q", got)
 	}
 	// Below the wordmark width the same wording rides the single-row title.
 	a = &App{width: 30, playlist: newPlaylist()}
@@ -540,20 +675,77 @@ func TestHeaderIdle(t *testing.T) {
 	}
 }
 
+// TestMergeRows pins the help overlay's cell merge (issue #19): the
+// overwriting row's cells win inside its rectangle, the base keeps the
+// rest, and a style code is emitted only on a state change.
+func TestMergeRows(t *testing.T) {
+	base := strings.Repeat("x", 20)
+	over := strings.Repeat("o", 5)
+	want := "xxx" + strings.Repeat("o", 5) + strings.Repeat("x", 12)
+	if got := mergeRows(base, over, 3, 5); got != want {
+		t.Fatalf("mergeRows = %q; want %q", got, want)
+	}
+	// Styled over, plain base: the accent code opens before the box's cells
+	// and resets after them — exactly two codes, never per-cell.
+	styled := styleAccent.Render("ab")
+	got := mergeRows(strings.Repeat("c", 6), styled, 1, 2)
+	if g := stripANSI(got); g != "cabccc" {
+		t.Fatalf("mergeRows = %q; want the base around the box", g)
+	}
+	if n := strings.Count(got, "\x1b["); n != 2 {
+		t.Errorf("mergeRows emits %d SGR codes; want 2 (open + reset): %q", n, got)
+	}
+}
+
+// TestComposeHelp pins the overlay placement (issue #19): the box centres
+// over the base, rows above and below the box keep the base verbatim, and
+// the rows inside the box's rectangle show the box over the base.
+func TestComposeHelp(t *testing.T) {
+	a := &App{width: 30, height: 10}
+	baseLines := make([]string, 10)
+	for i := range baseLines {
+		baseLines[i] = strings.Repeat("z", 30)
+	}
+	base := strings.Join(baseLines, "\n")
+	box := "╭──╮\n│ab│\n╰──╯" // 4 wide, 3 tall
+	lines := strings.Split(a.composeHelp(base, box), "\n")
+	if len(lines) != 10 {
+		t.Fatalf("composeHelp gives %d rows; want 10", len(lines))
+	}
+	if lines[2] != strings.Repeat("z", 30) {
+		t.Errorf("row above the box is not the base: %q", lines[2])
+	}
+	// Centred: top = (10-3)/2 = 3, left = (30-4)/2 = 13.
+	want := strings.Repeat("z", 13) + "│ab│" + strings.Repeat("z", 13)
+	if lines[4] != want {
+		t.Errorf("box row = %q; want the box centred over the base", lines[4])
+	}
+	if lines[9] != strings.Repeat("z", 30) {
+		t.Errorf("row below the box is not the base: %q", lines[9])
+	}
+}
+
 // TestCheckOutRow pins the footer's second row: the playing track's band
-// and its Bandcamp home, all dim, so a listener can find the release to
-// support. Blank when nothing with a band is playing; a long band clips
-// and the row stays at the terminal width.
+// and its Bandcamp home, so a listener can find the release to support.
+// The name and the URL carry the accent, the " at " between them stays
+// quiet; blank when the band or its home is unknown — a name without a
+// URL points nowhere, so the row stays quiet; a long band clips and the
+// row stays at the terminal width.
 func TestCheckOutRow(t *testing.T) {
 	a := &App{width: 80}
 	a.state.Track = contract.Track{Title: "T", BandName: "The Band", Subdomain: "theband.bandcamp.com"}
 	if got := stripANSI(a.checkOutRow()); got != "├─ Check out The Band at https://theband.bandcamp.com/" {
 		t.Fatalf("checkOutRow = %q; want the name and the link", got)
 	}
-	// No subdomain: the name stands alone, never a broken URL.
+	// The " at " separator reads quiet: only the name and the URL are
+	// highlighted (compare the SGR, not the glyphs).
+	if !strings.Contains(a.checkOutRow(), styleDim.Render(" at ")) {
+		t.Fatalf("the ' at ' separator must carry the dim style, not the accent: %q", a.checkOutRow())
+	}
+	// No subdomain: the row is blank, never a name without a URL.
 	a.state.Track.Subdomain = ""
-	if got := stripANSI(a.checkOutRow()); got != "├─ Check out The Band" {
-		t.Fatalf("checkOutRow = %q; want the name without a URL", got)
+	if got := stripANSI(a.checkOutRow()); got != "" {
+		t.Fatalf("checkOutRow = %q; want blank without a URL", got)
 	}
 	// Nothing with a band name: the row stays blank.
 	a.state.Track.BandName = ""
@@ -562,7 +754,7 @@ func TestCheckOutRow(t *testing.T) {
 	}
 	// A long band ellipses; the row never overruns the terminal.
 	a.width = 50
-	a.state.Track = contract.Track{Title: "T", BandName: strings.Repeat("B", 60)}
+	a.state.Track = contract.Track{Title: "T", BandName: strings.Repeat("B", 60), Subdomain: "theband.bandcamp.com"}
 	got := stripANSI(a.checkOutRow())
 	if w, _ := lipgloss.Size(got); w > 50 {
 		t.Fatalf("checkOutRow is %d cells; must not overflow: %q", w, got)

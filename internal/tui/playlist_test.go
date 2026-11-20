@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -65,23 +66,36 @@ func TestNextRepeatOne(t *testing.T) {
 	}
 }
 
-func TestNextPoolChronologicalWrap(t *testing.T) {
+// The pool itself is chronological and deduplicated (history in playback
+// order, then the current track if it is not already in the history):
+// the machinery SkipNext's chronological wrap draws on.
+func TestPoolChronologicalOrder(t *testing.T) {
 	p := newPlaylist()
-	playThrough(p, "A", "B", "C")
-	// last C, history [A B C]: the pool wraps to the oldest.
-	n, ok := p.Next()
-	if !ok || n.ID != "A" {
-		t.Fatalf("Next = %q, %v; want A (chronological wrap)", n.ID, ok)
+	playThrough(p, "A", "B", "C") // history [A B C], nothing current
+	pool := p.pool()
+	if got := ids(pool); strings.Join(got, " ") != "A B C" {
+		t.Fatalf("pool = %v; want A B C in playback order", got)
+	}
+	// The current track joins the pool unless it is already in the history.
+	p.SetCurrent(track("C"))
+	if got := ids(p.pool()); strings.Join(got, " ") != "A B C" {
+		t.Fatalf("pool with current C = %v; want C deduplicated", got)
+	}
+	p.SetCurrent(track("D"))
+	if got := ids(p.pool()); strings.Join(got, " ") != "A B C D" {
+		t.Fatalf("pool with current D = %v; want D appended", got)
 	}
 }
 
-func TestNextSingleTrackPoolReplays(t *testing.T) {
+// Radio on but the index empty (a failed walk): nothing opted in, so the
+// next after the current track is silence — the pool is an opt-in via
+// shuffle, never a default, even with the radio on.
+func TestNextRadioOnEmptyIndexGoesQuiet(t *testing.T) {
 	p := newPlaylist()
-	playThrough(p, "A")
-	// A radio with one gathered track keeps playing it.
-	n, ok := p.Next()
-	if !ok || n.ID != "A" {
-		t.Fatalf("Next = %q, %v; want A (single-track pool replays)", n.ID, ok)
+	p.radio = true
+	playThrough(p, "A") // history [A]; the index is empty
+	if n, ok := p.Next(); ok || n.ID != "" {
+		t.Fatalf("Next = %q, %v; want nothing (no index, no shuffle, no repeat)", n.ID, ok)
 	}
 }
 
@@ -113,6 +127,30 @@ func TestSkipNextQueueThenPool(t *testing.T) {
 	p.Add(track("B"))
 	if n, ok := p.SkipNext(); !ok || n.ID != "B" {
 		t.Fatalf("SkipNext = %q, %v; want B", n.ID, ok)
+	}
+}
+
+// Radio off, a played session, nothing queued: an explicit next continues
+// the session chronologically — and must never return the abandoned track
+// (the classic no-op skip: the chronological slot behind the last finished
+// track *is* the current one).
+func TestSkipNextPoolContinuesSession(t *testing.T) {
+	p := newPlaylist()
+	p.radio = false
+	playThrough(p, "A", "B") // last B, history [A B]
+	p.SetCurrent(track("C")) // C playing; a skip abandons it
+	if n, ok := p.SkipNext(); !ok || n.ID != "A" {
+		t.Fatalf("SkipNext = %q, %v; want A (wrap to the oldest, not C)", n.ID, ok)
+	}
+	// Shuffled or not, the abandoned track never comes back.
+	p.radio = false
+	for i := 0; i < 32; i++ {
+		p.SetCurrent(track("C"))
+		p.shuffle = i%2 == 0
+		n, ok := p.SkipNext()
+		if ok && n.ID == "C" {
+			t.Fatalf("SkipNext = C; a skip must never return the abandoned track")
+		}
 	}
 }
 
@@ -294,14 +332,53 @@ func TestNextRepeatOneBeatsRadio(t *testing.T) {
 	}
 }
 
-// Radio off: Next uses the pool (history + current), never the index.
-func TestNextRadioOffUsesPool(t *testing.T) {
+// Radio off and nothing opted in: the app stops picking. The next after
+// the current track is silence — the pool (session history) is a last
+// resort behind an explicit shuffle or repeat, never a default, so "off"
+// means the same thing at a cold start and mid-session (2026-11-19:
+// Alister — radio off is not the app keeping the program going).
+func TestNextRadioOffGoesQuiet(t *testing.T) {
 	p := newPlaylist()
 	p.radio = false
 	p.SetIndex([]contract.Track{track("A"), track("B")})
-	playThrough(p, "C", "D") // pool [C D], last D
-	if n, ok := p.Next(); !ok || n.ID != "C" {
-		t.Fatalf("Next = %q, %v; want C (radio off: the pool wraps, not the index)", n.ID, ok)
+	playThrough(p, "C", "D") // history [C D], last D
+	if n, ok := p.Next(); ok || n.ID != "" {
+		t.Fatalf("Next = %q, %v; want nothing (radio off, no repeat, no shuffle)", n.ID, ok)
+	}
+	// The explicit queue still beats the quiet: curated plays first.
+	p.Add(track("Q"))
+	if n, ok := p.Next(); !ok || n.ID != "Q" {
+		t.Fatalf("Next = %q, %v; want Q (the queue beats the quiet)", n.ID, ok)
+	}
+}
+
+// Shuffle is the opt-in for the session pool: with the radio off, a
+// shuffled next is drawn from the played tracks, never the index.
+func TestNextRadioOffShuffleUsesPool(t *testing.T) {
+	p := newPlaylist()
+	p.radio = false
+	p.shuffle = true
+	p.SetIndex([]contract.Track{track("A"), track("B")})
+	playThrough(p, "C", "D") // pool [C D]
+	n, ok := p.Next()
+	if !ok {
+		t.Fatal("Next with the radio off and shuffle on must play from the pool")
+	}
+	if want := map[string]bool{"C": true, "D": true}; !want[n.ID] {
+		t.Fatalf("Next = %q; want a played track (C or D), not the index", n.ID)
+	}
+}
+
+// Repeat-one is the other explicit session loop: radio off, repeat on,
+// the last track plays again (before the pool is ever consulted).
+func TestNextRadioOffRepeatOne(t *testing.T) {
+	p := newPlaylist()
+	p.radio = false
+	p.repeat = true
+	p.SetIndex([]contract.Track{track("A"), track("B")})
+	playThrough(p, "C", "D") // last D
+	if n, ok := p.Next(); !ok || n.ID != "D" {
+		t.Fatalf("Next = %q, %v; want D (repeat-one beats the pool)", n.ID, ok)
 	}
 }
 

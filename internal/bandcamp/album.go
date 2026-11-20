@@ -51,15 +51,123 @@ type parsedRelease struct {
 	URLs  map[int64]string
 }
 
-// Album returns the full release record for one slug, tracks included. It
-// implements contract.Library. Each track's Subdomain carries the release's
-// canonical host (from the blob's url when present, else the artist's
-// host), so a queued track stays re-openable without the library.
-func (c *Client) Album(ctx context.Context, a contract.Artist, slug string) (contract.Album, error) {
-	page, err := c.getHTML(ctx, c.pageURL(artistHost(a), "/album/"+slug), false)
+// Album returns the full release record, tracks included, for one of the
+// minimal albums Albums returned. It implements contract.Library. Each
+// track's Subdomain carries the release's canonical host (from the
+// blob's url when present, else the artist's host), so a queued track
+// stays re-openable without the library.
+//
+// A real release is read from its /album/{slug} page. The synthetic
+// singles grouping has no such page; for it the singles' /track/ pages
+// are read instead, one fetch per single, best-effort.
+func (c *Client) Album(ctx context.Context, a contract.Artist, al contract.Album) (contract.Album, error) {
+	if al.Single {
+		return c.singles(ctx, a)
+	}
+	page, _, err := c.getHTML(ctx, c.pageURL(artistHost(a), "/album/"+al.Slug), false)
 	if err != nil {
 		return contract.Album{}, err
 	}
+	return albumFromPage(page, al.Slug, a)
+}
+
+// singles is the synthetic grouping of the artist's single-track
+// releases: one entry per single, each read from its /track/ page, which
+// carries a full data-tralbum (verified live 2026-11-19 — TONTRAKUL's
+// singles, after the spike's 404s on other artists' track pages). A
+// single is a release with one track; the grouping is the library
+// listing them under one entry (the "singles" album row) instead of one
+// row per single.
+//
+// The /music page is authoritative for which singles exist; each single's
+// /track/ page is best-effort — a single that 404s (killed) is named in
+// the error and the readable ones are still returned, the walk's
+// standard partial-release behaviour.
+func (c *Client) singles(ctx context.Context, a contract.Artist) (contract.Album, error) {
+	u := c.pageURL(artistHost(a), "/music")
+	page, _, err := c.getHTML(ctx, u, false)
+	if err != nil {
+		return contract.Album{}, err
+	}
+	_, singles, err := parseMusic(page)
+	if err != nil {
+		return contract.Album{}, fmt.Errorf("bandcamp: parse music page for %s: %w", a.Name, err)
+	}
+	album := contract.Album{
+		Title:  singlesTitle,
+		Slug:   singlesSlug,
+		BandID: a.BandID,
+		Single: true,
+	}
+	host := artistHost(a)
+	var missing []string
+	for _, s := range singles {
+		sp, _, err := c.getHTML(ctx, c.pageURL(host, "/track/"+s.slug), false)
+		if err != nil {
+			missing = append(missing, s.name())
+			continue
+		}
+		release, err := parseTralbum(sp)
+		if err != nil {
+			missing = append(missing, s.name())
+			continue
+		}
+		if release.Host != "" {
+			host = release.Host
+		}
+		for i := range release.Album.Tracks {
+			release.Album.Tracks[i].Subdomain = host
+			release.Album.Tracks[i].AlbumSlug = "" // a single has no /album/ page
+			if release.Album.Tracks[i].TrackSlug == "" {
+				release.Album.Tracks[i].TrackSlug = s.slug
+			}
+			release.Album.Tracks[i].AlbumTitle = singlesTitle
+		}
+		album.Tracks = append(album.Tracks, release.Album.Tracks...)
+	}
+	if len(missing) > 0 {
+		return album, fmt.Errorf("bandcamp: %s — %d of %d singles unavailable (%s)",
+			a.Name, len(missing), len(singles), strings.Join(missing, ", "))
+	}
+	return album, nil
+}
+
+// singleFromTrackPage recovers the one release when an artist's /music
+// page redirects to a single's /track/ page (an artist with exactly one
+// release, a single: no listing to redirect from). It is the one-entry
+// form of singles — same synthetic album, the track already in hand.
+func singleFromTrackPage(page string, a contract.Artist) (contract.Album, bool) {
+	release, err := parseTralbum(page)
+	if err != nil || len(release.Album.Tracks) == 0 {
+		return contract.Album{}, false
+	}
+	host := artistHost(a)
+	if release.Host != "" {
+		host = release.Host
+	}
+	for i := range release.Album.Tracks {
+		release.Album.Tracks[i].Subdomain = host
+		release.Album.Tracks[i].AlbumSlug = ""
+		if release.Album.Tracks[i].TrackSlug == "" {
+			release.Album.Tracks[i].TrackSlug = release.Album.Slug
+		}
+		release.Album.Tracks[i].AlbumTitle = singlesTitle
+	}
+	album := contract.Album{
+		Title:  singlesTitle,
+		Slug:   singlesSlug,
+		BandID: a.BandID,
+		Single: true,
+		Tracks: release.Album.Tracks,
+	}
+	return album, true
+}
+
+// albumFromPage parses a release page body into the contract album: the
+// tralbum blob for the record, then the slug and the canonical host
+// stamped onto every track, so a queued track stays re-openable without
+// the library.
+func albumFromPage(page, slug string, a contract.Artist) (contract.Album, error) {
 	release, err := parseTralbum(page)
 	if err != nil {
 		return contract.Album{}, fmt.Errorf("bandcamp: parse album %s: %w", slug, err)
@@ -78,8 +186,12 @@ func (c *Client) Album(ctx context.Context, a contract.Artist, slug string) (con
 	return release.Album, nil
 }
 
-// parseTralbum extracts the full release record from an album page's
-// data-tralbum JSON.
+// parseTralbum extracts the full release record from a release page's
+// data-tralbum JSON. The client reads two kinds of release page: /album/
+// (item_type "album") and /track/ — a single is a release with one
+// track, and the track page carries the same blob shape (item_type
+// "track", verified live 2026-11-19). A foreign kind — a page that is
+// not a release at all — is a parse error.
 func parseTralbum(page string) (parsedRelease, error) {
 	doc, err := parseDoc(page)
 	if err != nil {
@@ -89,9 +201,17 @@ func parseTralbum(page string) (parsedRelease, error) {
 	if err := attrJSON(doc, "data-tralbum", &blob); err != nil {
 		return parsedRelease{}, err
 	}
-	if blob.ItemType != "" && blob.ItemType != "album" {
-		return parsedRelease{}, fmt.Errorf("page is not an album (item_type %q)", blob.ItemType)
+	if blob.ItemType != "" && blob.ItemType != "album" && blob.ItemType != "track" {
+		return parsedRelease{}, fmt.Errorf("page is not a release (item_type %q)", blob.ItemType)
 	}
+	return releaseFromBlob(blob), nil
+}
+
+// releaseFromBlob builds the release record from a tralbum blob: the
+// release header, the canonical host and slug from the blob's url (when
+// present), and one contract track per trackinfo entry, each with its
+// signed stream URL kept for the audio path.
+func releaseFromBlob(blob tralbumBlob) parsedRelease {
 	release := parsedRelease{
 		Album: contract.Album{
 			ID:          blob.ID,
@@ -102,13 +222,24 @@ func parseTralbum(page string) (parsedRelease, error) {
 		},
 		URLs: make(map[int64]string, len(blob.TrackInfo)),
 	}
+	var u *url.URL
 	if blob.URL != "" {
-		if u, err := url.Parse(blob.URL); err == nil && u.Host != "" {
+		if parsed, err := url.Parse(blob.URL); err == nil && parsed.Host != "" {
+			u = parsed
 			release.Host = u.Host
 			if s := path.Base(u.Path); s != "." && s != "/" {
 				release.Album.Slug = s
 			}
 		}
+	}
+	// A /track/ release stamps the slug onto TrackSlug (its stream page
+	// is the track page); an /album/ release onto AlbumSlug. The
+	// distinction comes from the blob's item_type, cross-checked with
+	// the canonical URL's path (a track page missing item_type is still
+	// recognised by its /track/ path).
+	single := blob.ItemType == "track"
+	if !single && u != nil && strings.Contains(u.Path, "/track/") {
+		single = true
 	}
 	release.Album.Tracks = make([]contract.Track, 0, len(blob.TrackInfo))
 	for _, t := range blob.TrackInfo {
@@ -116,7 +247,7 @@ func parseTralbum(page string) (parsedRelease, error) {
 		if id == 0 {
 			id = t.ID
 		}
-		release.Album.Tracks = append(release.Album.Tracks, contract.Track{
+		tr := contract.Track{
 			ID:         strconv.FormatInt(id, 10),
 			Title:      t.Title,
 			Number:     t.TrackNum,
@@ -126,12 +257,17 @@ func parseTralbum(page string) (parsedRelease, error) {
 			AlbumID:    blob.ID,
 			AlbumSlug:  release.Album.Slug,
 			AlbumTitle: blob.Current.Title,
-		})
+		}
+		if single {
+			tr.AlbumSlug = "" // a single has no /album/ page
+			tr.TrackSlug = release.Album.Slug
+		}
+		release.Album.Tracks = append(release.Album.Tracks, tr)
 		if u, ok := streamFileURL(t.File); ok {
 			release.URLs[id] = u
 		}
 	}
-	return release, nil
+	return release
 }
 
 // streamFileURL picks the signed stream URL from a trackinfo file map. It

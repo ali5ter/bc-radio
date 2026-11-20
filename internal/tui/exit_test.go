@@ -7,23 +7,27 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// TestExitBanner pins the banner's shape: the wordmark, one-space
-// indented, then the two-line thank-you — ten rows, each within the clip
-// width. One art row is pinned in full: the drawing is byte-exact
-// (regenerated from the design file, never retyped), so a regression in
-// the transcription must fail here.
+// TestExitBanner pins the banner's shape: a blank line, the wordmark,
+// one-space indented, then the two-line thank-you — eleven rows, each
+// within the clip width. One art row is pinned in full: the drawing is
+// byte-exact (regenerated from the design file, never retyped), so a
+// regression in the transcription must fail here.
 func TestExitBanner(t *testing.T) {
 	a := &App{width: 80}
 	got := strings.Split(stripANSI(a.ExitBanner()), "\n")
-	if len(got) != 10 {
-		t.Fatalf("banner has %d rows; want 10:\n%s", len(got), strings.Join(got, "\n"))
+	if len(got) != 11 {
+		t.Fatalf("banner has %d rows; want 11:\n%s", len(got), strings.Join(got, "\n"))
 	}
-	if got[0] != " "+wordmarkR0 {
-		t.Errorf("banner art row 1 = %q; want the one-space-indented wordmark", got)
+	// A blank row separates the app from the banner (issue #16).
+	if got[0] != "" {
+		t.Errorf("banner row 1 = %q; want a blank row above the wordmark", got[0])
 	}
-	for i, row := range got[:6] {
+	if got[1] != " "+wordmarkR0 {
+		t.Errorf("banner art row 1 = %q; want the one-space-indented wordmark", got[1])
+	}
+	for i, row := range got[1:7] {
 		if w, _ := lipgloss.Size(row); w > 80 {
-			t.Errorf("banner art row %d is %d cells; must fit the terminal: %q", i+1, w, row)
+			t.Errorf("banner art row %d is %d cells; must fit the terminal: %q", i+2, w, row)
 		}
 	}
 	want := []string{
@@ -33,8 +37,8 @@ func TestExitBanner(t *testing.T) {
 		"",
 	}
 	for i, w := range want {
-		if got[6+i] != w {
-			t.Errorf("banner row %d = %q; want %q", 7+i, got[6+i], w)
+		if got[7+i] != w {
+			t.Errorf("banner row %d = %q; want %q", 8+i, got[7+i], w)
 		}
 	}
 	// A narrow terminal clips the banner, never widens it.

@@ -60,12 +60,17 @@ func (c *Client) Tracks(ctx context.Context) ([]contract.Track, error) {
 			skipArtists = append(skipArtists, a.Name)
 		} else {
 			for _, al := range albums {
-				full, err := c.Album(ctx, a, al.Slug)
+				full, err := c.Album(ctx, a, al)
+				// A failed fetch can still carry tracks: the synthetic
+				// singles grouping is best-effort per single, so a
+				// killed single keeps its readable siblings. Keep what
+				// was read, and name the gap.
+				if len(full.Tracks) > 0 {
+					tracks = append(tracks, full.Tracks...)
+				}
 				if err != nil {
 					skipReleases = append(skipReleases, al.Title)
-					continue
 				}
-				tracks = append(tracks, full.Tracks...)
 			}
 		}
 		c.indexDone.Store(int32(i + 1))

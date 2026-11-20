@@ -165,16 +165,16 @@ func (f *fakeLib) Albums(ctx context.Context, a contract.Artist) ([]contract.Alb
 	return f.albums[a.BandID], nil
 }
 
-func (f *fakeLib) Album(ctx context.Context, a contract.Artist, slug string) (contract.Album, error) {
+func (f *fakeLib) Album(ctx context.Context, a contract.Artist, al contract.Album) (contract.Album, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.fullCt++
 	if f.err != nil {
 		return contract.Album{}, f.err
 	}
-	al := f.full[slug]
-	al.BandID = a.BandID
-	return al, nil
+	full := f.full[al.Slug]
+	full.BandID = a.BandID
+	return full, nil
 }
 
 func (f *fakeLib) Tracks(ctx context.Context) ([]contract.Track, error) {
@@ -217,8 +217,8 @@ func TestNew(t *testing.T) {
 	if got := len(app.bands); got != contract.BandCount {
 		t.Fatalf("bands = %d; want %d", got, contract.BandCount)
 	}
-	if got := len(app.visualizers); got != 4 {
-		t.Fatalf("visualizers = %d; want 4", got)
+	if got := len(app.visualizers); got != 3 {
+		t.Fatalf("visualizers = %d; want 3 (spectrum, particles, scope)", got)
 	}
 	if app.theme != themeDark {
 		t.Fatalf("theme = %q; want dark", app.theme)
@@ -310,8 +310,10 @@ func TestResize(t *testing.T) {
 	if app.width != 100 || app.height != 30 {
 		t.Fatalf("size = %dx%d; want 100x30", app.width, app.height)
 	}
-	if app.browser.viewH != 27 {
-		t.Fatalf("browser viewport = %d; want 27", app.browser.viewH)
+	// 30 rows − the six-row wordmark header − the blank row − the section
+	// title − the help row.
+	if app.browser.viewH != 20 {
+		t.Fatalf("browser viewport = %d; want 20", app.browser.viewH)
 	}
 }
 
@@ -698,14 +700,23 @@ func TestSkipEmpty(t *testing.T) {
 	app.state = lp.State()
 	app.playlist.SetCurrent(track("A")) // the engine and the playlist agree
 
-	m, ok := mustRun(t, press(t, app, tea.KeyPressMsg{Text: "n"})).(loadedMsg)
-	if !ok || m.track.ID != "A" {
-		t.Fatalf("skip with only A gathered should replay A; got %v", m)
+	// A single-track session with nothing queued: the abandoned track must
+	// not come back from the pool — a skip that replays what it just
+	// skipped is a no-op — so the run ends.
+	cmd := press(t, app, tea.KeyPressMsg{Text: "n"})
+	if cmd != nil {
+		t.Fatalf("skip of a lone track should produce no command; got %v", cmd)
+	}
+	if got := ids(lp.queues); len(got) != 0 {
+		t.Fatalf("Queue calls = %v; a lone-track skip must not retry A", got)
+	}
+	if !strings.Contains(app.status, "end of queue") {
+		t.Fatalf("status = %q; want the run's end surfaced", app.status)
 	}
 
 	app, lp, _ = newTestApp()
 	app.state = contract.State{} // idle, nothing gathered
-	cmd := press(t, app, tea.KeyPressMsg{Text: "n"})
+	cmd = press(t, app, tea.KeyPressMsg{Text: "n"})
 	if cmd != nil {
 		t.Fatalf("skip with nothing to play should produce no command; got %v", cmd)
 	}
@@ -1156,6 +1167,89 @@ func TestIndexMsg(t *testing.T) {
 	if app.statusKind != statusWarn {
 		t.Fatalf("statusKind = %v; a near-success is a warning, not an alarm", app.statusKind)
 	}
+}
+
+// The autoplay (issue #16): the index is the radio's fuel, and the radio is
+// on by default — when it lands with the engine idle, the radio starts
+// without a keypress, and the index status (not a "play:" overwrite)
+// explains the start.
+func TestIndexAutoplay(t *testing.T) {
+	app, lp, _ := newTestApp()
+	app.indexState = indexBuilding
+
+	// Distinct BandIDs: the index report counts distinct bands.
+	tracks := []contract.Track{
+		{ID: "A", Title: "A", BandID: 1, BandName: "Band A"},
+		{ID: "B", Title: "B", BandID: 2, BandName: "Band B"},
+	}
+	_, cmd := app.Update(indexMsg{tracks: tracks})
+
+	m, ok := mustRun(t, cmd).(loadedMsg)
+	if !ok || m.err != nil {
+		t.Fatalf("a clean index should start a radio draw; got %v (%v)", m, m.err)
+	}
+	want := map[string]bool{"A": true, "B": true}
+	if !want[m.track.ID] {
+		t.Fatalf("autoplay draw = %q; want an index track", m.track.ID)
+	}
+	if !app.pendingLoad {
+		t.Fatal("pendingLoad must be set while the autoplay load is in flight")
+	}
+	// The index report is the status the user reads, not a start confirmation.
+	if got := app.status; got != "track index: 2 tracks from 2 bands" {
+		t.Fatalf("status = %q; the autoplay must not crowd out the index report", got)
+	}
+	// The load lands: the engine's state is the started draw.
+	if !containsTrack(lp.loads, m.track.ID) {
+		t.Fatalf("Load calls = %v; want the drawn track", ids(lp.loads))
+	}
+}
+
+// The autoplay's guardrails: a radio the user turned off, an engine that is
+// not idle, and a walk that read nothing all keep the v1.0 silence rule.
+func TestIndexAutoplayGuardrails(t *testing.T) {
+	app, lp, _ := newTestApp()
+	app.indexState = indexBuilding
+	tracks := []contract.Track{track("A"), track("B")}
+
+	// Radio off: the index lands, the radio stays silent.
+	app.playlist.radio = false
+	_, cmd := app.Update(indexMsg{tracks: tracks})
+	if cmd != nil {
+		t.Fatalf("radio off: the autoplay must not start; got %v", cmd)
+	}
+
+	// Engine not idle (a track already playing): no second start.
+	app = newTestAppFromFake(lp)
+	app.indexState = indexBuilding
+	lp.setState(contract.State{Track: track("C"), Playing: true})
+	app.state = lp.State()
+	_, cmd = app.Update(indexMsg{tracks: tracks})
+	if cmd != nil {
+		t.Fatalf("a playing engine: the autoplay must not start; got %v", cmd)
+	}
+
+	// A walk that read nothing: the index fails, the radio has no pool.
+	app = newTestAppFromFake(lp)
+	app.indexState = indexBuilding
+	lp.setState(contract.State{})
+	app.state = lp.State()
+	_, cmd = app.Update(indexMsg{err: errors.New("network down")})
+	if cmd != nil {
+		t.Fatalf("a failed empty walk: the autoplay must not start; got %v", cmd)
+	}
+	if app.indexState != indexFailed {
+		t.Fatalf("indexState = %v; want failed", app.indexState)
+	}
+}
+
+// newTestAppFromFake builds an app over an existing fake player (the guardrail
+// test reuses one engine across several apps).
+func newTestAppFromFake(lp *fakePlayer) *App {
+	fl := &fakeLib{albums: map[int64][]contract.Album{}, full: map[string]contract.Album{}}
+	app := New(fl, lp, "dark")
+	_, _ = app.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	return app
 }
 
 // A partial follow list (the >20 batch cap) still lands the artists it read,

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 	"strings"
@@ -37,8 +38,8 @@ func bandFrame(bands []float64, w, h int) frame {
 
 func TestMakeVisualizers(t *testing.T) {
 	vs := makeVisualizers()
-	if len(vs) != 4 {
-		t.Fatalf("makeVisualizers = %d; want 4 (spectrum, particles, radial, scope)", len(vs))
+	if len(vs) != 3 {
+		t.Fatalf("makeVisualizers = %d; want 3 (spectrum, particles, scope)", len(vs))
 	}
 	seen := map[string]bool{}
 	for _, v := range vs {
@@ -218,6 +219,56 @@ func TestParticlesPopulation(t *testing.T) {
 	}
 }
 
+// particlesSnapshot is the field's full state as a string, so the pause
+// test can assert the simulation did (or did not) advance without
+// depending on raster quantisation.
+func particlesSnapshot(v *particles) string {
+	var sb strings.Builder
+	for _, l := range v.lane {
+		for _, m := range l.motes {
+			fmt.Fprintf(&sb, "%.17g %.17g %.17g %.17g %.17g|", m.x, m.y, m.vx, m.vy, m.age)
+		}
+		sb.WriteByte('/')
+	}
+	return sb.String()
+}
+
+// TestParticlesPauseFreeze pins the pause cue (2026-11-19): a loaded,
+// paused track must freeze the field exactly like the spectrum and scope
+// hold their pinned inputs — a paused Render re-rasterizes the motes
+// where they are, without ageing, moving or respawning them, and the
+// resume continues from where the field held.
+func TestParticlesPauseFreeze(t *testing.T) {
+	v := newParticles()
+	b := frameBands(1.0, 0.8, 0.6, 0.4)
+	// Let the field equilibrate in a loud passage.
+	var playing string
+	for i := 0; i < 120; i++ {
+		playing = v.Render(bandFrame(b, 80, 24))
+	}
+	// Pause: the render is the frozen field, byte-identical to the last
+	// playing one, and the simulation itself does not advance.
+	snap := particlesSnapshot(v)
+	f := bandFrame(b, 80, 24)
+	f.paused = true
+	frozen := v.Render(f)
+	if frozen != playing {
+		t.Fatal("a paused frame must re-rasterize the held field, byte for byte")
+	}
+	if got := particlesSnapshot(v); got != snap {
+		t.Fatal("a paused frame must not advance the simulation")
+	}
+	// Repeated paused frames stay identical…
+	if got := v.Render(f); got != frozen {
+		t.Fatal("repeated paused frames must be identical")
+	}
+	// …and the resume moves the field again.
+	v.Render(bandFrame(b, 80, 24))
+	if got := particlesSnapshot(v); got == snap {
+		t.Fatal("the resumed simulation must advance the field")
+	}
+}
+
 func TestParticlesRestPopulation(t *testing.T) {
 	v := newParticles()
 	var got string
@@ -268,63 +319,6 @@ func TestParticlesLaneMapping(t *testing.T) {
 	}
 }
 
-// At rest the radial is the centre dot and the ghost ring at full radius:
-// the meter's constant silhouette in quiet passages. The ring is one dot
-// thick, passes through the four cardinal points, and is a dense outline —
-// far more than the 16 spoke directions.
-func TestRadialRestRing(t *testing.T) {
-	const w, h = 21, 11 // maxR = min(10, 10, 5, 5) = 5
-	got := stripANSI(newRadial().Render(bandFrame(zeroBands(), w, h)))
-	lines := strings.Split(got, "\n")
-	if len(lines) != h {
-		t.Fatalf("got %d rows; want %d", len(lines), h)
-	}
-	cx, cy := (w-1)/2, (h-1)/2
-	cell := func(x, y int) rune {
-		rs := []rune(lines[y])
-		if len(rs) != w {
-			t.Fatalf("row %d is %d cells; want %d", y, len(rs), w)
-		}
-		return rs[x]
-	}
-	if got := cell(cx, cy); got != '•' {
-		t.Errorf("centre = %q; want the centre dot", got)
-	}
-	for _, p := range [][2]int{{cx, cy - 5}, {cx, cy + 5}, {cx - 5, cy}, {cx + 5, cy}} {
-		if got := cell(p[0], p[1]); got != '·' {
-			t.Errorf("ring at (%d,%d) = %q; want the ghost dot", p[0], p[1], got)
-		}
-	}
-	if got := cell(cx, cy-3); got != ' ' {
-		t.Errorf("interior cell (cx, cy-3) = %q; want clear air", got)
-	}
-	dots := 0
-	for _, r := range got {
-		if r == '·' {
-			dots++
-		}
-	}
-	if dots < 24 {
-		t.Errorf("ring holds %d dots; want a dense outline (>= 24)", dots)
-	}
-}
-
-// A spoke at full scale ends exactly on its ring dot and replaces it: the
-// live data always wins the cell, so the ghost never double-draws.
-func TestRadialFullScaleOverwritesRing(t *testing.T) {
-	const w, h = 21, 11
-	b := zeroBands()
-	for k := range b {
-		b[k] = 1.0
-	}
-	lines := strings.Split(stripANSI(newRadial().Render(bandFrame(b, w, h))), "\n")
-	rs := []rune(lines[0]) // the top row: band 0's full-scale tip
-	cx := (w - 1) / 2
-	if rs[cx] != '•' {
-		t.Errorf("full-scale band 0 tip = %q; want the live dot over the ghost", rs[cx])
-	}
-}
-
 // Renders must be a pure function of the input frames: two fresh instances
 // fed the same sequence draw identical frames.
 func TestVisualizersDeterministic(t *testing.T) {
@@ -340,7 +334,7 @@ func TestVisualizersDeterministic(t *testing.T) {
 		}
 		return out.String()
 	}
-	for i, name := range []string{"spectrum", "particles", "radial", "scope"} {
+	for i, name := range []string{"spectrum", "particles", "scope"} {
 		if vs1[i].Name() != name {
 			t.Fatalf("makeVisualizers()[%d] = %s; the test expects %s", i, vs1[i].Name(), name)
 		}

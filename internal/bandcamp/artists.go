@@ -64,7 +64,7 @@ type followingItem struct {
 // the embedded batch, the returned slice is the (complete-so-far) list and
 // the error names the gap, so the TUI can show both.
 func (c *Client) Artists(ctx context.Context) ([]contract.Artist, error) {
-	page, err := c.getHTML(ctx, c.followingURL(), false)
+	page, _, err := c.getHTML(ctx, c.followingURL(), false)
 	if err != nil {
 		return nil, err
 	}

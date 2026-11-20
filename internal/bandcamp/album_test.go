@@ -52,7 +52,7 @@ func TestAlbum(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			album, err := c.Album(context.Background(), tt.artist, tt.slug)
+			album, err := c.Album(context.Background(), tt.artist, contract.Album{Slug: tt.slug})
 			if err != nil {
 				t.Fatalf("Album: %v", err)
 			}
@@ -92,7 +92,7 @@ func TestAlbumNotFound(t *testing.T) {
 	t.Parallel()
 	srv := fixtureServer(t)
 	c := testClient(t, srv, "deerhoof")
-	if _, err := c.Album(context.Background(), artistWith("mrtw", ""), "no-such-album"); err == nil {
+	if _, err := c.Album(context.Background(), artistWith("mrtw", ""), contract.Album{Slug: "no-such-album"}); err == nil {
 		t.Fatal("Album: want a not-found error for a missing route")
 	}
 }
@@ -106,9 +106,43 @@ func TestParseTralbumNoBlob(t *testing.T) {
 
 func TestParseTralbumWrongItemType(t *testing.T) {
 	t.Parallel()
-	page := tralbumPage(`{"id":1,"item_type":"track","current":{}}`)
-	if _, err := parseTralbum(page); err == nil || !strings.Contains(err.Error(), "not an album") {
-		t.Errorf("err = %v, want a not-an-album error", err)
+	// A foreign kind (neither album nor track) is not a release page.
+	// "track" itself is valid — singles are a release with one track.
+	page := tralbumPage(`{"id":1,"item_type":"merch","current":{}}`)
+	if _, err := parseTralbum(page); err == nil || !strings.Contains(err.Error(), "not a release") {
+		t.Errorf("err = %v, want a not-a-release error", err)
+	}
+}
+
+// TestParseTralbumSinglePage pins the single's blob: a /track/ page
+// (item_type "track", canonical /track/ URL) parses, and its one track
+// carries the slug as TrackSlug, not AlbumSlug.
+func TestParseTralbumSinglePage(t *testing.T) {
+	t.Parallel()
+	page := tralbumPage(`{
+		"id": 7, "item_type": "track", "artist": "TONTRAKUL",
+		"url": "https://tontrakul.bandcamp.com/track/earn",
+		"current": {"title": "Earn", "band_id": 7, "art_id": 1, "release_date": "01 Jan 2020 00:00:00 GMT"},
+		"trackinfo": [
+			{"id": 100, "track_id": 100, "title": "Earn", "track_num": 1, "duration": 10.5, "file": {}}
+		]
+	}`)
+	release, err := parseTralbum(page)
+	if err != nil {
+		t.Fatalf("parseTralbum: %v", err)
+	}
+	if len(release.Album.Tracks) != 1 {
+		t.Fatalf("len(tracks) = %d, want 1", len(release.Album.Tracks))
+	}
+	tr := release.Album.Tracks[0]
+	if tr.TrackSlug != "earn" {
+		t.Errorf("TrackSlug = %q, want earn (from the blob's /track/ URL)", tr.TrackSlug)
+	}
+	if tr.AlbumSlug != "" {
+		t.Errorf("AlbumSlug = %q, want empty (a single has no /album/ page)", tr.AlbumSlug)
+	}
+	if release.Host != "tontrakul.bandcamp.com" {
+		t.Errorf("Host = %q, want the canonical host", release.Host)
 	}
 }
 

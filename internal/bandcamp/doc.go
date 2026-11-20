@@ -7,8 +7,12 @@
 //
 //   - the following page's data-blob (bandcamp.com/{user}/following/
 //     artists_and_labels) for followed artists;
-//   - the artist /music page's markup for the release list;
-//   - the album page's data-tralbum JSON for tracks and signed stream URLs.
+//   - the artist /music page's markup for the release list — which
+//     303-redirects to the release itself for an artist with exactly one
+//     release, a page the client recovers from (Albums);
+//   - the album page's data-tralbum JSON for tracks and signed stream URLs;
+//   - a single's /track/ page, whose data-tralbum carries the one track
+//     and its stream URL the same way (verified live 2026-11-19).
 //
 // Stream URLs are signed and expire about 24 hours after the album page was
 // rendered. The client treats them as disposable: it caches them in memory
@@ -17,9 +21,16 @@
 // the session cookies are optional; the only required configuration is the
 // Bandcamp username.
 //
-// v1 limitation: single-track releases are not playable. Track pages
-// (/{host}/track/{slug}) return 404, so /music cards of kind track-* are
-// skipped and Albums returns albums only.
+// Singles are in: /music cards of kind track-* are single-track
+// releases, grouped into one synthetic "singles" album per artist (the
+// library lists them under one entry, not one row per single). Each
+// single's /track/ page carries a full data-tralbum with a streamable
+// track, so a single is a release with one track and the stream path
+// re-fetches its /track/ page for a fresh URL, exactly as it does for
+// an album. (History: the spike hit 404s on the track pages it tried,
+// which made v1 skip them; at least some /track/ pages do carry the
+// blob, verified live 2026-11-19 on TONTRAKUL's singles, so the skip
+// became a scope decision — Alister lifted it 2026-11-19.)
 //
 // One interpretation note for the frozen contract: contract.Track.Subdomain
 // carries the artist's full host ("mrtwinsister.bandcamp.com", or a custom

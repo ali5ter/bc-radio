@@ -41,6 +41,13 @@ type Artist struct {
 // Library.Albums carries only Slug, Title and ArtID; the full form,
 // returned by Library.Album, also carries ID, ReleaseDate and Tracks
 // (zero values mean "not populated yet").
+//
+// Single is set on the synthetic album that groups an artist's
+// single-track releases. There is no such page on Bandcamp — the grouping
+// is a library convenience (the band's singles, listed under one entry).
+// On it, Title is the display name, Slug is an opaque key for callers
+// (not a URL), and each track's stream page is its /track/ page (see
+// Track.TrackSlug). A real release has Single false and a /album/ Slug.
 type Album struct {
 	ID          int64 // tralbum id; 0 until the album page is fetched
 	Slug        string
@@ -49,6 +56,7 @@ type Album struct {
 	ArtID       int64
 	ReleaseDate time.Time // zero value when unknown
 	Tracks      []Track
+	Single      bool
 }
 
 // Track is one track, denormalized with both the display strings the TUI
@@ -69,6 +77,11 @@ type Track struct {
 	AlbumSlug  string
 	AlbumTitle string
 	Subdomain  string // artist host for stream-URL fetches
+	// TrackSlug is set on single-track releases only: the slug of the
+	// /track/ page that carries the track's data-tralbum, the source the
+	// client re-fetches for a fresh stream URL. Empty on album tracks,
+	// whose stream page is /album/{AlbumSlug}.
+	TrackSlug string
 }
 
 // AudioStream is an open stream of one encoded track (MP3 in v1). The
@@ -116,11 +129,17 @@ type Library interface {
 	Artists(ctx context.Context) ([]Artist, error)
 
 	// Albums returns the artist's releases from the /music page, in
-	// minimal form (see Album).
+	// minimal form (see Album): the real releases in page order, and —
+	// when the artist has single-track releases — a synthetic "singles"
+	// grouping (Album.Single) after them.
 	Albums(ctx context.Context, a Artist) ([]Album, error)
 
-	// Album returns the full release record for one slug, tracks included.
-	Album(ctx context.Context, a Artist, slug string) (Album, error)
+	// Album returns the full release record, tracks included, for one of
+	// the minimal albums Albums returned. A real release is read from its
+	// /album/{slug} page; the synthetic single grouping from its singles'
+	// /track/ pages, one fetch per single, best-effort (a single whose
+	// page fails is named in the error, the readable ones are returned).
+	Album(ctx context.Context, a Artist, al Album) (Album, error)
 
 	// Tracks returns every track of every release of every followed artist
 	// — the flat index behind random radio. It is the composition of

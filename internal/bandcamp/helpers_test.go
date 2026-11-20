@@ -33,7 +33,19 @@ func fixtureServer(t *testing.T) *httptest.Server {
 	}
 	// The corpus was captured under these account/host names.
 	mux.Handle("/deerhoof/following/artists_and_labels", fixture("deerhoof-following.html"))
+	// Go Kurosawa has exactly one release, so Bandcamp answers /music
+	// with a 303 to it: the redirect route is synthetic, the body is the
+	// captured album page.
+	mux.HandleFunc("/gokurosawa/music", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/gokurosawa/album/soft-shakes", http.StatusSeeOther)
+	})
+	mux.Handle("/gokurosawa/album/soft-shakes", fixture("gokurosawa-album.html"))
 	mux.Handle("/mrtw/music", fixture("mrtw-music.html"))
+	// TONTRAKUL has no albums: three single-track releases (the music
+	// page carries only track-* cards). One /track/ page is captured;
+	// the other two 404, exercising the best-effort skip.
+	mux.Handle("/tontrakul/music", fixture("tontrakul-music.html"))
+	mux.Handle("/tontrakul/track/earn", fixture("tontrakul-track-earn.html"))
 	mux.Handle("/mrtw/album/bad-street", fixture("mrtw-album.html"))
 	mux.Handle("/mrtwinsister/album/bad-street", fixture("mrtw-album.html"))
 	mux.Handle("/deerhoof/music", fixture("deerhoof-sub-music.html"))

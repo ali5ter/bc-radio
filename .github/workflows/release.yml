@@ -12,7 +12,36 @@ permissions:
 # arm64 -> amd64 does work natively, so one macOS runner builds both
 # published architectures.
 jobs:
+  # Every built binary is run before anything is published (issue #17):
+  # the v0.4.1 purego amd64 trampoline made every amd64 release launch
+  # into a silent hang, and the release that built it never ran it. -h
+  # must print and exit; the alarm kills a hung process at 10 s.
+  smoke:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build both published architectures
+        run: |
+          CGO_ENABLED=1 GOARCH=arm64 go build -o bc-radio-arm64 ./cmd/bc-radio
+          CGO_ENABLED=1 GOARCH=amd64 go build -o bc-radio-amd64 ./cmd/bc-radio
+
+      - name: Smoke the arm64 binary
+        run: |
+          set -o pipefail
+          perl -e 'alarm 10; exec @ARGV' ./bc-radio-arm64 -h | head -1
+
+      - name: Smoke the amd64 binary under Rosetta
+        run: |
+          set -o pipefail
+          perl -e 'alarm 10; exec @ARGV' arch -x86_64 ./bc-radio-amd64 -h | head -1
+
   release:
+    needs: smoke
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

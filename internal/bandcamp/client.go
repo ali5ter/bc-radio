@@ -202,40 +202,45 @@ func (c *Client) do(ctx context.Context, u string) (*http.Response, error) {
 }
 
 // getHTML fetches a page as HTML, served from the disk page cache when a
-// fresh entry exists, unless force is set.
-func (c *Client) getHTML(ctx context.Context, u string, force bool) (string, error) {
+// fresh entry exists, unless force is set. It also returns the URL the
+// request ended at after redirects: a /music request for a single-release
+// account ends at the release page, and a cached read must still know that
+// (see Albums). When no redirect occurred the final URL is u.
+func (c *Client) getHTML(ctx context.Context, u string, force bool) (string, string, error) {
 	if !force {
-		if page, ok := c.cache.get(u); ok {
-			return page, nil
+		if page, final, ok := c.cache.get(u); ok {
+			return page, final, nil
 		}
 	}
-	page, err := c.fetchHTML(ctx, u)
+	page, final, err := c.fetchHTML(ctx, u)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	c.cache.put(u, page)
-	return page, nil
+	c.cache.put(u, page, final)
+	return page, final, nil
 }
 
-// fetchHTML GETs the page at u and returns its body, translating the
-// not-found and non-200 statuses into errors for the caller.
-func (c *Client) fetchHTML(ctx context.Context, u string) (string, error) {
+// fetchHTML GETs the page at u and returns its body and the final request
+// URL (the end of the redirect chain; equal to u when none occurred),
+// translating the not-found and non-200 statuses into errors for the
+// caller.
+func (c *Client) fetchHTML(ctx context.Context, u string) (string, string, error) {
 	resp, err := c.do(ctx, u)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return "", fmt.Errorf("bandcamp: page not found: %s", u)
+		return "", "", fmt.Errorf("bandcamp: page not found: %s", u)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("bandcamp: fetch %s: HTTP %d", u, resp.StatusCode)
+		return "", "", fmt.Errorf("bandcamp: fetch %s: HTTP %d", u, resp.StatusCode)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("bandcamp: read %s: %w", u, err)
+		return "", "", fmt.Errorf("bandcamp: read %s: %w", u, err)
 	}
-	return string(body), nil
+	return string(body), resp.Request.URL.String(), nil
 }
 
 // drainClose discards a response body and closes it, for responses that

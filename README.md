@@ -5,7 +5,7 @@ index from your follows and their discographies, plays it as random radio — or
 you queue — and streams the tracks over your system audio: everything you hear comes from
 Bandcamp, the platform where your follows, likes, and purchases support the artists. The
 interface renders at 60 fps with live visualizers: a bar spectrum, dust mapped to the bands,
-a radial meter, and an oscilloscope of the raw output.
+and an oscilloscope of the raw output.
 
 ![bc-radio demo](examples/bc-radio-demo.gif)
 
@@ -43,14 +43,14 @@ CGO_ENABLED=1 go build -o bc-radio ./cmd/bc-radio
 ## Usage
 
 ```bash
-./bc-radio -username yourbandcampname
+./bc-radio -u yourbandcampname
 ```
 
 bc-radio opens on the player screen with the radio on (toggle with `d`). At startup it reads
 your followed bands and builds a flat track index from their discography — the status line
-shows the build, then the radio's state and the size of the index it draws from. Press
-`space` and it plays a random index track; as each track ends, it picks another, never the
-one that just ended.
+shows the build, then the radio's state and the size of the index it draws from. As soon as
+the index builds, the radio starts a random index track; press `space` to pause, and as each
+track ends it picks another, never the one that just ended.
 
 Explicitly queued tracks always beat the radio: press `l` to browse the library, pick a track
 (and press `enter` to queue it) or an album (`enter` queues every track of it), and the
@@ -105,7 +105,7 @@ force a fresh walk — a new album, a changed track list — pass a short `-page
 | `s` | Shuffle on / off | Player |
 | `r` | Repeat on / off | Player |
 | `d` | Radio on / off (random tracks from your follows) | Player |
-| `v` | Next visualizer (spectrum → particles → radial → scope) | Player |
+| `v` | Next visualizer (spectrum → particles → scope) | Player |
 | `f` | Fullscreen visualizer | Player |
 | `l` | Library | Player |
 | `+` / `-` | Volume up / down | Player |
@@ -143,11 +143,13 @@ local state is the page cache above, plus the one-line theme preference the app 
 after an explicit `-theme` choice (see Themes).
 
 The radio is the default mode. At startup bc-radio walks every followed band's discography —
-artists, releases, then album tracks — into a flat index, reading the same cached pages as
+artists, releases (their singles, grouped under a `singles` entry), then each release's
+tracks — into a flat index, reading the same cached pages as
 the library browser, and the status line reports its size. With the radio on, each
 transition picks a random index track, avoiding the one that just ended; an explicit queue
-or repeat-one always plays first. With the radio off, the player loops the tracks you have
-gathered, like any other queue.
+or repeat-one always plays first. With the radio off the app stops picking on its own: your
+queue plays, then the player stops — shuffle (`s`) is the explicit way to keep the session
+playing at random instead.
 
 Tracks decode in pure Go (`beep/mp3`, which wraps `hajimehoshi/go-mp3`) and play through oto.
 The queue pre-decodes the next track while the current one plays for gapless transitions.

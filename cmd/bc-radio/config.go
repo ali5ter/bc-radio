@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -75,16 +74,10 @@ func pickTheme(explicit bool, flagValue, remembered string) (string, error) {
 }
 
 // resolveTheme works out the theme this launch runs with: the explicit
-// -theme flag, else the remembered preference, else auto. It records
-// whether the flag was explicit, which decides whether the choice is
+// -theme flag, else the remembered preference, else auto. explicit reports
+// whether the caller passed -theme, which decides whether the choice is
 // remembered for the next launch.
-func (o *options) resolveTheme() error {
-	explicit := false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == "theme" {
-			explicit = true
-		}
-	})
+func (o *options) resolveTheme(explicit bool) error {
 	o.themeExplicit = explicit
 
 	remembered := ""

@@ -3,6 +3,98 @@
 All notable changes to bc-radio are recorded here. Each release follows
 [Semantic Versioning](https://semver.org/).
 
+## [v1.2.0] - 2026-11-19
+
+### Added
+
+- The command line shows a one-sentence description and a usage line that
+  names the required username: `bc-radio -u username [flags]` (#12).
+- When the track index lands with the engine idle and the radio on, the
+  radio starts without a keypress; a failed or empty walk keeps the v1.0
+  silence rule and the idle hint.
+- The help overlay renders over the live screen: the keybinding box centred
+  on top, the playback visible around it, instead of a blank background
+  (#19).
+- Single-track releases are playable. The library lists each artist's
+  singles under one `singles` entry (one row, not one per single; enter
+  queues them all), each single resolving its stream URL from its own
+  `/track/` page, which carries the same release blob as an album page.
+  A single whose page is unreadable is named as a gap and the readable
+  singles are kept (Alister's call, after the library re-test showed
+  followed artists whose only releases are singles, like TONTRAKUL).
+
+### Changed
+
+- The player header's wordmark is the byte-exact design box again (three
+  rows had lost their letters' verticals in a transcription), its heavy `═`
+  runs now read in the blue-to-peach gradient as letter shapes, the light
+  `─` runs stay the quiet frame, and every info row closes on a two-dash
+  tail at the far right (#13).
+- The footer: the check-out line stays blank until both the band name and
+  its Bandcamp home are known (a name without a URL points nowhere), the
+  " at " between them reads quiet, and the up-next line is a blank line
+  when nothing can be known (#14).
+- The key hints read space, d, l, v, f, q left and `? help` at the far
+  right (#14).
+- The library screen carries the player's own header — it reflects the
+  playback and does not move while the user browses — a blank row, a
+  "Library (N artists)" title, the three columns, and a selected-row bar
+  of one uniform colour instead of reverse video. The minimum size is
+  60 × 12 (#15).
+- The radial meter leaves the visualizer set: spectrum, particles, scope,
+  cycled with `v`.
+- The exit banner's wordmark is the header's own drawing — the letters in
+  the theme's gradient, the bars quiet — with a blank lead row, instead of
+  the monochrome accent box (#16).
+- The dependency `github.com/ebitengine/purego` moves from v0.4.1 to
+  v0.6.0, the first release whose amd64-darwin call trampoline works.
+
+### Fixed
+
+- **The amd64 (Intel) binary hung on every launch** — `bc-radio -h`, a
+  bare start, all of it: the v0.4.1 purego amd64 trampoline that every C
+  call (starting with the `Dlopen` of the Objective-C runtime at startup)
+  goes through livelocked in a signal loop, so the process printed nothing
+  and only died on ctrl-c. This affects every amd64 release since
+  v1.1.0; the v0.6.0 pin above is the fix (#17).
+- The wordmark's three ragged rows shifted the header's left edge so the
+  negative space no longer read as one box; `TestWordmarkRowsAreUniform`
+  pins the 48 × 6 box so it cannot return (#13).
+- The header's time row closed with a doubled tail — its own two dashes
+  plus the block's, leaving four after the percent where the other info
+  rows end with two. The bar now takes the space the times and the
+  percent leave, a space separates the percent from the tail, and the
+  row ends with the one standard tail, like the other info rows (#13
+  follow-up).
+- The library rendered the row above the selection in bright text, a
+  phantom highlight over the bar; every unselected row now reads quiet,
+  the bar alone marking the position (#15 follow-up).
+- Pausing no longer leaves the particle field drifting: the motes hold
+  exactly where the pause found them — the same frozen pause cue as the
+  spectrum and scope — and resume from where they held instead of
+  jumping.
+- The standing status line reads `◉ radio paused` while a loaded track
+  is paused, instead of claiming a playing radio over silence; resuming
+  restores `◉ radio on`.
+- Radio off now means the app stops picking on its own (Alister's
+  re-test decision, 2026-11-19): your queue plays, then the player stops
+  — the session no longer replays itself behind the off state. Shuffle
+  (`s`) is the explicit opt-in for a looping session; repeat (`r`) keeps
+  its one-track behaviour. The standing line follows: `○ radio off` while
+  a track plays (the up-next row says what comes), `— space plays the
+  queue` idle with a queue, and `— l opens the library` idle without one
+  (the hint leads so it survives the ellipsis at a narrow width; the on
+  and paused lines are unchanged).
+- A skip (`n`) whose next comes from the session pool no longer lands
+  back on the track just abandoned: the pool is the played tracks minus
+  the skip, so a one-track session ends instead of silently restarting
+  (follow-up to the off-state semantics).
+- Artists with exactly one release no longer show an empty library
+  column: Bandcamp answers their `/music` page with a redirect to the
+  release itself, and the client recovered the release from the redirected
+  page (the page cache now carries the redirect's destination, so the
+  recovery holds on cached reads too) (#20).
+
 ## [v1.1.3] - 2026-11-18
 
 ### Added
