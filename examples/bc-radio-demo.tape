@@ -15,28 +15,34 @@ Sleep 200ms
 Show
 
 # Launch with the adaptive theme at full volume (real audio plays while vhs
-# renders); the page cache is warm, so the index builds from disk.
+# renders). The page cache was refreshed before the render, so the index
+# walk reads fresh pages from disk and lands in a few seconds on a quiet
+# machine — and when it lands with the engine idle, the radio starts by
+# itself: no keypress, the bar spectrum dancing on a random track.
 Type "./bc-radio -username ali5ter"
 Sleep 600ms
 Enter
 
-# Library build: the status line runs a spinner with a per-band counter
-# until the walk over the cached discographies lands (10–22 s warm).
-# Wait for the walk to finish before space: a space pressed while the index
-# is still building starts nothing.
-Sleep 8s
+# Wait for the walk: on a quiet machine a fresh-cache walk lands in a few
+# seconds and the radio is already playing by the first space; the margin
+# covers a loaded machine, where the build screen (spinner + per-band
+# counter) is the content in the meantime.
+Sleep 10s
 
-# Space starts the radio: a random index track, the bar spectrum dancing.
+# Space pauses — the bars hold exactly where the pause found them — then
+# resumes.
 Type " "
 Sleep 2s
+Type " "
+Sleep 1s
 
-# Cycle the visualizers: spectrum → particles → radial → scope.
+# Cycle the visualizers: spectrum → particles → scope.
 Type "v"
 Sleep 2s
 Type "v"
 Sleep 2s
 Type "v"
-Sleep 2s
+Sleep 1s
 
 # Fullscreen visualizer, then back.
 Type "f"
@@ -44,8 +50,16 @@ Sleep 2s
 Type "f"
 Sleep 1s
 
-# Library: an artist's releases, queue an album (up next shows the queue),
-# back to the player.
+# Radio off: the standing line goes plain and the up-next row goes blank —
+# the app stops picking on its own. On again: the radio returns with its
+# prepared draw.
+Type "d"
+Sleep 2s
+Type "d"
+Sleep 2s
+
+# Library: browse the three columns under the live playback header, queue
+# an album, back to the player.
 Type "l"
 Sleep 1s
 Down
@@ -61,12 +75,13 @@ Sleep 2s
 Escape
 Sleep 2s
 
-# Help overlay, then out.
+# Help overlay: the keybindings over the live screen, then out.
 Type "?"
 Sleep 2s
 Type "?"
 Sleep 1s
-# q quits (this vhs build types "ctrl+c" as literal characters, which would
-# hit the repeat and library keys on the way through).
+# q quits: the gradient wordmark banner and the thank-you (this vhs build
+# types "ctrl+c" as literal characters, which would hit the repeat and
+# library keys on the way through).
 Type "q"
 Sleep 1s

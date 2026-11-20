@@ -3,6 +3,18 @@
 All notable changes to bc-radio are recorded here. Each release follows
 [Semantic Versioning](https://semver.org/).
 
+## [v1.2.1] - 2026-11-20
+
+### Changed
+
+- The demo reel is re-rendered against the v1.2.0 interface: the radio
+  starts by itself when the track index lands (the tape's first space
+  press is a pause, and the bars hold where the pause found them), the
+  visualizer cycle is the 3-way set — spectrum, particles, scope — and
+  the tour gains the radio-off line, the new library screen under the
+  live playback header, the help overlay over the live screen, and the
+  gradient exit banner.
+
 ## [v1.2.0] - 2026-11-19
 
 ### Added
