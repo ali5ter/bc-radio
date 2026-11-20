@@ -1,29 +1,14 @@
 # bc-radio
 
-A local-first terminal radio for the bands you follow on Bandcamp. bc-radio builds a track
-index from your follows and their discographies, plays it as random radio — or whatever else
-you queue — and streams the tracks over your system audio: everything you hear comes from
-Bandcamp, the platform where your follows, likes, and purchases support the artists. The
-interface renders at 60 fps with live visualizers: a bar spectrum, dust mapped to the bands,
-and an oscilloscope of the raw output.
+A TUI based radio that plays tracks of the bands you follow on Bandcamp.
+
+bc-radio builds a track index from your follows and their discographies, plays it as random
+radio (or a queue of albums or tracks you choose) and streams the music over your system
+audio.
+
+Everything you hear comes from Bandcamp, the platform where your follows, likes, and purchases support the artists.
 
 ![bc-radio demo](examples/bc-radio-demo.gif)
-
-- The product specification and the spike findings are private documents; the public record
-  is [the changelog](CHANGELOG.md) and the source
-- The packages: `internal/bandcamp` (the Bandcamp client), `internal/audio` (playback and
-  analysis), `internal/tui` (the interface), with the frozen contracts between them in
-  `internal/contract/`
-- Test fixtures: `testdata/` (captured Bandcamp pages for the schema tests; the MP3s are
-  generated test tones)
-
-## Requirements
-
-- Go 1.27 or newer
-- cgo (the audio device layer uses [oto](https://github.com/hajimehoshi/oto), which needs a C
-  compiler; on macOS that is the built-in toolchain, on Linux `libasound2-dev` or
-  `libpulse-dev`)
-- An interactive terminal (the `-json` and `-list` index exports work off one, in a pipe)
 
 ## Install
 
@@ -36,6 +21,16 @@ Pre-built macOS binaries (arm64 and amd64) are attached to
 
 ## Build
 
+The build requires:
+
+- Go 1.27 or newer
+- cgo (the audio device layer uses [oto](https://github.com/hajimehoshi/oto), which needs a C
+  compiler; on macOS that is the built-in toolchain, on Linux `libasound2-dev` or
+  `libpulse-dev`)
+- An interactive terminal (the `-json` and `-list` index exports work off one, in a pipe)
+
+then:
+
 ```bash
 CGO_ENABLED=1 go build -o bc-radio ./cmd/bc-radio
 ```
@@ -46,16 +41,17 @@ CGO_ENABLED=1 go build -o bc-radio ./cmd/bc-radio
 ./bc-radio -u yourbandcampname
 ```
 
-bc-radio opens on the player screen with the radio on (toggle with `d`). At startup it reads
-your followed bands and builds a flat track index from their discography — the status line
-shows the build, then the radio's state and the size of the index it draws from. As soon as
-the index builds, the radio starts a random index track; press `space` to pause, and as each
-track ends it picks another, never the one that just ended.
+bc-radio opens on the player screen with the radio on (toggle with `d`).
 
-Explicitly queued tracks always beat the radio: press `l` to browse the library, pick a track
-(and press `enter` to queue it) or an album (`enter` queues every track of it), and the
-queued tracks play in order before the radio resumes. Enter on an artist simply opens their
-releases.
+At startup it reads your followed bands and builds a flat track index from their
+discography. Then the radio starts a random index track; press `space` to pause, and as
+each track ends it picks another.
+
+Explicitly queued tracks always beat the radio: press `l` to browse the library, pick a
+track (and press `enter` to queue it) or an album (`enter` queues every track of it), and
+the queued tracks play in order before the radio resumes.
+
+Stopping the radio (toggle with `d`) simply means only play tracks you've queued and don't pick them randomly.
 
 | Flag | Meaning |
 | --- | --- |
@@ -69,16 +65,10 @@ releases.
 | `-json` | Build the track index, print it as JSON, and exit (no interface) |
 | `-list` | Build the track index, print it as a plain-text list, and exit (no interface) |
 
-Outside a terminal, without `-json` or `-list`, bc-radio exits with an actionable error
-instead of emitting escape sequences into the pipe.
-
 ## Index export
 
 `-json` and `-list` build the same track index the radio plays — every followed band, its
-releases, and their tracks with durations — print it, and exit without opening the
-interface. They work off a terminal, in a pipe, script, or CI job, and exit `0` on
-success and non-zero when the index cannot be built. Gaps in the walk (a removed band or
-release) are reported on stderr, so piped stdout stays clean.
+releases, and their tracks with durations — print it, and exit without opening the TUI.
 
 ```bash
 # The index as JSON: bands, then each band's albums, then each album's tracks
@@ -90,10 +80,9 @@ release) are reported on stderr, so piped stdout stays clean.
 ./bc-radio -username yourbandcampname -list
 ```
 
-The index walks the page cache: parsed Bandcamp pages stay on disk for `-page-ttl`
-(24 h by default), so runs inside that window reuse what was already fetched. To
-force a fresh walk — a new album, a changed track list — pass a short `-page-ttl`
-(`1s` re-fetches every page) or point `-cache-dir` at an empty directory.
+The index walks the page cache: parsed Bandcamp pages that stay on disk for `-page-ttl`
+(24 h by default). To force a fresh walk, pass a short `-page-ttl` (`1s` re-fetches every
+page) or point `-cache-dir` at an empty directory.
 
 ## Keybindings
 
@@ -119,48 +108,8 @@ force a fresh walk — a new album, a changed track list — pass a short `-page
 
 ## Themes
 
-`-theme` chooses the palette: `dark` for dark terminals, `light` for light ones, and `mono`
-renders everything in the terminal's default colour, with the hierarchy carried by bold and
-faint instead. The default, `auto`, follows the terminal: `NO_COLOR` resolves to mono, and
-otherwise the palette matches the terminal's background colour. An explicit choice never
-moves — and it is remembered: the app writes the last explicit choice to a one-line file
-(`$XDG_CONFIG_HOME/bc-radio/theme`, or `~/.config/bc-radio/theme` when that is unset), so a
-later unflagged launch keeps it. A `-theme` flag always wins over the remembered value, and
-a missing or unreadable file falls back to `auto`; delete the file, or pass `-theme auto`,
-to return to following the terminal.
-
-## How it works
-
-Bandcamp has no public consumer API, so the client reads the JSON Bandcamp embeds in its own
-pages — your following list and each album page. Parsed pages are cached on disk for 24
-hours (by default) so restarts are fast and a markup change does not take the library down.
-Stream links are time-limited; when one expires, the client re-resolves the album page for a
-fresh link, and a failed stream shows as a brief notice before the radio moves on. Repeated
-failures back off before retrying.
-
-Nothing is stored for later: tracks are streamed and played as they arrive, and the only
-local state is the page cache above, plus the one-line theme preference the app remembers
-after an explicit `-theme` choice (see Themes).
-
-The radio is the default mode. At startup bc-radio walks every followed band's discography —
-artists, releases (their singles, grouped under a `singles` entry), then each release's
-tracks — into a flat index, reading the same cached pages as
-the library browser, and the status line reports its size. With the radio on, each
-transition picks a random index track, avoiding the one that just ended; an explicit queue
-or repeat-one always plays first. With the radio off the app stops picking on its own: your
-queue plays, then the player stops — shuffle (`s`) is the explicit way to keep the session
-playing at random instead.
-
-Tracks decode in pure Go (`beep/mp3`, which wraps `hajimehoshi/go-mp3`) and play through oto.
-The queue pre-decodes the next track while the current one plays for gapless transitions.
-Analysis is pure Go as well: a Hann-windowed FFT of 2048 samples, half-overlapped, folded
-into the 16 bands on a log (decibel) scale, so a loud passage reads tall and a quiet one
-short — the visualizers show the music's own dynamics. The audio device refills its buffer
-in bursts, so the analyser keeps a rolling copy of everything it is given and anchors its
-reads on what is audible right now: the motion tracks the music at a steady cadence instead
-of in step with the buffer. The interface eases each band toward its target at the
-terminal's clock rate, and the oscilloscope draws the analyser's most recent samples raw,
-sample by sample.
-
-The terminal needs to be at least 30 × 10 for the player screen and 60 × 10 for the library;
-below that, bc-radio shows a notice instead of a broken layout.
+`-theme` chooses the palette: `dark` for dark terminals, `light` for light ones, and
+`mono` renders everything in the terminal's default colour. The default, `auto`, follows
+the terminal: `NO_COLOR` resolves to mono, and otherwise the palette matches the
+terminal's background colour. The theme is saved to a file (`$XDG_CONFIG_HOME/bc-radio/theme`, or
+`~/.config/bc-radio/theme` when that is unset), so a later unflagged launch keeps it.
