@@ -453,6 +453,102 @@ func TestSkipNextRadioAvoidsLastAndCurrent(t *testing.T) {
 	}
 }
 
+// The prepared draw avoids the last played *and* the one in the speakers:
+// on a two-track index, "avoid the last" alone would force a preview of
+// what is currently playing, and the hop after would replay it.
+func TestPrepareRadioNextAvoidsCurrent(t *testing.T) {
+	p := newPlaylist()
+	p.SetIndex([]contract.Track{track("A"), track("B")})
+	playThrough(p, "B")      // last B
+	p.SetCurrent(track("A")) // A playing
+	p.prepareRadioNext()
+	if got := p.radioNext.ID; got != "B" {
+		t.Fatalf("prepared draw = %q; want B (the only track that is neither last nor current)", got)
+	}
+}
+
+// prepareRadioNext must not preview the current track on any index: the
+// redraw after a track starts (the gapless radio's bookkeeping) runs while
+// that track is still playing.
+func TestPrepareRadioNextNeverPreviewsCurrent(t *testing.T) {
+	p := newPlaylist()
+	p.SetIndex([]contract.Track{track("A"), track("B"), track("C"), track("D")})
+	p.last = track("C")
+	p.SetCurrent(track("A"))
+	for i := 0; i < 200; i++ {
+		p.prepareRadioNext()
+		if got := p.radioNext.ID; got == "A" {
+			t.Fatalf("draw %d = %q; the radio must never preview the track in the speakers", i, got)
+		}
+	}
+}
+
+// upNext is the engine slot's fuel in the gapless flow: the queued head
+// first, then repeat-one, then the prepared radio draw; it peeks, so it
+// leaves both the queue and the draw untouched.
+func TestUpNextPrecedence(t *testing.T) {
+	p := newPlaylist()
+	p.SetIndex([]contract.Track{track("A"), track("B")})
+	playThrough(p, "C") // last C
+	p.SetCurrent(track("X"))
+	p.prepareRadioNext()
+	draw := p.radioNext
+
+	if n := p.upNext(); n.ID != draw.ID {
+		t.Fatalf("upNext = %q; want the radio draw %q with an empty queue", n.ID, draw.ID)
+	}
+
+	p.repeat = true
+	if n := p.upNext(); n.ID != "C" {
+		t.Fatalf("upNext = %q; repeat-one beats the radio", n.ID)
+	}
+
+	p.Add(track("Q"))
+	if n := p.upNext(); n.ID != "Q" {
+		t.Fatalf("upNext = %q; the queued head beats repeat-one and the radio", n.ID)
+	}
+	// The peek mutated nothing.
+	if got := len(p.Queue()); got != 1 {
+		t.Fatalf("queue length = %d; upNext must peek, not pop", got)
+	}
+	if p.radioNext.ID != draw.ID {
+		t.Fatalf("radio draw changed to %q; upNext must not consume it", p.radioNext.ID)
+	}
+}
+
+// recordPlayed dedupes adjacent duplicates: the same end can be reported
+// twice (an explicit load records the abandoned track, then the engine's
+// TrackStarted for it arrives behind), and repeat-one ends the same track
+// over and over — neither may stack the history, or prev would pop the
+// same track twice in a row.
+func TestRecordPlayedAdjacentDedup(t *testing.T) {
+	p := newPlaylist()
+	p.SetCurrent(track("A"))
+	p.recordPlayed(track("A")) // the load path
+	p.recordPlayed(track("A")) // the engine's end for the same track
+	if got := len(p.History()); got != 1 {
+		t.Fatalf("history = %v; the same end reported twice must stack once", ids(p.History()))
+	}
+	p.recordPlayed(track("B"))
+	p.recordPlayed(track("A")) // non-adjacent: a different end in between
+	if got := ids(p.History()); !reflect.DeepEqual(got, []string{"A", "B", "A"}) {
+		t.Fatalf("history = %v; want [A B A] (dedup is adjacent only)", got)
+	}
+}
+
+// consumeRadioNext will not hand back a draw that is now stale: the last
+// played, or the track in the speakers.
+func TestConsumeRadioNextStaleRedraws(t *testing.T) {
+	p := newPlaylist()
+	p.SetIndex([]contract.Track{track("A"), track("B"), track("C")})
+	playThrough(p, "B")      // last B
+	p.SetCurrent(track("A")) // A in the speakers
+	p.radioNext = track("A") // a stale preview of the current
+	if n, ok := p.consumeRadioNext(); !ok || n.ID != "C" {
+		t.Fatalf("consume = %q, %v; a stale draw must be redrawn (C: neither last nor current)", n.ID, ok)
+	}
+}
+
 // ids projects tracks to their IDs for readable assertions.
 func ids(ts []contract.Track) []string {
 	out := make([]string, len(ts))

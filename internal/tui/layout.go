@@ -821,6 +821,7 @@ func (a *App) viewHelp() string {
 			"  f          fullscreen visualizer",
 			"  l          library",
 			"  + / -      volume",
+			"  ← / →      seek 10 s back / forward",
 			styleDim.Render(fmt.Sprintf("  v cycles: %s", strings.Join(nameList(a.visualizers), " / "))),
 		)
 	}

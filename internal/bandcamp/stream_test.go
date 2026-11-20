@@ -422,6 +422,142 @@ func TestOpenSlowStreamBody(t *testing.T) {
 	}
 }
 
+// TestOpenBuffersWholeBody proves Open decouples playback from the network:
+// the body is fully downloaded before Open returns, so the returned Body
+// reads to completion even after the server goes away. A body read live
+// from the connection would instead end the track wherever that connection
+// died — the mid-track truncation this buffering exists to make impossible.
+func TestOpenBuffersWholeBody(t *testing.T) {
+	t.Parallel()
+	var page string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/fakehost/album/demo", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(page))
+	})
+	mux.HandleFunc("/stream/100", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("MP3DATA"))
+	})
+	srv := httptest.NewServer(mux)
+	page = demoPage(srv.URL, time.Now().Add(24*time.Hour))
+
+	c := testClient(t, srv, "deerhoof")
+	stream, err := c.Open(context.Background(), synthTrack(42, "fakehost.bandcamp.com", "demo", "100"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer stream.Body.Close()
+	srv.Close() // the download finished inside Open; nothing may depend on it now
+	body, err := io.ReadAll(stream.Body)
+	if err != nil {
+		t.Fatalf("body read after the server closed: %v (the body must be fully buffered)", err)
+	}
+	if string(body) != "MP3DATA" {
+		t.Errorf("body = %q, want MP3DATA", body)
+	}
+}
+
+// TestOpenRetriesSeveredBody proves a connection that dies mid-download is
+// a loud failure that recovers via the one retry, never a silently
+// truncated track: the first stream attempt is hijacked and closed after a
+// few bytes, and Open must return the complete body from the retry.
+func TestOpenRetriesSeveredBody(t *testing.T) {
+	t.Parallel()
+	var page string
+	pageHits := 0
+	streamHits := 0
+	severed := 0
+	mux := http.NewServeMux()
+	mux.HandleFunc("/fakehost/album/demo", countingHandler(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(page))
+	}, &pageHits))
+	mux.HandleFunc("/stream/100", countingHandler(func(w http.ResponseWriter, _ *http.Request) {
+		if severed < 1 {
+			severed++
+			w.Write([]byte("PARTIAL"))
+			conn, _, herr := w.(http.Hijacker).Hijack()
+			if herr == nil {
+				conn.Close()
+			}
+			return
+		}
+		w.Write([]byte("MP3DATA"))
+	}, &streamHits))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	page = demoPage(srv.URL, time.Now().Add(24*time.Hour))
+
+	c := testClient(t, srv, "deerhoof")
+	stream, err := c.Open(context.Background(), synthTrack(42, "fakehost.bandcamp.com", "demo", "100"))
+	if err != nil {
+		t.Fatalf("Open: %v (a severed body should be retried, not returned short)", err)
+	}
+	body, _ := io.ReadAll(stream.Body)
+	stream.Body.Close()
+	if string(body) != "MP3DATA" {
+		t.Errorf("body = %q, want MP3DATA after retry", body)
+	}
+	if streamHits != 2 {
+		t.Errorf("stream hits = %d, want 2 (severed, then success)", streamHits)
+	}
+	if pageHits != 2 {
+		t.Errorf("page hits = %d, want 2 (the failed stream triggered a URL refetch)", pageHits)
+	}
+}
+
+// TestOpenRejectsShortBody pins the length check: a body that ends cleanly
+// before the server's declared ContentLength is a failed fetch (one retry,
+// then a loud error), never a partial file presented as a complete track.
+// The short body is produced with a fake RoundTripper — an honest HTTP
+// server cannot end a declared-length body early without an error — which
+// also stands in for a misbehaving CDN edge.
+func TestOpenRejectsShortBody(t *testing.T) {
+	t.Parallel()
+	var page string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/fakehost/album/demo", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(page))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	page = demoPage(srv.URL, time.Now().Add(24*time.Hour))
+
+	alwaysShort := &fakeStreamRT{declared: 100, body: "PARTIAL"}
+	c := testClient(t, srv, "deerhoof")
+	c.stream = &http.Client{Transport: alwaysShort}
+	_, err := c.Open(context.Background(), synthTrack(42, "fakehost.bandcamp.com", "demo", "100"))
+	if err == nil {
+		t.Fatal("Open: want an error when the body is shorter than declared")
+	}
+	if !strings.Contains(err.Error(), "ended after") {
+		t.Errorf("err = %v, want it to name the short body", err)
+	}
+	if alwaysShort.hits != 2 {
+		t.Errorf("stream attempts = %d, want 2 (the short body triggered the one retry)", alwaysShort.hits)
+	}
+}
+
+// fakeStreamRT is an http.RoundTripper that answers every stream request
+// with a fixed body against a declared, larger ContentLength.
+type fakeStreamRT struct {
+	declared int64
+	body     string
+	hits     int
+}
+
+func (f *fakeStreamRT) RoundTrip(_ *http.Request) (*http.Response, error) {
+	f.hits++
+	return &http.Response{
+		StatusCode:    http.StatusOK,
+		Proto:         "HTTP/1.1",
+		ProtoMajor:    1,
+		ProtoMinor:    1,
+		Header:        http.Header{},
+		Body:          io.NopCloser(strings.NewReader(f.body)),
+		ContentLength: f.declared,
+		Request:       &http.Request{},
+	}, nil
+}
+
 // TestOpenHeaderStallTimesOut proves setup is still bounded: a stream
 // endpoint that never sends headers fails within the header deadline.
 func TestOpenHeaderStallTimesOut(t *testing.T) {
@@ -485,5 +621,50 @@ func TestOpenStreamContentLengthUnknown(t *testing.T) {
 	defer stream.Body.Close()
 	if stream.ContentLength != -1 {
 		t.Errorf("ContentLength = %d, want -1 for an unknown length", stream.ContentLength)
+	}
+}
+
+// TestOpenBodySeekable pins the body's shape: it must be seekable, because
+// the audio engine's MP3 decoder indexes a seekable body to report the
+// track's exact length and to let the ←/→ keys seek within it. A body that
+// read fine but would not seek (a plain NopCloser) silently degrades both.
+func TestOpenBodySeekable(t *testing.T) {
+	t.Parallel()
+	var page string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/fakehost/album/demo", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(page))
+	})
+	mux.HandleFunc("/stream/100", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("MP3DATA-MP3DATA-MP3DATA"))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	page = demoPage(srv.URL, time.Now().Add(24*time.Hour))
+
+	c := testClient(t, srv, "deerhoof")
+	stream, err := c.Open(context.Background(), synthTrack(42, "fakehost.bandcamp.com", "demo", "100"))
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	s, ok := stream.Body.(io.Seeker)
+	if !ok {
+		t.Fatal("the body does not implement io.Seeker; the decoder could not index it")
+	}
+	if _, err := s.Seek(8, io.SeekStart); err != nil {
+		t.Fatalf("Seek(8): %v", err)
+	}
+	body, err := io.ReadAll(stream.Body)
+	if err != nil {
+		t.Fatalf("ReadAll after seek: %v", err)
+	}
+	if got := string(body); got != "MP3DATA-MP3DATA" {
+		t.Fatalf("body after seek(8) = %q, want the tail from byte 8", got)
+	}
+	if _, err := s.Seek(0, io.SeekStart); err != nil {
+		t.Fatalf("Seek(0): %v", err)
+	}
+	if err := stream.Body.Close(); err != nil {
+		t.Fatalf("Close: %v (a memory buffer has nothing to release)", err)
 	}
 }

@@ -30,6 +30,7 @@ type options struct {
 	cacheDir      string
 	pageTTL       time.Duration
 	volume        float64
+	crossfade     time.Duration
 	theme         string
 	themeExplicit bool // -theme was passed, not left at its default
 	jsonOut       bool
@@ -38,15 +39,16 @@ type options struct {
 
 // The command-line flags, one variable per flag.
 var (
-	flagUsername string
-	flagSession  string
-	flagIdentity string
-	flagCacheDir string
-	flagPageTTL  time.Duration
-	flagVolume   float64
-	flagTheme    string
-	flagJSON     bool
-	flagList     bool
+	flagUsername  string
+	flagSession   string
+	flagIdentity  string
+	flagCacheDir  string
+	flagPageTTL   time.Duration
+	flagVolume    float64
+	flagCrossfade time.Duration
+	flagTheme     string
+	flagJSON      bool
+	flagList      bool
 	// themeFlag is the registered --theme flag: run reads its Changed bit to
 	// tell an explicit -theme from the default. Held in a variable (not
 	// looked up in rootCmd from run) so the command's RunE and run do not
@@ -80,6 +82,7 @@ func init() {
 	// non-zero default would make cobra print the raw "24h0m0s" spelling.
 	f.DurationVar(&flagPageTTL, "page-ttl", 0, "how long parsed Bandcamp pages stay in the local cache (default 24h)")
 	f.Float64Var(&flagVolume, "volume", 1, "the starting volume, from 0 (silent) to 1 (full)")
+	f.DurationVar(&flagCrossfade, "crossfade", 0, "how long tracks crossfade into each other on an equal-power curve (0 = a clean gapless switch, the default)")
 	f.StringVarP(&flagTheme, "theme", "t", "auto", "the interface theme: auto (follows the terminal), dark, light or mono; an explicit choice is remembered for the next launch")
 	themeFlag = f.Lookup("theme")
 	f.BoolVarP(&flagJSON, "json", "j", false, "build the track index, print it as JSON, and exit (no interface, works off a terminal)")
@@ -97,6 +100,9 @@ func (o options) validate() error {
 	}
 	if o.volume < 0 || o.volume > 1 {
 		return fmt.Errorf("the --volume flag must be between 0 and 1 (got %g)", o.volume)
+	}
+	if o.crossfade < 0 {
+		return fmt.Errorf("the --crossfade flag must not be negative (got %s)", o.crossfade)
 	}
 	if o.jsonOut && o.list {
 		return fmt.Errorf("use only one of -json and -list")
@@ -126,15 +132,16 @@ func run(_ *cobra.Command, _ []string) error {
 	themeExplicit := themeFlag != nil && themeFlag.Changed
 
 	o := options{
-		username: flagUsername,
-		session:  flagSession,
-		identity: flagIdentity,
-		cacheDir: flagCacheDir,
-		pageTTL:  flagPageTTL,
-		volume:   flagVolume,
-		theme:    flagTheme,
-		jsonOut:  flagJSON,
-		list:     flagList,
+		username:  flagUsername,
+		session:   flagSession,
+		identity:  flagIdentity,
+		cacheDir:  flagCacheDir,
+		pageTTL:   flagPageTTL,
+		volume:    flagVolume,
+		crossfade: flagCrossfade,
+		theme:     flagTheme,
+		jsonOut:   flagJSON,
+		list:      flagList,
 	}
 	if err := o.resolveTheme(themeExplicit); err != nil {
 		return err
@@ -168,7 +175,7 @@ func run(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("bandcamp: %w", err)
 	}
 
-	engine, err := audio.New(bc)
+	engine, err := audio.New(bc, audio.WithCrossfade(o.crossfade))
 	if err != nil {
 		return fmt.Errorf("audio: %w", err)
 	}

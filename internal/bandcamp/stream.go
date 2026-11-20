@@ -1,8 +1,11 @@
 package bandcamp
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -95,8 +98,18 @@ func signedURLExpiry(u string) time.Time {
 //     track, the /track/ page for a single — re-parsing data-tralbum;
 //  3. a forced fresh page fetch, when the cached page's URL has already
 //     expired;
-//  4. if the stream fetch itself fails, the URL is invalidated and the
-//     chain runs once more.
+//  4. if the stream fetch itself fails — the HTTP exchange, a truncated
+//     body, or a length mismatch — the URL is invalidated and the chain
+//     runs once more.
+//
+// The body is downloaded completely before Open returns. The audio engine
+// decodes in real time (a second of audio per second of wall time), so a
+// body read live from the network would keep one HTTP connection open for
+// the whole track — anything that severs a slowly draining response
+// (a CDN edge, a router, a network blip) silently truncated tracks
+// mid-playback. A fully buffered body makes mid-track truncation
+// impossible: the download completes at full speed in a few seconds, and
+// playback decodes from memory.
 //
 // A track must carry its location (Subdomain host + a release slug of
 // either kind + ID); a track built anywhere else is rejected with a
@@ -114,22 +127,65 @@ func (c *Client) Open(ctx context.Context, t contract.Track) (contract.AudioStre
 	if err != nil {
 		return contract.AudioStream{}, err
 	}
-	resp, err := c.fetchStream(ctx, streamURL)
+	data, length, err := c.fetchBody(ctx, streamURL)
 	if err != nil {
 		c.urls.invalidate(key)
 		streamURL, err = c.streamURL(ctx, t, key, true)
 		if err != nil {
 			return contract.AudioStream{}, err
 		}
-		if resp, err = c.fetchStream(ctx, streamURL); err != nil {
+		if data, length, err = c.fetchBody(ctx, streamURL); err != nil {
 			return contract.AudioStream{}, err
 		}
 	}
-	length := resp.ContentLength
-	if length < 0 {
-		length = -1
+	return contract.AudioStream{Body: &memBody{bytes.NewReader(data)}, ContentLength: length}, nil
+}
+
+// memBody is the in-memory stream body: a seekable buffer with a no-op
+// Close (there is nothing to release). It implements io.Seeker in addition
+// to io.ReadCloser, so the audio engine's MP3 decoder can index it —
+// reporting the track's exact length and letting the ←/→ keys seek within
+// it. A plain NopCloser would read fine but not seek.
+type memBody struct {
+	*bytes.Reader
+}
+
+// Close implements io.Closer: a memory buffer has nothing to release.
+func (b *memBody) Close() error { return nil }
+
+// fetchBody fetches u and reads the whole response body, validating it
+// against the ContentLength the server committed to. It fails on any read
+// error or a short read: a partially delivered stream must not be
+// presented as a complete track (the decoder would then end the track
+// wherever the data ran out, a few seconds or minutes early). The body is
+// returned for the caller to serve from memory.
+func (c *Client) fetchBody(ctx context.Context, u string) (data []byte, length int64, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, -1, fmt.Errorf("bandcamp: stream %s: %w", u, err)
 	}
-	return contract.AudioStream{Body: resp.Body, ContentLength: length}, nil
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := c.stream.Do(req)
+	if err != nil {
+		return nil, -1, fmt.Errorf("bandcamp: stream %s: %w", u, err)
+	}
+	if resp.StatusCode >= 400 {
+		drainClose(resp)
+		return nil, -1, fmt.Errorf("bandcamp: stream %s: HTTP %d", u, resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	data, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, -1, fmt.Errorf("bandcamp: stream %s: reading the body: %w", u, err)
+	}
+	if resp.ContentLength >= 0 && int64(len(data)) != resp.ContentLength {
+		return nil, -1, fmt.Errorf("bandcamp: stream %s: the body ended after %d of %d bytes", u, len(data), resp.ContentLength)
+	}
+	length = int64(len(data))
+	if resp.ContentLength < 0 {
+		length = -1 // the server committed to no length; the buffer is what it is
+	}
+	return data, length, nil
 }
 
 // urlKeyFor builds the URL-cache key from a track's AlbumID and ID.

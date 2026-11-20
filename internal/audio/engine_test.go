@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"math"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/ali5ter/bc-radio/internal/contract"
 )
@@ -31,6 +33,24 @@ func TestNewStartsDevice(t *testing.T) {
 		t.Errorf("device calls after New = %v, want [play]", got)
 	}
 	_ = e
+}
+
+// TestWithCrossfade: the option stores the duration, and crossFrames
+// converts it to device-rate frames — 0 stays 0 (the gapless default).
+func TestWithCrossfade(t *testing.T) {
+	t.Parallel()
+	e, _ := newTestEngine(t, &fakeSource{})
+	WithCrossfade(2 * time.Second)(e)
+	if e.crossfade != 2*time.Second {
+		t.Errorf("crossfade = %v, want 2s", e.crossfade)
+	}
+	if got := e.crossFrames(); got != 2*deviceRate {
+		t.Errorf("crossFrames = %d, want %d", got, 2*deviceRate)
+	}
+	WithCrossfade(0)(e)
+	if got := e.crossFrames(); got != 0 {
+		t.Errorf("crossFrames after WithCrossfade(0) = %d, want 0", got)
+	}
 }
 
 // TestLoadFailure: a failed Load reports EventPlaybackFailed, returns the
@@ -379,4 +399,292 @@ func TestClose(t *testing.T) {
 		t.Errorf("device calls = %v, want to end in [close]", got)
 	}
 	drainEvents(e) // must terminate: the channel is closed
+}
+
+// closedReady is a pending slot whose preparation is finished.
+func closedReady() chan struct{} {
+	c := make(chan struct{})
+	close(c)
+	return c
+}
+
+// TestFadeNext: a ready slot becomes current at once (TrackStarted), the
+// current track becomes the fade's ghost over the full crossfade window,
+// the position zeros, and the device is untouched — the mix is continuous,
+// so nothing needs a flush.
+func TestFadeNext(t *testing.T) {
+	t.Parallel()
+	e, dev := newTestEngine(t, &fakeSource{})
+	WithCrossfade(50 * time.Millisecond)(e)
+	ghost := &chain{track: testTrack("old"), tail: newScriptStreamer(2500, 0.8, nil)}
+	setCurrent(e, ghost)
+	in := &chain{track: testTrack("next"), tail: newScriptStreamer(2500, 0.4, nil)}
+	e.mu.Lock()
+	e.playing = true
+	e.next = &pending{chain: in, ready: closedReady()}
+	e.mu.Unlock()
+
+	if !e.FadeNext(testTrack("next")) {
+		t.Fatal("FadeNext = false; the slot is ready and named correctly")
+	}
+	if st := e.State(); st.Track.ID != "next" {
+		t.Fatalf("State track = %q, want next", st.Track.ID)
+	}
+	if st := e.State(); st.Position != 0 {
+		t.Fatalf("State.Position = %v after the swap, want 0", st.Position)
+	}
+	if e.pump.fade == nil || e.pump.fade.out != ghost || e.pump.fade.in != in {
+		t.Fatal("the pump's fade must hold the ghost and the promoted chain")
+	}
+	if e.pump.fade.total != 50*deviceRate/1000 || e.pump.fade.left != 50*deviceRate/1000 {
+		t.Fatalf("fade window = %d/%d; want the full crossfade duration (50 ms = %d frames)",
+			e.pump.fade.total, e.pump.fade.left, 50*deviceRate/1000)
+	}
+	if got := dev.Calls(); !sameStrings(got, []string{"play"}) {
+		t.Errorf("device calls = %v, want [play] (a skip-fade must not flush)", got)
+	}
+	if got := drainEvents(e); len(got) != 1 || got[0].Kind != contract.EventTrackStarted || got[0].Track.ID != "next" {
+		t.Fatalf("events = %v, want one TrackStarted(next)", got)
+	}
+
+	// Drive the mix: the first frame is the ghost at full gain (x = 1:
+	// gainIn 0, gainOut 1), and the ghost is not drained by the window.
+	buf := make([]byte, 20*bytesPerFrame)
+	if _, err := e.pump.Read(buf); err != nil {
+		t.Fatalf("Read: %v", err)
+	}
+	frames := decodeFrames(t, buf)
+	// The 1e-6 tolerance is the float32 round trip through encodeFloat32,
+	// not a mix error: the ghost at full gain (x = 1) must be exact to
+	// the encoding.
+	if math.Abs(frames[0][0]-0.8) > 1e-6 {
+		t.Fatalf("first mixed frame = %v; want the ghost at full gain (0.8)", frames[0])
+	}
+	// The position counts the incoming track: one Read of 20 frames.
+	readFrames := 20
+	wantPos := time.Duration(float64(readFrames) / float64(deviceRate) * float64(time.Second))
+	if st := e.State(); st.Position != wantPos {
+		t.Fatalf("Position after the first mixed Read = %v; want %v (20 frames at the device rate)", st.Position, wantPos)
+	}
+	// Run the window to its end: the ghost departs (cut, not drained) and
+	// the incoming keeps playing.
+	for e.pump.fade != nil && e.pump.fade.left > 0 {
+		if _, err := e.pump.Read(buf); err != nil {
+			t.Fatalf("Read: %v", err)
+		}
+	}
+	if e.pump.fade != nil {
+		t.Fatal("the fade must complete at the window's end")
+	}
+	if ghost.tail.(*scriptStreamer).left == 0 {
+		t.Fatal("the ghost must be cut at the window's end, not drained")
+	}
+	evs := drainEvents(e)
+	if len(evs) != 1 || evs[0].Kind != contract.EventTrackEnded || evs[0].Track.ID != "old" {
+		t.Fatalf("events after the window = %v; want the cut ghost's TrackEnded", evs)
+	}
+}
+
+// TestFadeNextRefusals: every shape the fade cannot take reports false and
+// leaves the engine exactly as it was.
+func TestFadeNextRefusals(t *testing.T) {
+	t.Parallel()
+	build := func() (*Engine, *fakeDevice, *chain) {
+		e, dev := newTestEngine(t, &fakeSource{})
+		WithCrossfade(time.Second)(e)
+		ghost := &chain{track: testTrack("old"), tail: newScriptStreamer(16, 1, nil)}
+		setCurrent(e, ghost)
+		e.mu.Lock()
+		e.playing = true
+		e.mu.Unlock()
+		return e, dev, ghost
+	}
+	ready := func() *pending {
+		return &pending{chain: &chain{track: testTrack("next"), tail: newScriptStreamer(16, 1, nil)}, ready: closedReady()}
+	}
+
+	t.Run("crossfade unset", func(t *testing.T) {
+		e, _, _ := build()
+		e.mu.Lock()
+		e.crossfade = 0
+		e.next = ready()
+		e.mu.Unlock()
+		if e.FadeNext(testTrack("next")) {
+			t.Fatal("a zero crossfade must refuse the fade")
+		}
+	})
+	t.Run("nothing next", func(t *testing.T) {
+		e, _, _ := build()
+		if e.FadeNext(testTrack("next")) {
+			t.Fatal("an empty slot must refuse the fade")
+		}
+	})
+	t.Run("next not ready", func(t *testing.T) {
+		e, _, _ := build()
+		pd := ready()
+		pd.ready = make(chan struct{}) // preparation still running
+		e.mu.Lock()
+		e.next = pd
+		e.mu.Unlock()
+		if e.FadeNext(testTrack("next")) {
+			t.Fatal("an unready slot must refuse the fade")
+		}
+	})
+	t.Run("failed preparation", func(t *testing.T) {
+		e, _, _ := build()
+		e.mu.Lock()
+		e.next = &pending{chain: nil, ready: closedReady()}
+		e.mu.Unlock()
+		if e.FadeNext(testTrack("next")) {
+			t.Fatal("a nil chain must refuse the fade")
+		}
+	})
+	t.Run("different track", func(t *testing.T) {
+		e, _, _ := build()
+		e.mu.Lock()
+		e.next = ready()
+		e.mu.Unlock()
+		if e.FadeNext(testTrack("someone else")) {
+			t.Fatal("a slot holding another track must refuse the fade")
+		}
+	})
+	t.Run("paused", func(t *testing.T) {
+		e, _, _ := build()
+		e.mu.Lock()
+		e.playing = false
+		e.next = ready()
+		e.mu.Unlock()
+		if e.FadeNext(testTrack("next")) {
+			t.Fatal("a paused engine must refuse the fade")
+		}
+	})
+	t.Run("fade in flight", func(t *testing.T) {
+		e, _, _ := build()
+		// The chains carry tails: Stop (in the cleanup) aborts the fade
+		// and departs the ghost, which reads the tail's Err.
+		e.mu.Lock()
+		e.next = ready()
+		e.pump.fade = &fade{out: &chain{tail: newScriptStreamer(1, 1, nil)}, in: &chain{tail: newScriptStreamer(1, 1, nil)}, total: 1, left: 1}
+		e.mu.Unlock()
+		if e.FadeNext(testTrack("next")) {
+			t.Fatal("an in-flight fade must refuse a second one")
+		}
+	})
+	// None of them may have moved the track or touched the device.
+}
+
+// TestSeek: a seekable chain moves by the requested amount, clamped to the
+// track's ends; the device buffer is cleared (flush playing, reset
+// paused); the position reads the move.
+func TestSeek(t *testing.T) {
+	t.Parallel()
+	body := readFixture(t, "actually-you-can-track1.mp3")
+	e, dev := newTestEngine(t, sourceFromSeekableBytes(body))
+	if err := e.Load(context.Background(), testTrack("t1")); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !e.currentChain().seekable {
+		t.Fatal("the fixture chain must be seekable (an indexed in-memory body)")
+	}
+	ctx := context.Background()
+
+	e.Seek(ctx, time.Second)
+	if st := e.State(); st.Position != time.Second {
+		t.Fatalf("Position after seek +1 s = %v, want 1 s", st.Position)
+	}
+	if got := dev.Calls(); !sameStrings(got, []string{"play", "flush", "flush"}) {
+		t.Fatalf("device calls = %v, want [play flush (load) flush (seek)]", got)
+	}
+
+	// Forward past the end clamps to the track's end.
+	e.Seek(ctx, 100*time.Second)
+	if st := e.State(); st.Position < 4*time.Second || st.Position > 8*time.Second {
+		t.Fatalf("Position after a 100 s forward seek = %v; want the clamped end of the ~5 s fixture", st.Position)
+	}
+	// Backward past the start clamps to zero.
+	e.Seek(ctx, -100*time.Second)
+	if st := e.State(); st.Position != 0 {
+		t.Fatalf("Position after a 100 s backward seek = %v, want 0", st.Position)
+	}
+
+	// Paused: the buffer clears with reset, not flush — the pause survives.
+	if err := e.Pause(ctx); err != nil {
+		t.Fatalf("Pause: %v", err)
+	}
+	e.Seek(ctx, time.Second)
+	if got := dev.Calls(); got[len(got)-1] != "reset" {
+		t.Fatalf("last device call = %q, want reset (a paused seek must not resume)", got[len(got)-1])
+	}
+	if st := e.State(); st.Playing {
+		t.Fatal("a seek on a paused track must stay paused")
+	}
+	if st := e.State(); st.Position != time.Second {
+		t.Fatalf("Position after a paused seek = %v, want 1 s", st.Position)
+	}
+}
+
+// TestSeekNoOps: an idle engine, a zero delta, and a chain the seek cannot
+// move all leave the engine — and any in-flight fade — untouched.
+func TestSeekNoOps(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	t.Run("idle", func(t *testing.T) {
+		e, dev := newTestEngine(t, &fakeSource{})
+		e.Seek(ctx, time.Second)
+		e.Seek(ctx, 0)
+		if got := dev.Calls(); !sameStrings(got, []string{"play"}) {
+			t.Fatalf("device calls = %v, want [play] (no seek landed)", got)
+		}
+	})
+	t.Run("unseekable chain keeps the fade", func(t *testing.T) {
+		e, dev := newTestEngine(t, &fakeSource{})
+		ghost := &chain{track: testTrack("old"), tail: newScriptStreamer(16, 1, nil)}
+		in := &chain{track: testTrack("next"), tail: newScriptStreamer(16, 1, nil)}
+		setCurrent(e, in)
+		e.mu.Lock()
+		e.playing = true
+		e.pump.fade = &fade{out: ghost, in: in, total: 16, left: 16}
+		e.mu.Unlock()
+		e.Seek(ctx, time.Second)
+		if st := e.State(); st.Position != 0 {
+			t.Fatalf("Position = %v; a seek that cannot land must not move it", st.Position)
+		}
+		if e.pump.fade == nil || e.pump.fade.left != 16 {
+			t.Fatal("a seek that cannot land must not abort the in-flight fade")
+		}
+		if got := dev.Calls(); !sameStrings(got, []string{"play"}) {
+			t.Fatalf("device calls = %v, want [play] (no buffer clear for a no-op seek)", got)
+		}
+	})
+}
+
+// TestSeekAbortsFade: a seek that lands while a crossfade is in flight
+// ends the mix — the ghost departs (cut) — and the position moves.
+func TestSeekAbortsFade(t *testing.T) {
+	t.Parallel()
+	body := readFixture(t, "actually-you-can-track1.mp3")
+	e, dev := newTestEngine(t, sourceFromSeekableBytes(body))
+	if err := e.Load(context.Background(), testTrack("t1")); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	in := e.currentChain()
+	ghost := &chain{track: testTrack("ghost"), tail: newScriptStreamer(16, 1, nil)}
+	e.mu.Lock()
+	e.pump.fade = &fade{out: ghost, in: in, total: 16, left: 16}
+	e.mu.Unlock()
+
+	e.Seek(context.Background(), time.Second)
+	if e.pump.fade != nil {
+		t.Fatal("a landed seek must abort the in-flight fade")
+	}
+	if st := e.State(); st.Position != time.Second {
+		t.Fatalf("Position = %v after the seek, want 1 s", st.Position)
+	}
+	if got := drainEvents(e); len(got) == 0 || got[0].Kind != contract.EventTrackEnded || got[0].Track.ID != "ghost" {
+		t.Fatalf("events = %v, want the cut ghost's TrackEnded", got)
+	}
+	if got := dev.Calls(); got[len(got)-1] != "flush" {
+		t.Fatalf("last device call = %q, want flush", got[len(got)-1])
+	}
 }

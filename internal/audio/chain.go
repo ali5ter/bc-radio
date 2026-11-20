@@ -2,9 +2,11 @@ package audio
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/ali5ter/bc-radio/internal/contract"
 	"github.com/faiface/beep"
@@ -69,6 +71,19 @@ func (s *volumeStage) Stream(samples [][2]float64) (int, bool) {
 // Err implements beep.Streamer.
 func (s *volumeStage) Err() error { return s.s.Err() }
 
+// tailFrames is the number of frames a chain's tail will emit for a track
+// of duration d at the device rate: the tail always runs at the device rate
+// (the resampler, when present, converts to it), so the wall-clock duration
+// times the device rate is the tail's output length. A non-positive
+// duration (unknown) yields -1: the crossfade start cannot be timed, and
+// the transition falls back to the plain gapless one.
+func tailFrames(t contract.Track, deviceRate int) int {
+	if t.Duration <= 0 {
+		return -1
+	}
+	return int(float64(t.Duration) / float64(time.Second) * float64(deviceRate))
+}
+
 // chain is the audio pipeline for one track:
 //
 //	mp3 decoder → (resampler, only if the source rate differs) → volume
@@ -80,6 +95,23 @@ type chain struct {
 	tail    beep.Streamer
 	decoder beep.StreamSeekCloser // owns the stream body once decode succeeds
 	body    io.ReadCloser         // closed directly only if no decoder was built
+
+	// seekable is true when the decoder can move within the track: the
+	// source rate is the device rate (no resampler in between — beep's
+	// resampler has no flush, so a source seek would leave its stale
+	// interpolation state behind) and the body the decoder indexed.
+	// When false, seekTo is a no-op error.
+	seekable bool
+
+	// total is the frames the tail is expected to emit: the exact count
+	// the decoder walked for a seekable chain, else the track's metadata
+	// duration at the device rate — -1 when that is unknown. The pump's
+	// crossfade start compares it against the frames already consumed; a
+	// metadata estimate off by a few frames is inaudible (the mix is
+	// continuous at both ends of the fade), and the walk's exact count
+	// makes the timing and the seek clamp precise where the metadata is
+	// not.
+	total int
 
 	closeOnce sync.Once // the pump and the engine (Stop) can both close a chain
 }
@@ -98,15 +130,46 @@ func newChain(ctx context.Context, source contract.AudioSource, t contract.Track
 		return nil, fmt.Errorf("audio: decode %s — %s: %w", t.BandName, t.Title, err)
 	}
 	var s beep.Streamer = decoder
-	if int(format.SampleRate) != deviceRate {
+	resampled := int(format.SampleRate) != deviceRate
+	if resampled {
 		s = beep.Resample(resampleQuality, format.SampleRate, beep.SampleRate(deviceRate), decoder)
 	}
+	total := tailFrames(t, deviceRate)
+	seekable := false
+	if !resampled {
+		// The walk the decoder did on Open (it indexes a seekable body
+		// while building) counts the track's frames exactly at the
+		// device rate — it is the seek's clamp and a tighter crossfade
+		// clock than the metadata. A body the decoder could not index
+		// reports 0 and stays unseekable.
+		if n := decoder.Len(); n > 0 {
+			total = n
+			seekable = true
+		}
+	}
 	return &chain{
-		track:   t,
-		tail:    &volumeStage{v: vol, s: s},
-		decoder: decoder,
-		body:    stream.Body,
+		track:    t,
+		tail:     &volumeStage{v: vol, s: s},
+		decoder:  decoder,
+		body:     stream.Body,
+		total:    total,
+		seekable: seekable,
 	}, nil
+}
+
+// errNotSeekable is returned by seekTo for a chain that cannot move — a
+// resampled source, or a body the decoder could not index.
+var errNotSeekable = errors.New("audio: track is not seekable")
+
+// seekTo moves the decoder to frame f at the device rate. It returns
+// errNotSeekable when the chain is not seekable (the caller treats that as
+// a no-op), or the decoder's error when f is out of range (the engine
+// clamps before calling, so this is defence against a race).
+func (c *chain) seekTo(f int) error {
+	if c == nil || !c.seekable || c.decoder == nil {
+		return errNotSeekable
+	}
+	return c.decoder.Seek(f)
 }
 
 // close releases the chain's resources. The mp3 decoder closes the stream

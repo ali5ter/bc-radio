@@ -32,6 +32,7 @@ func (d *fakeDevice) record(call string) {
 func (d *fakeDevice) play()  { d.record("play") }
 func (d *fakeDevice) pause() { d.record("pause") }
 func (d *fakeDevice) flush() { d.record("flush") }
+func (d *fakeDevice) reset() { d.record("reset") }
 func (d *fakeDevice) close() { d.record("close") }
 
 // unplayed implements device. It is a query, not a control call, so it is
@@ -89,12 +90,36 @@ func (s *fakeSource) Opened() []contract.Track {
 
 var _ contract.AudioSource = (*fakeSource)(nil)
 
-// sourceFromBytes is a fakeSource that serves body for every track.
+// sourceFromBytes is a fakeSource that serves body for every track, as a
+// plain read-only body: the conservative case — the decoder cannot index
+// it, so the chain is unseekable and falls back to the metadata total.
+// (The bandcamp source serves a seekable buffer; sourceFromSeekableBytes
+// mirrors that.)
 func sourceFromBytes(body []byte) *fakeSource {
 	return &fakeSource{openFn: func(_ context.Context, _ contract.Track) (contract.AudioStream, error) {
 		return contract.AudioStream{Body: io.NopCloser(bytes.NewReader(body)), ContentLength: int64(len(body))}, nil
 	}}
 }
+
+// sourceFromSeekableBytes is a fakeSource that serves body for every track
+// as a seekable in-memory buffer, the shape the bandcamp source returns:
+// the decoder can index it, so the chain is seekable with an exact total.
+func sourceFromSeekableBytes(body []byte) *fakeSource {
+	return &fakeSource{openFn: func(_ context.Context, _ contract.Track) (contract.AudioStream, error) {
+		sb := &seekableTestBody{bytes.NewReader(body)}
+		return contract.AudioStream{Body: sb, ContentLength: int64(len(body))}, nil
+	}}
+}
+
+// seekableTestBody is a test double for a source body that is both
+// readable/closable (io.ReadCloser) and seekable (io.Seeker) — the shape
+// the bandcamp source returns.
+type seekableTestBody struct {
+	*bytes.Reader
+}
+
+// Close implements io.Closer: a memory buffer has nothing to release.
+func (b *seekableTestBody) Close() error { return nil }
 
 // recordedCloser is a stream body that records whether Close was called.
 type recordedCloser struct {

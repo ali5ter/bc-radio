@@ -577,18 +577,21 @@ func (a *App) pollIndexProgress() {
 	a.indexDone, a.indexTotal = progress.IndexProgress()
 }
 
-// syncNext fills the engine's single pending slot with the queue head, so
-// the engine can advance gaplessly when the current track ends. The engine
-// holds exactly one prepared track — a second Queue would supersede it — so
-// this acts only when the slot is empty. When the engine is idle, the same
-// call starts the head at once (contract: Queue on an idle player starts).
+// syncNext fills the engine's single pending slot with whatever the policy
+// says plays next — the queue head, then repeat-one, then the prepared
+// radio draw (playlist.upNext) — so the engine has it prepared when the
+// current track ends, and the transition is gapless (or a crossfade, when
+// one is set) instead of a fetch gap. The engine holds exactly one prepared
+// track — a second Queue would supersede it — so this acts only when the
+// slot is empty. When the engine is idle, the same call starts the pick at
+// once (contract: Queue on an idle player starts).
 func (a *App) syncNext() {
 	if a.engineNextID != "" {
 		return
 	}
-	if q := a.playlist.Queue(); len(q) > 0 {
-		a.player.Queue(q[0])
-		a.engineNextID = q[0].ID
+	if t := a.playlist.upNext(); t.ID != "" {
+		a.player.Queue(t)
+		a.engineNextID = t.ID
 	}
 }
 
@@ -610,13 +613,35 @@ func (a *App) onEvent(ev contract.Event) {
 	switch ev.Kind {
 	case contract.EventTrackStarted:
 		a.pos = 0
+		// The replaced track is done — record it. It may still be fading
+		// out (a crossfade starts the TrackStarted before the outgoing one
+		// ends), but it is replaced either way: it leaves the current slot
+		// and lands in history and last, so avoidance and prev see it.
+		// recordPlayed is adjacent-deduped, so the TrackEnded that follows
+		// for a cut or a fade-out reports the same end without stacking it.
+		// A current that already is the new track (an explicit load whose
+		// loadedMsg landed first, a repeat-one) records nothing: it is not
+		// an end, and the dedup alone would not stop it stacking.
+		if ended := a.playlist.Current(); ended.ID != "" && ended.ID != ev.Track.ID {
+			a.playlist.recordPlayed(ended)
+		}
 		a.playlist.SetCurrent(ev.Track)
 		if ev.Track.ID == a.engineNextID {
 			a.engineNextID = "" // the engine consumed its pending slot
+			// When the slot held the radio draw, the draw is spent:
+			// consume it, or the redraw below previews it and the slot
+			// refill would queue a radio that plays its own preview twice.
+			if a.playlist.radioNext.ID == ev.Track.ID {
+				a.playlist.radioNext = contract.Track{}
+			}
 		}
 		a.statusf("now: %s — %s", ev.Track.BandName, ev.Track.Title)
-		a.syncNext()
+		// Redraw the preview before refilling the slot: the refill
+		// previews what the redraw picked, so the footer and the engine's
+		// pending slot always name the same track (a radio that announces
+		// A and plays B is not a radio).
 		a.playlist.prepareRadioNext()
+		a.syncNext()
 	case contract.EventTrackEnded:
 		if st.Track.ID != "" {
 			// The engine advanced to its prepared track; the TrackStarted
@@ -704,6 +729,10 @@ func (a *App) handlePlayerKey(act action) tea.Cmd {
 		a.setVolume(a.state.Volume + 0.05)
 	case actVolumeDown:
 		a.setVolume(a.state.Volume - 0.05)
+	case actLeft:
+		return a.seek(-seekStep)
+	case actRight:
+		return a.seek(seekStep)
 	case actLibrary:
 		a.screen = screenLibrary
 		if len(a.browser.artists) == 0 {
@@ -784,10 +813,19 @@ func (a *App) togglePlayPause() tea.Cmd {
 	return nil
 }
 
-// skip implements n: abandon the current track (recording it once the
-// replacement is confirmed) and start the policy's next.
+// skip implements n: abandon the current track and start the policy's
+// next. When the engine's pending slot already holds the track the policy
+// would play, the skip is the crossfade itself — instant (the successor is
+// already downloaded), the abandoned track fading out over the full window
+// instead of a hard cut. Anything that cannot fade (the crossfade unset,
+// the slot empty or not ready, a repeat-one, a paused or idle engine)
+// falls through to the plain skip: a fresh pick and a background load,
+// recording the abandoned track once the replacement is confirmed.
 func (a *App) skip() tea.Cmd {
 	if a.pendingLoad {
+		return nil
+	}
+	if a.tryFadeSkip() {
 		return nil
 	}
 	a.skipFrom = a.playlist.Current()
@@ -800,6 +838,48 @@ func (a *App) skip() tea.Cmd {
 	a.pendingLoad = true
 	a.statusf("next: %s — %s", t.BandName, t.Title)
 	return a.loadCmd(t)
+}
+
+// tryFadeSkip runs the skip as a crossfade when it can, and reports
+// whether it did. The engine's pending slot must hold exactly the track
+// the policy previews (upNext — the same one syncNext queued into the
+// slot), and that track must not be the one playing (a repeat-one target
+// is a restart, and the plain skip picks fresh). The engine performs the
+// swap and raises TrackStarted for the successor; the playlist
+// bookkeeping — recording the abandoned track, making the successor
+// current, consuming the slot — happens in that event, so this leaves the
+// playlist alone.
+func (a *App) tryFadeSkip() bool {
+	st := a.player.State()
+	if !st.Playing || st.Track.ID == "" {
+		return false
+	}
+	target := a.playlist.upNext()
+	if target.ID == "" || target.ID != a.engineNextID || target.ID == st.Track.ID {
+		return false
+	}
+	return a.player.FadeNext(target)
+}
+
+// seekStep is the ←/→ seek step: ten seconds, the standard player quantity.
+const seekStep = 10 * time.Second
+
+// seek implements ←/→: move the current track ten seconds back or forward.
+// The engine applies the move at once (decoder, position, device buffer),
+// so the position bar follows on the same tick. It is deliberately quiet
+// about the cases the engine cannot honour — nothing playing, a track it
+// cannot seek: an arrow that announced what it could not do would be a
+// lie, and the frozen bar says enough.
+func (a *App) seek(d time.Duration) tea.Cmd {
+	if a.pendingLoad {
+		return nil
+	}
+	if a.state.Track.ID == "" {
+		return nil
+	}
+	a.player.Seek(context.Background(), d)
+	a.pos = a.player.State().Position
+	return nil
 }
 
 // prev implements p: within 5 s of the start, restart the current track;

@@ -32,6 +32,11 @@ type device interface {
 	// come from the newly installed chain, so nothing of the previous
 	// track is heard.
 	flush()
+	// reset discards any audio already pulled into the device's buffer and
+	// leaves it paused: flush minus the resume. A seek on a paused track
+	// uses it — the stale buffer must not play on resume, but the pause
+	// must survive the seek.
+	reset()
 	// unplayed reports the frames the device has already pulled but not yet
 	// played, at the device's sample rate. The analyser subtracts it from
 	// what it has been fed to anchor its reads on what is audible right
@@ -70,10 +75,17 @@ func (d *otoDevice) unplayed() int {
 }
 
 // flush is the one reset-and-resume: oto/v2's Reset empties the player's
-// internal buffer (setting it paused) and Play restarts the pull.
+// internal buffer (setting it paused) and Play restarts the pull. See the
+// interface for why a replaced track needs this rather than a resume.
 func (d *otoDevice) flush() {
 	d.player.Reset()
 	d.player.Play()
+}
+
+// reset is flush minus the resume: the buffer empties, the player stays
+// paused (a seek must not un-pause a paused track).
+func (d *otoDevice) reset() {
+	d.player.Reset()
 }
 
 func (d *otoDevice) close() { _ = d.player.Close() }

@@ -34,6 +34,13 @@ type fakePlayer struct {
 	volumes []float64
 	loadErr error
 	events  chan contract.Event
+
+	// fades records FadeNext calls; fadeOK is what they return (default
+	// false: a fade the engine refuses, so the app takes the plain path).
+	fades  []contract.Track
+	fadeOK bool
+	// seekDeltas records the Seek calls the app made.
+	seekDeltas []time.Duration
 }
 
 func newFakePlayer() *fakePlayer {
@@ -87,6 +94,22 @@ func (f *fakePlayer) SetVolume(ctx context.Context, v float64) error {
 	f.volumes = append(f.volumes, v)
 	f.state.Volume = v
 	return nil
+}
+
+func (f *fakePlayer) FadeNext(t contract.Track) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.fades = append(f.fades, t)
+	return f.fadeOK
+}
+
+// Seek updates the fake's position, so the app's optimistic bar read
+// (a.player.State().Position after a seek) sees the move.
+func (f *fakePlayer) Seek(ctx context.Context, d time.Duration) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.seekDeltas = append(f.seekDeltas, d)
+	f.state.Position += d
 }
 
 func (f *fakePlayer) State() contract.State {
@@ -508,6 +531,80 @@ func TestTrackStartedForeignSlotUntouched(t *testing.T) {
 	}
 }
 
+// The track the engine replaced lands in history and last when its
+// successor's TrackStarted arrives: the gapless and crossfade flows have
+// no other place to record an end (no loadedMsg), so prev, the pool and
+// the radio's avoidance see it.
+func TestTrackStartedRecordsReplaced(t *testing.T) {
+	app, lp, _ := newTestApp()
+	app.playlist.SetCurrent(track("A"))
+	app.engineNextID = "B" // the engine advanced on its own
+	lp.setState(contract.State{Track: track("B"), Playing: true})
+
+	_, _ = app.Update(eventMsg{ev: contract.Event{Kind: contract.EventTrackStarted, Track: track("B")}})
+
+	if got := app.playlist.Current().ID; got != "B" {
+		t.Fatalf("current = %q; want B", got)
+	}
+	if !containsID(app.playlist.History(), "A") {
+		t.Fatal("the replaced track A must be in the history")
+	}
+	if app.playlist.last.ID != "A" {
+		t.Fatalf("last = %q; want A (replaced tracks are the ones to avoid)", app.playlist.last.ID)
+	}
+}
+
+// A current that already is the arriving track (an explicit load whose
+// loadedMsg ran first, a repeat-one restart) is not an end: it must not be
+// recorded into history while it is still playing.
+func TestTrackStartedNoSelfRecord(t *testing.T) {
+	app, _, _ := newTestApp()
+	app.playlist.Add(track("B"))
+	app.playlist.SetCurrent(track("B")) // the loadedMsg already ran
+	app.engineNextID = "B"
+
+	_, _ = app.Update(eventMsg{ev: contract.Event{Kind: contract.EventTrackStarted, Track: track("B")}})
+
+	if containsID(app.playlist.History(), "B") {
+		t.Fatalf("history = %v; a track that just started must not be recorded as ended", ids(app.playlist.History()))
+	}
+	if got := app.playlist.Current().ID; got != "B" {
+		t.Fatalf("current = %q; want B", got)
+	}
+}
+
+// When the engine's pending slot held the radio's prepared draw, its
+// TrackStarted spends the draw: the redraw previews a track that is not
+// the one in the speakers, and the slot refill queues exactly that, so the
+// radio never plays a track its preview already announced.
+func TestTrackStartedConsumesRadioDraw(t *testing.T) {
+	app, lp, _ := newTestApp()
+	app.playlist.SetIndex([]contract.Track{track("A"), track("B"), track("C"), track("D")})
+	app.playlist.SetCurrent(track("C"))
+	app.playlist.last = track("C")
+	app.playlist.prepareRadioNext()
+	draw := app.playlist.radioNext
+	if draw.ID == "" {
+		t.Fatal("the radio drew nothing with a populated index")
+	}
+	app.engineNextID = draw.ID // the engine holds the draw in its slot
+
+	_, _ = app.Update(eventMsg{ev: contract.Event{Kind: contract.EventTrackStarted, Track: draw}})
+
+	if got := app.playlist.radioNext.ID; got == draw.ID {
+		t.Fatalf("redraw = %q; the radio must not preview a track that just started", got)
+	}
+	if got := app.playlist.radioNext.ID; got == "C" {
+		t.Fatalf("redraw = %q; the radio must not preview the last played", got)
+	}
+	if app.engineNextID != app.playlist.radioNext.ID {
+		t.Fatalf("engineNextID = %q, preview = %q; the slot and the footer must agree", app.engineNextID, app.playlist.radioNext.ID)
+	}
+	if got := last(ids(lp.queues)); got != app.playlist.radioNext.ID {
+		t.Fatalf("Queue calls = %v; want the redrawn draw", ids(lp.queues))
+	}
+}
+
 // An ended track with the engine idle: the app must pick and start the
 // next one itself (Queue on an idle engine starts it at once).
 func TestTrackEndedIdleAutoAdvance(t *testing.T) {
@@ -724,6 +821,146 @@ func TestSkipEmpty(t *testing.T) {
 		t.Fatalf("status = %q; want end of queue", app.status)
 	}
 	_ = lp
+}
+
+// n with the engine's pending slot holding the policy's next is the
+// crossfade itself: instant, no load, and the playlist follows the
+// TrackStarted the fade raises.
+func TestSkipFadeConsumesSlot(t *testing.T) {
+	app, lp, _ := newTestApp()
+	lp.setState(contract.State{Track: track("A"), Playing: true})
+	app.state = lp.State()
+	app.playlist.SetCurrent(track("A"))
+	app.playlist.Add(track("B"))
+	app.engineNextID = "B" // the slot holds what the footer previews
+	lp.fadeOK = true
+
+	cmd := press(t, app, tea.KeyPressMsg{Text: "n"})
+	if cmd != nil {
+		t.Fatalf("a faded skip must be synchronous; got command %v", cmd)
+	}
+	if got := ids(lp.fades); len(got) != 1 || got[0] != "B" {
+		t.Fatalf("FadeNext calls = %v; want [B]", got)
+	}
+	if got := ids(lp.loads); len(got) != 0 {
+		t.Fatalf("Load calls = %v; a faded skip must not load", got)
+	}
+	if app.pendingLoad {
+		t.Fatal("pendingLoad must not be set for a faded skip")
+	}
+	// The engine's TrackStarted does the bookkeeping: A is recorded (the
+	// abandoned track), B is current, the consumed slot is cleared.
+	_, _ = app.Update(eventMsg{ev: contract.Event{Kind: contract.EventTrackStarted, Track: track("B")}})
+	if got := app.playlist.Current().ID; got != "B" {
+		t.Fatalf("current = %q; want B", got)
+	}
+	if !containsID(app.playlist.History(), "A") {
+		t.Fatalf("history = %v; the abandoned A must be recorded", ids(app.playlist.History()))
+	}
+	if app.engineNextID != "" {
+		t.Fatalf("engineNextID = %q; the consumed slot must clear", app.engineNextID)
+	}
+}
+
+// The same arrangement with the engine refusing the fade (the slot not
+// ready) takes the plain skip: a fresh pick, a background load.
+func TestSkipFadeRefusedFallsBack(t *testing.T) {
+	app, lp, _ := newTestApp()
+	lp.setState(contract.State{Track: track("A"), Playing: true})
+	app.state = lp.State()
+	app.playlist.SetCurrent(track("A"))
+	app.playlist.Add(track("B"))
+	app.engineNextID = "B"
+	lp.fadeOK = false
+
+	m, ok := mustRun(t, press(t, app, tea.KeyPressMsg{Text: "n"})).(loadedMsg)
+	if !ok || m.track.ID != "B" {
+		t.Fatalf("a refused fade must load B; got %v", m)
+	}
+	if got := ids(lp.fades); len(got) != 1 {
+		t.Fatalf("FadeNext calls = %v; want one attempt", ids(lp.fades))
+	}
+	if !app.pendingLoad {
+		t.Fatal("a load skip must set pendingLoad")
+	}
+}
+
+// A stale slot (the engine holds a different track than the policy previews)
+// never fades: the engine would promote a track the playlist did not
+// consume. The plain skip loads what it picked.
+func TestSkipNoFadeOnStaleSlot(t *testing.T) {
+	app, lp, _ := newTestApp()
+	lp.setState(contract.State{Track: track("A"), Playing: true})
+	app.state = lp.State()
+	app.playlist.SetCurrent(track("A"))
+	app.playlist.Add(track("B"))
+	app.engineNextID = "C" // the slot holds C; the policy previews B
+	lp.fadeOK = true
+
+	_ = mustRun(t, press(t, app, tea.KeyPressMsg{Text: "n"}))
+	if got := ids(lp.fades); len(got) != 0 {
+		t.Fatalf("FadeNext calls = %v; a stale slot must not fade", ids(lp.fades))
+	}
+	if got := ids(lp.loads); len(got) != 1 || got[0] != "B" {
+		t.Fatalf("Load calls = %v; want the plain skip's B", got)
+	}
+}
+
+// Repeat-one in the slot is a restart, not a skip: the fade path rejects a
+// target that is the track already playing, and the plain skip picks fresh.
+func TestSkipNoFadeOnRepeatOne(t *testing.T) {
+	app, lp, _ := newTestApp()
+	lp.setState(contract.State{Track: track("A"), Playing: true})
+	app.state = lp.State()
+	app.playlist.SetCurrent(track("A"))
+	app.playlist.last = track("A") // repeat-one's target is what is playing
+	app.playlist.repeat = true
+	app.playlist.SetIndex([]contract.Track{track("A"), track("B")})
+	app.engineNextID = "A"
+	lp.fadeOK = true
+
+	_ = mustRun(t, press(t, app, tea.KeyPressMsg{Text: "n"}))
+	if got := ids(lp.fades); len(got) != 0 {
+		t.Fatalf("FadeNext calls = %v; a repeat-one must not fade", ids(lp.fades))
+	}
+	if !strings.Contains(app.status, "next") {
+		t.Fatalf("status = %q; want the plain skip's acknowledgement", app.status)
+	}
+}
+
+// ←/→ seek the current track ten seconds back / forward; the position bar
+// follows on the same tick.
+func TestSeekKeys(t *testing.T) {
+	app, lp, _ := newTestApp()
+	lp.setState(contract.State{Track: track("A"), Playing: true, Position: 30 * time.Second})
+	app.state = lp.State()
+	app.pos = 30 * time.Second
+
+	press(t, app, tea.KeyPressMsg{Code: tea.KeyLeft})
+	if got := lp.seekDeltas; len(got) != 1 || got[0] != -10*time.Second {
+		t.Fatalf("seek(←) = %v; want one step back ten seconds", got)
+	}
+	if app.pos != 20*time.Second {
+		t.Fatalf("pos = %v after ←; want 20 s", app.pos)
+	}
+	press(t, app, tea.KeyPressMsg{Code: tea.KeyRight})
+	if got := lp.seekDeltas; len(got) != 2 || got[1] != 10*time.Second {
+		t.Fatalf("seek(→) = %v; want a step forward ten seconds", got)
+	}
+	if app.pos != 30*time.Second {
+		t.Fatalf("pos = %v after →; want 30 s", app.pos)
+	}
+}
+
+// With nothing playing the arrows are inert — a seek the engine cannot
+// honour stays silent rather than announcing itself.
+func TestSeekIdleInert(t *testing.T) {
+	app, lp, _ := newTestApp()
+	press(t, app, tea.KeyPressMsg{Code: tea.KeyLeft})
+	press(t, app, tea.KeyPressMsg{Code: tea.KeyRight})
+	if got := lp.seekDeltas; len(got) != 0 {
+		t.Fatalf("seek calls = %v; an idle engine must not seek", got)
+	}
 }
 
 // p within 5 s of the start restarts the current track; later it goes to

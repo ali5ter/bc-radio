@@ -33,6 +33,11 @@ type Engine struct {
 	device     device
 	sampleRate int
 
+	// crossfade is the equal-power crossfade applied to natural track
+	// transitions: 0 (the default) keeps the shipped gapless cut. It is a
+	// start-time preference — set once at construction, never changed.
+	crossfade time.Duration
+
 	analyser *analyser
 	pump     *pump
 
@@ -64,6 +69,14 @@ type Option func(*Engine)
 // WithDevice overrides the default oto output device. Tests use it to avoid
 // opening a real audio device; the pump is then driven manually.
 func WithDevice(d device) Option { return func(e *Engine) { e.device = d } }
+
+// WithCrossfade sets the equal-power crossfade applied when a track ends
+// into a prepared next: during the current track's final d, the pump mixes
+// it with the incoming track — the outgoing fading out, the incoming in —
+// on a constant-power curve instead of the gapless cut. 0 (the default)
+// leaves the transition as shipped; a natural end without a prepared next
+// in time falls back to the gapless path either way.
+func WithCrossfade(d time.Duration) Option { return func(e *Engine) { e.crossfade = d } }
 
 // New builds an Engine that plays tracks from source. Unless WithDevice is
 // given, it opens the system audio output device. The engine runs until Stop
@@ -170,6 +183,57 @@ func (e *Engine) Queue(t contract.Track) {
 	go e.prepare(t, pd)
 }
 
+// FadeNext starts a crossfade from the current track to t — the engine's
+// prepared next — at once, instead of when the current track's final frames
+// reach the crossfade window (the pump's tryFade): the successor is
+// already downloaded, so an explicit next is instant. t becomes current
+// (TrackStarted fires for it) and the current track fades out over the full
+// crossfade window on the same equal-power curve as a natural end, cut at a
+// gain of 0 at the window's end.
+//
+// It reports false — the caller falls back to a plain Load — when the
+// crossfade is unset, a fade is already in flight (the caller's Load aborts
+// it), nothing is playing, or the pending slot is empty, not ready, or
+// holds a track other than t. The slot swap and the pump's fade setup
+// happen under the decode mutex, so a Read can never observe the swap
+// without the mix.
+func (e *Engine) FadeNext(t contract.Track) bool {
+	// The lock order is decMu then mu — the same order the pump's Read
+	// holds (it takes the engine lock inside sync/advance) — so this can
+	// never invert the pump's.
+	e.decMu.Lock()
+	defer e.decMu.Unlock()
+	e.mu.Lock()
+	ok := !e.stopped && e.crossfade > 0 && e.playing && e.cur != nil &&
+		e.next != nil && e.pump.fade == nil
+	if ok {
+		select {
+		case <-e.next.ready:
+		default:
+			ok = false
+		}
+	}
+	var ghost, in *chain
+	if ok {
+		if c := e.next.chain; c == nil || c.track.ID != t.ID {
+			// An empty slot (a failed preparation) or a track the caller
+			// did not name: the plain Load below supersedes either.
+			ok = false
+		} else {
+			ghost, in = e.cur, c
+			e.next = nil
+			e.cur = in
+			e.pos = 0
+		}
+	}
+	e.mu.Unlock()
+	if ok {
+		e.pump.skipFade(ghost, in, e.crossFrames())
+		e.activate(in)
+	}
+	return ok
+}
+
 // Play resumes playback of the current track from where it paused. The
 // device's buffer may hold up to half a second of already-decoded audio
 // (the player keeps pulling until it is full, even paused), so resuming
@@ -221,6 +285,7 @@ func (e *Engine) Stop(ctx context.Context) error {
 	// until its buffer is full); the decode mutex waits for it to finish
 	// before the chains are closed, so a close never races a decode.
 	e.decMu.Lock()
+	e.pump.abortFade() // a ghost mid-crossfade is a chain too; close it here
 	e.mu.Lock()
 	if e.cur != nil {
 		e.cur.close()
@@ -243,6 +308,68 @@ func (e *Engine) Stop(ctx context.Context) error {
 func (e *Engine) SetVolume(ctx context.Context, v float64) error {
 	e.vol.set(v)
 	return nil
+}
+
+// Seek moves the current track by d — positive forward, negative back —
+// clamped to the track's ends. The decoder move happens under the decode
+// mutex, so no Read can race it; the position is set to the move, and the
+// device's buffer is cleared — flush (resume) when playing, reset (stay
+// paused) when not — so the new position is what is heard next. An
+// in-flight crossfade is aborted first: the mix cannot straddle the move,
+// and its ghost departs (cut) with it. The analyser is left alone — its
+// anchor is what the device plays, and the cleared buffer keeps it honest
+// within one window of the new audio.
+//
+// It is a no-op when nothing is playing, or when the chain is not seekable
+// (a resampled source, or a body the decoder could not index) — the
+// caller's position display simply does not move.
+func (e *Engine) Seek(ctx context.Context, d time.Duration) {
+	if d == 0 {
+		return
+	}
+	e.mu.Lock()
+	if e.stopped || e.cur == nil {
+		e.mu.Unlock()
+		return
+	}
+	c := e.cur
+	pos := e.pos
+	playing := e.playing
+	e.mu.Unlock()
+
+	target := int(float64(pos) + d.Seconds()*float64(e.sampleRate))
+	if target < 0 {
+		target = 0
+	}
+	// Clamp to the last frame, not the length: the decoder's seek reads
+	// ahead of its target, and one that lands on the end of the stream
+	// runs off it. A forward seek to the end lands on the final frame,
+	// and the track ends naturally on the next Read.
+	if c.total > 1 && target >= c.total {
+		target = c.total - 1
+	}
+
+	e.decMu.Lock()
+	// The seek first, the abort second: a chain the seek cannot move
+	// (unseekable) must not disturb a natural crossfade in flight, so the
+	// fade is only aborted once the move has landed.
+	if err := c.seekTo(target); err != nil {
+		e.decMu.Unlock()
+		return
+	}
+	if e.pump.fade != nil {
+		e.pump.abortFade()
+	}
+	e.mu.Lock()
+	e.pos = int64(target)
+	e.mu.Unlock()
+	e.decMu.Unlock()
+
+	if playing {
+		e.device.flush()
+	} else {
+		e.device.reset()
+	}
 }
 
 // State returns the current snapshot.
@@ -376,6 +503,55 @@ func (e *Engine) addPos(n int) {
 	e.mu.Lock()
 	e.pos += int64(n)
 	e.mu.Unlock()
+}
+
+// posFrames returns the frames of the current track consumed so far. The
+// pump's crossfade start reads it against the chain's expected total.
+func (e *Engine) posFrames() int {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return int(e.pos)
+}
+
+// crossFrames converts the crossfade duration to device-rate frames. Both
+// operands are fixed at construction, so no lock is needed.
+func (e *Engine) crossFrames() int {
+	if e.crossfade <= 0 {
+		return 0
+	}
+	return int(float64(e.crossfade) / float64(time.Second) * float64(e.sampleRate))
+}
+
+// beginCrossfade starts a crossfade on ghost: it promotes the prepared next
+// to current — the position resets and TrackStarted fires for the incoming
+// track — and returns it, or nil when there is no prepared next for ghost.
+// Called by the pump under the decode mutex; it takes the engine lock only
+// for the slot swap, so the activate and its event never deadlock on it.
+func (e *Engine) beginCrossfade(ghost *chain) *chain {
+	e.mu.Lock()
+	if e.stopped || e.cur != ghost || e.next == nil {
+		e.mu.Unlock()
+		return nil
+	}
+	select {
+	case <-e.next.ready:
+	default:
+		e.mu.Unlock()
+		return nil
+	}
+	c := e.next.chain
+	if c == nil {
+		// A failed preparation: drop the slot; the ghost ends the old
+		// way (gapless, or the app's advance when that leaves nothing).
+		e.next = nil
+		e.mu.Unlock()
+		return nil
+	}
+	e.next = nil
+	e.cur = c
+	e.mu.Unlock()
+	e.activate(c)
+	return c
 }
 
 // emit sends an event without blocking the caller (which may be the device

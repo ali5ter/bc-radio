@@ -86,6 +86,17 @@ type Track struct {
 
 // AudioStream is an open stream of one encoded track (MP3 in v1). The
 // consumer must close Body.
+//
+// Body is the track's complete encoded audio, served from memory: the
+// source downloads the whole stream before Open returns (a body read live
+// from the network would keep one connection open for the track's whole
+// duration, and anything that severs it truncates the track). ContentLength
+// is the buffered byte count, -1 when the server committed to no length.
+//
+// A source that serves an in-memory buffer (bandcamp does) also implements
+// io.Seeker on the body, so decoders that index a seekable source can
+// report the track's exact length and seek within it. A source whose body
+// is not seekable keeps playback working; seeking is then a no-op.
 type AudioStream struct {
 	Body          io.ReadCloser
 	ContentLength int64 // encoded bytes; -1 when unknown
@@ -181,6 +192,19 @@ type Player interface {
 	// runs on the engine's own context, so it takes none.
 	Queue(t Track)
 
+	// FadeNext starts a crossfade from the current track to t — the
+	// player's prepared next — at once, instead of when the current
+	// track's final frames reach the crossfade window: t becomes current
+	// immediately (TrackStarted fires for it), and the current track
+	// fades out over the full crossfade window on the same equal-power
+	// curve as a natural end, cut at a gain of 0 at its end. The
+	// successor is already downloaded, which is what makes an explicit
+	// next instant rather than a fresh fetch. It reports false — the
+	// caller falls back to a plain Load — when the crossfade is unset, a
+	// fade is already in flight, nothing is playing, or the pending slot
+	// is empty, not ready, or holds a track other than t.
+	FadeNext(t Track) bool
+
 	// Play resumes, Pause suspends and Stop unwinds the engine to idle.
 	Play(ctx context.Context) error
 	Pause(ctx context.Context) error
@@ -188,6 +212,15 @@ type Player interface {
 
 	// SetVolume sets the digital gain, 0..1.
 	SetVolume(ctx context.Context, volume float64) error
+
+	// Seek moves the current track by d — positive forward, negative
+	// backward — clamped to the track's ends. The move is applied at
+	// once: the position reflects it, and the device's buffer is cleared,
+	// so the new position is what is heard next. It is a no-op when
+	// nothing is playing, or when the track cannot be seeked (a source
+	// whose body the decoder could not index, or one that needed
+	// resampling).
+	Seek(ctx context.Context, d time.Duration)
 
 	// State returns the current snapshot.
 	State() State

@@ -6,6 +6,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ali5ter/bc-radio/internal/contract"
 )
@@ -87,6 +88,48 @@ func TestNewChainDecodeFailureClosesBody(t *testing.T) {
 	}
 }
 
+// TestTailFrames: the crossfade start's arithmetic — a wall-clock duration
+// to device-rate frames, and -1 when the duration is unknown.
+func TestTailFrames(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		d    time.Duration
+		rate int
+		want int
+	}{
+		{2 * time.Second, 44100, 88200},
+		{time.Second, 44100, 44100},
+		{500 * time.Millisecond, 44100, 22050},
+		{0, 44100, -1},
+		{-time.Second, 44100, -1},
+		{time.Second, 48000, 48000}, // the rate is the device's, whatever it is
+	}
+	for _, tc := range tests {
+		got := tailFrames(contract.Track{Duration: tc.d}, tc.rate)
+		if got != tc.want {
+			t.Errorf("tailFrames(%v, %d) = %d, want %d", tc.d, tc.rate, got, tc.want)
+		}
+	}
+}
+
+// TestNewChainTotal: newChain sets the crossfade's total from the track's
+// duration.
+func TestNewChainTotal(t *testing.T) {
+	t.Parallel()
+	body := readFixture(t, "actually-you-can-track1.mp3")
+	src := sourceFromBytes(body)
+	tk := testTrack("t1")
+	tk.Duration = 2 * time.Second
+	c, err := newChain(context.Background(), src, tk, deviceRate, &volume{g: 1})
+	if err != nil {
+		t.Fatalf("newChain: %v", err)
+	}
+	defer c.close()
+	if got := c.total; got != 2*deviceRate {
+		t.Errorf("chain.total = %d, want %d (2 s at the device rate)", got, 2*deviceRate)
+	}
+}
+
 // TestVolumeStageAppliesSharedGain: the gain is shared, so a change affects
 // every stage built on it, and applies to every frame it serves.
 func TestVolumeStageAppliesSharedGain(t *testing.T) {
@@ -136,4 +179,105 @@ func TestChainCloseNil(t *testing.T) {
 	t.Parallel()
 	var c *chain
 	c.close() // must not panic
+}
+
+// TestNewChainSeekable: a body the decoder can index makes the chain
+// seekable with an exact total — the walked frame count, which beats the
+// (deliberately wrong) metadata duration for the crossfade clock and the
+// seek clamp.
+func TestNewChainSeekable(t *testing.T) {
+	t.Parallel()
+	body := readFixture(t, "actually-you-can-track1.mp3")
+	tk := testTrack("t1")
+	tk.Duration = 2 * time.Second // wrong on purpose: the walk must win
+	c, err := newChain(context.Background(), sourceFromSeekableBytes(body), tk, deviceRate, &volume{g: 1})
+	if err != nil {
+		t.Fatalf("newChain: %v", err)
+	}
+	defer c.close()
+	if !c.seekable {
+		t.Fatal("chain is not seekable for an indexed body")
+	}
+	if c.total <= 0 || c.total == 2*deviceRate {
+		t.Fatalf("chain.total = %d; want the walked count, not the %d of the metadata", c.total, 2*deviceRate)
+	}
+	if got := c.decoder.Len(); got != c.total {
+		t.Fatalf("decoder.Len() = %d, want %d (the walk)", got, c.total)
+	}
+}
+
+// TestChainSeek: seekTo moves the decoder — the position reads the target,
+// and seeking home serves the fresh decode's first frames — and refuses a
+// chain it cannot move (a body the decoder could not index, a resampled
+// source) with errNotSeekable.
+func TestChainSeek(t *testing.T) {
+	t.Parallel()
+	body := readFixture(t, "actually-you-can-track1.mp3")
+
+	c, err := newChain(context.Background(), sourceFromSeekableBytes(body), testTrack("t1"), deviceRate, &volume{g: 1})
+	if err != nil {
+		t.Fatalf("newChain: %v", err)
+	}
+	defer c.close()
+
+	// Baseline: the first frames of a fresh decode of the same body.
+	fresh, err := newChain(context.Background(), sourceFromSeekableBytes(body), testTrack("t1"), deviceRate, &volume{g: 1})
+	if err != nil {
+		t.Fatalf("newChain (baseline): %v", err)
+	}
+	defer fresh.close()
+	buf := make([][2]float64, 64)
+	n, ok := fresh.tail.Stream(buf)
+	if !ok || n <= 0 {
+		t.Fatalf("baseline Stream = %d, %v", n, fresh.tail.Err())
+	}
+	want := make([][2]float64, n)
+	copy(want, buf[:n])
+
+	// Mid-track: the position must read the target frame.
+	mid := c.total / 2
+	if err := c.seekTo(mid); err != nil {
+		t.Fatalf("seekTo(mid): %v", err)
+	}
+	if got := c.decoder.Position(); got != mid {
+		t.Fatalf("Position after seekTo(%d) = %d", mid, got)
+	}
+	// Home: the decoder must serve the track from its start again.
+	if err := c.seekTo(0); err != nil {
+		t.Fatalf("seekTo(0): %v", err)
+	}
+	if got := c.decoder.Position(); got != 0 {
+		t.Fatalf("Position after seekTo(0) = %d", got)
+	}
+	n2, ok2 := c.tail.Stream(buf)
+	if !ok2 || n2 != n {
+		t.Fatalf("Stream after seek home = %d, %v; want %d frames", n2, c.tail.Err(), n)
+	}
+	checkFrames(t, buf[:n2], want, 1e-12)
+
+	// A body the decoder could not index is unseekable, and a resampled
+	// source is unseekable even when its body was indexed (beep's
+	// resampler has no flush: a source seek would leave its stale state).
+	plain, err := newChain(context.Background(), sourceFromBytes(body), testTrack("t2"), deviceRate, &volume{g: 1})
+	if err != nil {
+		t.Fatalf("newChain (plain body): %v", err)
+	}
+	defer plain.close()
+	if plain.seekable {
+		t.Fatal("a non-seekable body must not make the chain seekable")
+	}
+	if err := plain.seekTo(0); !errors.Is(err, errNotSeekable) {
+		t.Fatalf("seekTo on a plain body = %v, want errNotSeekable", err)
+	}
+	resampled, err := newChain(context.Background(), sourceFromSeekableBytes(body), testTrack("t3"), 48000, &volume{g: 1})
+	if err != nil {
+		t.Fatalf("newChain (resampled): %v", err)
+	}
+	defer resampled.close()
+	if resampled.seekable {
+		t.Fatal("a resampled chain must not be seekable")
+	}
+	if err := resampled.seekTo(0); !errors.Is(err, errNotSeekable) {
+		t.Fatalf("seekTo on a resampled chain = %v, want errNotSeekable", err)
+	}
 }

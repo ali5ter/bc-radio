@@ -45,7 +45,11 @@ bc-radio opens on the player screen with the radio on (toggle with `d`).
 
 At startup it reads your followed bands and builds a flat track index from their
 discography. Then the radio starts a random index track; press `space` to pause, and as
-each track ends it picks another.
+each track ends it picks another. Tracks hand over with a clean gapless cut by default;
+with `-crossfade 2s` the last 2 s of a track blend into the next one on an equal-power
+curve instead, and a manual next (`n`) fades into its already-downloaded successor over
+that same window instead of waiting for a fresh fetch. The cursor keys seek the current
+track ten seconds back or forward.
 
 Explicitly queued tracks always beat the radio: press `l` to browse the library, pick a
 track (and press `enter` to queue it) or an album (`enter` queues every track of it), and
@@ -61,6 +65,7 @@ Stopping the radio (toggle with `d`) simply means only play tracks you've queued
 | `-cache-dir` | Page cache directory (default `$XDG_CACHE_HOME/bc-radio`) |
 | `-page-ttl` | How long parsed Bandcamp pages stay in the cache (default `24h`) |
 | `-volume` | Starting volume, 0 to 1 (default `1`) |
+| `-crossfade` | How long tracks blend into each other on an equal-power curve (default `0`) |
 | `-theme` | Interface theme: `auto` (follows the terminal), `dark`, `light` or `mono` — see Themes |
 | `-json` | Build the track index, print it as JSON, and exit (no interface) |
 | `-list` | Build the track index, print it as a plain-text list, and exit (no interface) |
@@ -98,6 +103,7 @@ page) or point `-cache-dir` at an empty directory.
 | `f` | Fullscreen visualizer | Player |
 | `l` | Library | Player |
 | `+` / `-` | Volume up / down | Player |
+| `←` / `→` | Seek 10 s back / forward | Player |
 | `↑` / `↓` | Select | Library |
 | `←` / `→` | Change column (artists → albums → tracks) | Library |
 | `enter` | Open the selected artist, or queue the selected album or track | Library |

@@ -109,15 +109,25 @@ func (p *playlist) OnEnded() {
 // recordPlayed is OnEnded for a named track: it records t as last played
 // and moves it to the history (unless repeating). The App uses it for a
 // track it abandons on the user's instruction (a skip or prev), where the
-// engine does not report the abandonment as an end.
+// engine does not report the abandonment as an end, and for a track the
+// engine replaced (a gapless or crossfade transition), where the engine
+// does report the end too.
+//
+// A track is appended only when it is not already the history's tail: the
+// same end can be reported twice (an explicit load records the abandoned
+// track, and the engine's TrackEnded for it arrives behind), and repeat-one
+// ends the same track over and over. Both would otherwise stack adjacent
+// duplicates, and prev would pop the same track twice in a row.
 func (p *playlist) recordPlayed(t contract.Track) {
 	if t.ID == "" {
 		return
 	}
 	if !p.repeat {
-		p.history = append(p.history, t)
-		if len(p.history) > historyCap {
-			p.history = p.history[len(p.history)-historyCap:]
+		if n := len(p.history); n == 0 || p.history[n-1].ID != t.ID {
+			p.history = append(p.history, t)
+			if len(p.history) > historyCap {
+				p.history = p.history[len(p.history)-historyCap:]
+			}
 		}
 	}
 	p.last = t
@@ -146,8 +156,10 @@ func (p *playlist) IndexBands() int { return p.indexBands }
 // radioPick picks a random index track, avoiding the named ones (the last
 // played, the current, ...). It is the heart of the radio: the pick is
 // uniform over the index minus the avoided tracks, and when everything is
-// avoided — a one-track index — it falls back to the whole index rather
-// than stalling, so a radio with a single track keeps playing it.
+// avoided — a one-track index — it falls back rather than stalling, so a
+// radio with a single track keeps playing it. Even in the fallback the
+// track in the speakers is skipped when there is anything else: a
+// two-track index where both are avoided must not replay the current one.
 func (p *playlist) radioPick(avoid ...contract.Track) (contract.Track, bool) {
 	if !p.radio || len(p.index) == 0 {
 		return contract.Track{}, false
@@ -165,7 +177,14 @@ func (p *playlist) radioPick(avoid ...contract.Track) (contract.Track, bool) {
 		}
 	}
 	if len(candidates) == 0 {
-		candidates = p.index
+		for _, t := range p.index {
+			if t.ID != p.current.ID {
+				candidates = append(candidates, t)
+			}
+		}
+		if len(candidates) == 0 {
+			candidates = p.index
+		}
 	}
 	return candidates[p.rng.Intn(len(candidates))], true
 }
@@ -199,14 +218,17 @@ func (p *playlist) pool() []contract.Track {
 // footer previews when the queue is empty — or clears it when nothing
 // will come from the radio: the queue beats it, repeat-one beats it, the
 // radio is off, or the index is empty. The draw avoids the last played
-// track, exactly as the consumption in consumeRadioNext does. The App
-// calls it whenever any of those inputs change.
+// track and the one currently playing (both: the redraw after a track
+// starts must not preview what is in the speakers, and a two-track
+// index can turn "avoid the last" into "preview the current"), exactly
+// as the consumption in consumeRadioNext does. The App calls it whenever
+// any of those inputs change.
 func (p *playlist) prepareRadioNext() {
 	if len(p.queue) > 0 || p.repeat && p.last.ID != "" || !p.radio || len(p.index) == 0 {
 		p.radioNext = contract.Track{}
 		return
 	}
-	p.radioNext, _ = p.radioPick(p.last)
+	p.radioNext, _ = p.radioPick(p.last, p.current)
 }
 
 // upNext is the track that plays next, for the footer's preview: the
@@ -226,17 +248,18 @@ func (p *playlist) upNext() contract.Track {
 }
 
 // consumeRadioNext returns the prepared radio draw when it is still the
-// right pick (it is not the track that just ended — a two-track pool can
-// turn the preview into the last played, which the radio must not play
-// twice), drawing a fresh one otherwise. The prepared draw is consumed
-// either way, so a stale preview is never played.
+// right pick (it is not the track that just ended, and not the one
+// currently playing — a two-track pool can turn the preview into either,
+// which the radio must not play twice), drawing a fresh one otherwise.
+// The prepared draw is consumed either way, so a stale preview is never
+// played.
 func (p *playlist) consumeRadioNext() (contract.Track, bool) {
 	t := p.radioNext
 	p.radioNext = contract.Track{}
-	if t.ID != "" && t.ID != p.last.ID {
+	if t.ID != "" && t.ID != p.last.ID && t.ID != p.current.ID {
 		return t, true
 	}
-	return p.radioPick(p.last)
+	return p.radioPick(p.last, p.current)
 }
 
 // Next picks the track that should play after the current one ends,

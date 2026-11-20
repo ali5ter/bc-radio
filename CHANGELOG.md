@@ -3,6 +3,66 @@
 All notable changes to bc-radio are recorded here. Each release follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [v1.3.0] - 2026-11-20
+
+### Added
+
+- `-crossfade`: how long tracks blend into each other on an equal-power
+  curve (default `0`, the clean gapless switch). With a crossfade set, a
+  track's final seconds are mixed with the incoming track — the outgoing
+  fading out on a constant-power curve, the incoming fading in — which the
+  engine decodes ahead during those seconds, so the blend never costs a
+  fetch gap. A track whose duration the metadata does not know, or whose
+  successor is not prepared in time, falls back to the gapless cut.
+- The radio now hands over gaplessly: the engine prepares the radio's next
+  draw while the current track still plays, so a radio hop (and, with a
+  crossfade set, its blend) starts the moment the current track ends.
+- The radio's prepared draw avoids the track in the speakers as well as the
+  last played one, and the redraw after a track starts previews the draw
+  that the pending slot will actually play — a radio that announces a track
+  plays it.
+- A manual next (`n`) with a crossfade set fades into its successor at once
+  on the same equal-power curve: the successor is the track the engine
+  already prepared and downloaded, so the skip is instant — no background
+  fetch, no hard cut — and the abandoned track fades out over the full
+  crossfade window instead of ending where it was. Without a crossfade the
+  skip is exactly what it was before (a fresh pick and a background load),
+  and so is every skip the engine cannot fade: a paused or idle engine, a
+  slot that is not ready, or repeat mode, where "next" would be a restart.
+- `←` / `→` on the player screen seek the current track ten seconds back or
+  forward, clamped to the track's ends; the position bar moves with the
+  move and the audio resumes from it. The library keeps the cursor keys for
+  its columns. Seeking works with or without a crossfade set; a seek during
+  a crossfade ends the blend first.
+
+### Changed
+
+- The prepared radio draw is consumed when it starts, and the footer redraws
+  before the engine's pending slot is refilled, so the preview, the slot and
+  the next hop always name the same track.
+- A track's encoded audio is downloaded completely (a few seconds at full
+  speed) and then played from memory, instead of decoding from the live
+  response body. The in-memory buffer is also what makes seeking possible:
+  the decoder indexes it for the track's exact length and moves within it,
+  and the engine reports the walked length (not the metadata estimate) for
+  crossfade timing and the seek clamp.
+
+### Fixed
+
+- Tracks no longer end early. The body was read from the network at playback
+  pace, so anything that severed that slowly draining connection — a CDN
+  edge, a router, a network blip — silently ended the track wherever it
+  died, typically well before its end (reported around 90%). The whole file
+  is now fetched before playback starts, so a severed connection is a loud,
+  once-retried load error instead of a quiet mid-track cut.
+- The demo reel is re-rendered against the v1.3.0 interface: the help
+  overlay shows the cursor-key seek, and the tour is unchanged otherwise
+  (the tape waits out the index build, pauses, cycles the 3-way visualizer,
+  toggles the radio, browses the library, shows the help overlay, and exits
+  on the gradient banner).
+
 ## [v1.2.1] - 2026-11-20
 
 ### Changed
