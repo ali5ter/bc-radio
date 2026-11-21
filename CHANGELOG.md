@@ -5,6 +5,8 @@ All notable changes to bc-radio are recorded here. Each release follows
 
 ## [Unreleased]
 
+## [v1.3.1] - 2026-11-21
+
 ### Fixed
 
 - Release cards whose link is an absolute URL (for example
@@ -13,6 +15,7 @@ All notable changes to bc-radio are recorded here. Each release follows
   the parser accepted only the relative form — an artist whose albums
   used absolute links (Wet Leg, all four of them) was silently missing
   from the index, with only its singles remaining.
+- The demo reel is re-rendered against the current index.
 
 ## [v1.3.0] - 2026-11-20
 
