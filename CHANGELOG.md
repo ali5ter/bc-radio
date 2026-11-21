@@ -5,6 +5,15 @@ All notable changes to bc-radio are recorded here. Each release follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Release cards whose link is an absolute URL (for example
+  `https://host.bandcamp.com/album/slug`) are now read like relative
+  links. Bandcamp serves both forms from the same `/music` listing, and
+  the parser accepted only the relative form — an artist whose albums
+  used absolute links (Wet Leg, all four of them) was silently missing
+  from the index, with only its singles remaining.
+
 ## [v1.3.0] - 2026-11-20
 
 ### Added

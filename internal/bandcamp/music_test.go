@@ -264,3 +264,70 @@ func TestParseMusicNoCards(t *testing.T) {
 		t.Errorf("albums = %+v, singles = %+v, want none", albums, singles)
 	}
 }
+
+// TestCardPath pins the href normalisation: a relative link is the path
+// already, an absolute or protocol-relative URL is reduced to its path
+// (query and fragment discarded), a bare root or empty value fails.
+func TestCardPath(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		href string
+		want string
+		ok   bool
+	}{
+		{name: "relative", href: "/album/moisturizer", want: "/album/moisturizer", ok: true},
+		{name: "absolute", href: "https://wetleg.bandcamp.com/album/moisturizer", want: "/album/moisturizer", ok: true},
+		{name: "protocol-relative", href: "//wetleg.bandcamp.com/track/wet-dream", want: "/track/wet-dream", ok: true},
+		{name: "query discarded", href: "https://x.bandcamp.com/album/x?foo=1", want: "/album/x", ok: true},
+		{name: "root", href: "https://x.bandcamp.com/"},
+		{name: "empty", href: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, ok := cardPath(tt.href)
+			if ok != tt.ok || got != tt.want {
+				t.Errorf("cardPath(%q) = (%q, %v), want (%q, %v)", tt.href, got, ok, tt.want, tt.ok)
+			}
+		})
+	}
+}
+
+// TestParseMusicAbsoluteHrefs pins the wetleg regression (2026-11-20): a
+// /music listing whose album cards link absolutely
+// (https://host/album/x) and whose single cards link relatively
+// (/track/x). Both must parse to the same slugs — before the fix the
+// absolute-href albums failed the raw /album/ prefix check and were
+// dropped without a trace, and the artist came back with only its
+// singles.
+func TestParseMusicAbsoluteHrefs(t *testing.T) {
+	t.Parallel()
+	page := musicPage(
+		`<li data-item-id="album-2053136752" data-band-id="1626407001">`+
+			`<a href="https://wetleg.bandcamp.com/album/moisturizer-deluxe">`+
+			`<div class="art"><img src="https://f4.bcbits.com/img/a3533201704_2.jpg" alt="" /></div>`+
+			`<p class="title"> moisturizer (deluxe) </p></a></li>`,
+		`<li data-item-id="track-4003442188" data-band-id="1626407001">`+
+			`<a href="/track/too-late-now-soulwax-remix">`+
+			`<div class="art"><img src="https://f4.bcbits.com/img/a2496422928_2.jpg" alt="" /></div>`+
+			`<p class="title"> Too Late Now (Soulwax Remix) </p></a></li>`,
+	)
+	albums, singles, err := parseMusic(page)
+	if err != nil {
+		t.Fatalf("parseMusic: %v", err)
+	}
+	if len(albums) != 1 {
+		t.Fatalf("len(albums) = %d, want 1 (the absolute-href card must parse)", len(albums))
+	}
+	a := albums[0]
+	if a.Slug != "moisturizer-deluxe" || a.Title != "moisturizer (deluxe)" || a.BandID != 1626407001 || a.ArtID != 3533201704 {
+		t.Errorf("album = %+v, want slug moisturizer-deluxe with its title, band and art", a)
+	}
+	if len(singles) != 1 {
+		t.Fatalf("len(singles) = %d, want 1 (the relative-href card)", len(singles))
+	}
+	if singles[0].slug != "too-late-now-soulwax-remix" || singles[0].title != "Too Late Now (Soulwax Remix)" {
+		t.Errorf("single = %+v, want slug too-late-now-soulwax-remix", singles[0])
+	}
+}

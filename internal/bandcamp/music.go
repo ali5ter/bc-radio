@@ -173,10 +173,30 @@ func splitItemID(id string) (kind string, num int64, ok bool) {
 	return "", 0, false
 }
 
+// cardPath is a release card's link href as a path. A relative href
+// (/album/x) is the path already; an absolute (https://host/album/x) or
+// protocol-relative (//host/album/x) URL is reduced with url.Parse.
+// Bandcamp serves both forms from the same /music listing — wetleg's page
+// (2026-11-20) linked its albums absolutely while its singles linked
+// relatively — so the /album/ and /track/ prefix checks below must run on
+// the path, not the raw attribute: an absolute href fails the raw check
+// and the card is dropped without a trace, the release vanishing from the
+// index.
+func cardPath(href string) (string, bool) {
+	if strings.HasPrefix(href, "/") && !strings.HasPrefix(href, "//") {
+		return href, true
+	}
+	u, err := url.Parse(href)
+	if err != nil || u.Path == "" || u.Path == "/" {
+		return "", false
+	}
+	return u.Path, true
+}
+
 // albumCard builds a minimal contract.Album from one release card: the ID
 // from data-item-id, the BandID from data-band-id, the slug from the
-// /album/ href, the ArtID from the cover image URL, and the title from the
-// title element.
+// /album/ link (relative or absolute, via cardPath), the ArtID from the
+// cover image URL, and the title from the title element.
 func albumCard(card *html.Node, id int64) (contract.Album, bool) {
 	album := contract.Album{ID: id}
 	if v, ok := attrValue(card.Attr, "data-band-id"); ok {
@@ -189,8 +209,10 @@ func albumCard(card *html.Node, id int64) (contract.Album, bool) {
 		case n.Type != html.ElementNode:
 			continue
 		case n.Data == "a" && album.Slug == "":
-			if href, ok := attrValue(n.Attr, "href"); ok && strings.HasPrefix(href, "/album/") {
-				album.Slug = href[len("/album/"):]
+			if href, ok := attrValue(n.Attr, "href"); ok {
+				if p, ok := cardPath(href); ok && strings.HasPrefix(p, "/album/") {
+					album.Slug = p[len("/album/"):]
+				}
 			}
 		case n.Data == "img" && album.ArtID == 0:
 			if src, ok := attrValue(n.Attr, "src"); ok {
@@ -220,9 +242,10 @@ func (s singleCard) name() string {
 }
 
 // singleCardFromNode builds a singleCard from one track-* release card:
-// the ID from data-item-id, the slug from the /track/ href, the title
-// from the title element (used to name a single whose /track/ page later
-// fails). The same shape as albumCard, with the /track/ prefix.
+// the ID from data-item-id, the slug from the /track/ link (relative or
+// absolute, via cardPath), the title from the title element (used to name
+// a single whose /track/ page later fails). The same shape as albumCard,
+// with the /track/ prefix.
 func singleCardFromNode(card *html.Node, id int64) (singleCard, bool) {
 	sc := singleCard{id: id}
 	for n := nextNode(card); n != nil; n = nextNode(n) {
@@ -231,8 +254,10 @@ func singleCardFromNode(card *html.Node, id int64) (singleCard, bool) {
 		}
 		switch {
 		case n.Data == "a" && sc.slug == "":
-			if href, ok := attrValue(n.Attr, "href"); ok && strings.HasPrefix(href, "/track/") {
-				sc.slug = href[len("/track/"):]
+			if href, ok := attrValue(n.Attr, "href"); ok {
+				if p, ok := cardPath(href); ok && strings.HasPrefix(p, "/track/") {
+					sc.slug = p[len("/track/"):]
+				}
 			}
 		case n.Data == "p" && sc.title == "":
 			if class, ok := attrValue(n.Attr, "class"); ok && strings.Contains(class, "title") {
