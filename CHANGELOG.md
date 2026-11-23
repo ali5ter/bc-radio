@@ -5,6 +5,8 @@ All notable changes to bc-radio are recorded here. Each release follows
 
 ## [Unreleased]
 
+## [v1.3.2] - 2026-11-23
+
 ### Fixed
 
 - Release catalogs beyond the first 16 releases are now read in full.
@@ -14,6 +16,15 @@ All notable changes to bc-radio are recorded here. Each release follows
   static markup — an artist like King Gizzard & The Lizard Wizard
   (32 releases) or Øresund Space Collective (108) came back with only
   its first 16, the rest missing from the radio.
+- The demo reel is re-rendered against the current index.
+
+### Notes
+
+- A release with no streamable tracks (for example a vinyl-only
+  release, whose page carries no track list) has nothing for the radio
+  to play, so it does not appear in the index. That is upstream data,
+  not a read failure — and it is why an artist's indexed catalog can be
+  a few releases smaller than its Bandcamp page.
 
 ## [v1.3.1] - 2026-11-21
 
