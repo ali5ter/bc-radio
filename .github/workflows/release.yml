@@ -15,7 +15,11 @@ jobs:
   # Every built binary is run before anything is published (issue #17):
   # the v0.4.1 purego amd64 trampoline made every amd64 release launch
   # into a silent hang, and the release that built it never ran it. -h
-  # must print and exit; the alarm kills a hung process at 10 s.
+  # must print and exit; the alarm kills a hung process at 10 s. The help
+  # goes to a file, not a pipe: cobra prints it line by line, and piping
+  # to head -1 races the app's later writes against head's early close —
+  # a SIGPIPE (exit 141) on a healthy binary, seen 2026-11-23 on a
+  # capacity-constrained runner.
   smoke:
     runs-on: macos-latest
     steps:
@@ -32,13 +36,13 @@ jobs:
 
       - name: Smoke the arm64 binary
         run: |
-          set -o pipefail
-          perl -e 'alarm 10; exec @ARGV' ./bc-radio-arm64 -h | head -1
+          perl -e 'alarm 10; exec @ARGV' ./bc-radio-arm64 -h > /tmp/help-arm64.txt
+          head -1 /tmp/help-arm64.txt
 
       - name: Smoke the amd64 binary under Rosetta
         run: |
-          set -o pipefail
-          perl -e 'alarm 10; exec @ARGV' arch -x86_64 ./bc-radio-amd64 -h | head -1
+          perl -e 'alarm 10; exec @ARGV' arch -x86_64 ./bc-radio-amd64 -h > /tmp/help-amd64.txt
+          head -1 /tmp/help-amd64.txt
 
   release:
     needs: smoke
