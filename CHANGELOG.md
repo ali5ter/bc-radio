@@ -5,6 +5,16 @@ All notable changes to bc-radio are recorded here. Each release follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Release catalogs beyond the first 16 releases are now read in full.
+  Bandcamp's `/music` page ships its releases past the first 16 in a
+  client-only data batch that the site's JavaScript renders into the
+  grid while the static page markup omits, and the index read only the
+  static markup — an artist like King Gizzard & The Lizard Wizard
+  (32 releases) or Øresund Space Collective (108) came back with only
+  its first 16, the rest missing from the radio.
+
 ## [v1.3.1] - 2026-11-21
 
 ### Fixed

@@ -2,6 +2,7 @@ package bandcamp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -38,8 +39,9 @@ type singleCard struct {
 }
 
 // Albums returns the artist's releases in minimal form (Slug, Title,
-// ArtID, plus the ID and BandID the cards also carry), in page order
-// (newest first). It implements contract.Library.
+// ArtID, plus the ID and BandID the cards also carry): the page's
+// static cards in page order, then the client batch's (see
+// parseMusic). It implements contract.Library.
 //
 // Single-track releases appear on /music as track-* cards. They are
 // grouped into one synthetic "singles" album after the real releases:
@@ -117,11 +119,21 @@ func redirectRelease(requested, final string) (kind, slug string, ok bool) {
 	return "", "", false
 }
 
-// parseMusic extracts the release cards from an artist /music page. Cards
-// are <li> elements with a data-item-id attribute: kind "album" becomes a
-// minimal contract.Album, kind "track" a singleCard. A single listed on
-// two cards (a featured banner repeats the grid card) is de-duplicated by
-// its numeric ID.
+// parseMusic extracts the release list from an artist /music page.
+//
+// The page carries the list in two places. The static markup is <li>
+// cards with a data-item-id attribute: kind "album" becomes a minimal
+// contract.Album, kind "track" a singleCard; a single listed on two
+// cards (a featured banner repeats the grid card) is de-duplicated by
+// its numeric ID. Beyond the static cards, catalogs larger than 16
+// releases additionally ship a data-client-items JSON array on the
+// release grid — the *remainder* of the catalog (live-verified
+// 2026-11-23: King Gizzard 16 static + 16 client, Øresund Space
+// Collective 16 + 92). Bandcamp's JavaScript renders both sets in the
+// grid; reading only the static cards returns the first 16 and silently
+// drops the rest, the release vanishing from the index. Both sets are
+// merged, de-duplicated by ID, static cards first, then the batch in
+// its own order.
 func parseMusic(page string) (albums []contract.Album, singles []singleCard, err error) {
 	doc, err := parseDoc(page)
 	if err != nil {
@@ -155,6 +167,63 @@ func parseMusic(page string) (albums []contract.Album, singles []singleCard, err
 		}
 	}
 	walk(doc)
+	return mergeClientItems(doc, albums, singles)
+}
+
+// clientItem is one entry of the release grid's data-client-items JSON:
+// a release the page hands to Bandcamp's JavaScript client beyond its
+// static cards (see parseMusic).
+type clientItem struct {
+	ID      int64  `json:"id"`
+	BandID  int64  `json:"band_id"`
+	ArtID   int64  `json:"art_id"`
+	PageURL string `json:"page_url"`
+	Title   string `json:"title"`
+	Type    string `json:"type"`
+}
+
+// mergeClientItems folds the grid's data-client-items batch into the
+// static card results. A missing attribute is the normal small-catalog
+// case and leaves the results untouched; an attribute that is present
+// but will not decode is a schema drift and fails the parse — a half
+// index is the bug, not the error. Entries already read from the static
+// cards (by ID) are skipped, the rest appended in batch order; an
+// entry whose page URL is not a release page is dropped.
+func mergeClientItems(doc *html.Node, albums []contract.Album, singles []singleCard) ([]contract.Album, []singleCard, error) {
+	val, ok := findAttr(doc, "data-client-items")
+	if !ok {
+		return albums, singles, nil
+	}
+	var items []clientItem
+	if err := json.Unmarshal([]byte(val), &items); err != nil {
+		return nil, nil, fmt.Errorf("parse data-client-items: %w", err)
+	}
+	haveAlbum := make(map[int64]bool, len(albums))
+	for _, a := range albums {
+		haveAlbum[a.ID] = true
+	}
+	haveSingle := make(map[int64]bool, len(singles))
+	for _, s := range singles {
+		haveSingle[s.id] = true
+	}
+	for _, it := range items {
+		switch it.Type {
+		case "album":
+			slug, ok := releaseSlug(it.PageURL, "/album/")
+			if !ok || haveAlbum[it.ID] {
+				continue
+			}
+			haveAlbum[it.ID] = true
+			albums = append(albums, contract.Album{ID: it.ID, Slug: slug, Title: it.Title, BandID: it.BandID, ArtID: it.ArtID})
+		case "track":
+			slug, ok := releaseSlug(it.PageURL, "/track/")
+			if !ok || haveSingle[it.ID] {
+				continue
+			}
+			haveSingle[it.ID] = true
+			singles = append(singles, singleCard{id: it.ID, slug: slug, title: it.Title})
+		}
+	}
 	return albums, singles, nil
 }
 
@@ -178,10 +247,10 @@ func splitItemID(id string) (kind string, num int64, ok bool) {
 // protocol-relative (//host/album/x) URL is reduced with url.Parse.
 // Bandcamp serves both forms from the same /music listing — wetleg's page
 // (2026-11-20) linked its albums absolutely while its singles linked
-// relatively — so the /album/ and /track/ prefix checks below must run on
-// the path, not the raw attribute: an absolute href fails the raw check
-// and the card is dropped without a trace, the release vanishing from the
-// index.
+// relatively — so the /album/ and /track/ prefix checks (releaseSlug) must
+// run on the path, not the raw attribute: an absolute href fails the raw
+// check and the card is dropped without a trace, the release vanishing
+// from the index.
 func cardPath(href string) (string, bool) {
 	if strings.HasPrefix(href, "/") && !strings.HasPrefix(href, "//") {
 		return href, true
@@ -191,6 +260,18 @@ func cardPath(href string) (string, bool) {
 		return "", false
 	}
 	return u.Path, true
+}
+
+// releaseSlug is a release link's path with the kind prefix stripped to a
+// slug, or not-ok when the path does not run under prefix. The /album/
+// and /track/ prefix checks run on the normalised path (cardPath), never
+// the raw attribute, so relative and absolute hrefs both resolve.
+func releaseSlug(href, prefix string) (string, bool) {
+	p, ok := cardPath(href)
+	if !ok || !strings.HasPrefix(p, prefix) {
+		return "", false
+	}
+	return p[len(prefix):], true
 }
 
 // albumCard builds a minimal contract.Album from one release card: the ID
@@ -210,8 +291,8 @@ func albumCard(card *html.Node, id int64) (contract.Album, bool) {
 			continue
 		case n.Data == "a" && album.Slug == "":
 			if href, ok := attrValue(n.Attr, "href"); ok {
-				if p, ok := cardPath(href); ok && strings.HasPrefix(p, "/album/") {
-					album.Slug = p[len("/album/"):]
+				if slug, ok := releaseSlug(href, "/album/"); ok {
+					album.Slug = slug
 				}
 			}
 		case n.Data == "img" && album.ArtID == 0:
@@ -255,8 +336,8 @@ func singleCardFromNode(card *html.Node, id int64) (singleCard, bool) {
 		switch {
 		case n.Data == "a" && sc.slug == "":
 			if href, ok := attrValue(n.Attr, "href"); ok {
-				if p, ok := cardPath(href); ok && strings.HasPrefix(p, "/track/") {
-					sc.slug = p[len("/track/"):]
+				if slug, ok := releaseSlug(href, "/track/"); ok {
+					sc.slug = slug
 				}
 			}
 		case n.Data == "p" && sc.title == "":

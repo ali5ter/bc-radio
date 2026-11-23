@@ -7,9 +7,12 @@
 //
 //   - the following page's data-blob (bandcamp.com/{user}/following/
 //     artists_and_labels) for followed artists;
-//   - the artist /music page's markup for the release list — which
-//     303-redirects to the release itself for an artist with exactly one
-//     release, a page the client recovers from (Albums);
+//   - the artist /music page's markup for the release list — the static
+//     release cards, plus a data-client-items JSON array of the catalog's
+//     releases beyond the first 16 (live-verified 2026-11-23: King Gizzard
+//     32, Øresund Space Collective 108) — which 303-redirects to the
+//     release itself for an artist with exactly one release, a page the
+//     client recovers from (Albums);
 //   - the album page's data-tralbum JSON for tracks and signed stream URLs;
 //   - a single's /track/ page, whose data-tralbum carries the one track
 //     and its stream URL the same way (verified live 2026-11-19).

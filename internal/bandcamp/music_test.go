@@ -162,11 +162,15 @@ func TestAlbums(t *testing.T) {
 			firstArtID: 4191051966,
 		},
 		{
-			// No single-track cards, so no grouping: the count is the
-			// albums, and the last entry is a real release.
+			// A >16-release catalog: 16 static cards, the remaining 38
+			// (35 albums, 3 singles) in the grid's data-client-items.
+			// The 51 albums (16 static + 35 client) plus the synthetic
+			// "singles" grouping of the 3 client singles. Before the
+			// client-items merge (2026-11-23) this read 16 — the rest
+			// of the catalog missing from the index.
 			name:       "deerhoof music page",
 			artist:     artistWith("deerhoof", ""),
-			wantCount:  16,
+			wantCount:  52,
 			firstTitle: "Divine Schism",
 			firstSlug:  "divine-schism",
 			firstArtID: 1107809698,
@@ -262,6 +266,84 @@ func TestParseMusicNoCards(t *testing.T) {
 	}
 	if len(albums) != 0 || len(singles) != 0 {
 		t.Errorf("albums = %+v, singles = %+v, want none", albums, singles)
+	}
+}
+
+// clientItemsPage renders a /music page in the >16-release shape: the
+// grid's static cards plus a data-client-items JSON array on the ol, in
+// the &quot;-escaped form Bandcamp serves.
+func clientItemsPage(cards, items string) string {
+	esc := strings.ReplaceAll(items, `"`, `&quot;`)
+	return `<html><body><ol id="music-grid" data-edit-callback="/music_reorder" data-client-items="` + esc + `">` + cards + `</ol></body></html>`
+}
+
+// TestParseMusicClientItems pins the data-client-items merge (the
+// 2026-11-23 find: King Gizzard's /music carries 16 static cards and 16
+// more releases in the grid's client batch; the static-only walk dropped
+// all 16). Both sets must land — static cards in page order, then the
+// batch in its own order, de-duplicated by ID, an entry without a
+// release-page URL dropped.
+func TestParseMusicClientItems(t *testing.T) {
+	t.Parallel()
+	cards :=
+		`<li data-item-id="album-100" data-band-id="42"><a href="/album/duplicate">` +
+			`<img src="https://f4.bcbits.com/img/a11_2.jpg"><p class="title"> Duplicate </p></a></li>` +
+			`<li data-item-id="album-200" data-band-id="42"><a href="/album/static-only">` +
+			`<img src="https://f4.bcbits.com/img/a22_2.jpg"><p class="title"> Static Only </p></a></li>` +
+			`<li data-item-id="track-300" data-band-id="42"><a href="/track/static-single">` +
+			`<p class="title"> Static Single </p></a></li>`
+	items := `[` +
+		`{"id":900,"band_id":42,"art_id":55,"page_url":"/album/from-the-batch","title":"From The Batch","type":"album"},` +
+		`{"id":100,"band_id":42,"art_id":99,"page_url":"https://x.bandcamp.com/album/duplicate","title":"Duplicate","type":"album"},` +
+		`{"id":777,"band_id":42,"art_id":77,"page_url":"/track/batch-single","title":"Batch Single","type":"track"},` +
+		`{"id":888,"band_id":42,"art_id":88,"page_url":"/no-such-page","title":"Dropped","type":"album"}` +
+		`]`
+
+	albums, singles, err := parseMusic(clientItemsPage(cards, items))
+	if err != nil {
+		t.Fatalf("parseMusic: %v", err)
+	}
+	// The duplicate (ID 100, static card and client entry) is read once,
+	// from the static card; the no-page entry is dropped.
+	wantAlbums := []struct {
+		id    int64
+		slug  string
+		title string
+	}{
+		{100, "duplicate", "Duplicate"},
+		{200, "static-only", "Static Only"},
+		{900, "from-the-batch", "From The Batch"},
+	}
+	if len(albums) != len(wantAlbums) {
+		t.Fatalf("len(albums) = %d (%+v), want %d", len(albums), albums, len(wantAlbums))
+	}
+	for i, w := range wantAlbums {
+		if albums[i].ID != w.id || albums[i].Slug != w.slug || albums[i].Title != w.title {
+			t.Errorf("albums[%d] = %+v, want id %d slug %s title %s", i, albums[i], w.id, w.slug, w.title)
+		}
+	}
+	if albums[2].BandID != 42 || albums[2].ArtID != 55 {
+		t.Errorf("albums[2] band/art = %d/%d, want 42/55 from the client entry", albums[2].BandID, albums[2].ArtID)
+	}
+	if len(singles) != 2 {
+		t.Fatalf("len(singles) = %d (%+v), want 2 (static and client)", len(singles), singles)
+	}
+	if singles[0].slug != "static-single" || singles[1].slug != "batch-single" {
+		t.Errorf("singles = %+v, want static-single then batch-single", singles)
+	}
+}
+
+// TestParseMusicClientItemsUndecodable pins the loud-fail: a
+// data-client-items attribute that is present but will not decode is a
+// schema drift — the parse fails rather than returning a half index.
+func TestParseMusicClientItemsUndecodable(t *testing.T) {
+	t.Parallel()
+	page := clientItemsPage(
+		`<li data-item-id="album-100" data-band-id="42"><a href="/album/x"><p class="title"> X </p></a></li>`,
+		`not json`,
+	)
+	if _, _, err := parseMusic(page); err == nil {
+		t.Fatal("parseMusic with an undecodable client batch = nil error, want the drift named")
 	}
 }
 
