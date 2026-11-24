@@ -41,7 +41,7 @@ import (
 type interference struct {
 	t    float64 // phase clock, seconds: one Render call advances it one frame
 	grid []rune  // the field's glyphs, w*h, reused between frames
-	tier []int   // the style tier per cell, w*h: 0 plain, 1 dim, 2/3 visual
+	tier []int   // the style tier per cell, w*h: 0 air, 1/2 dim, 3-5 visual, 6 hot
 }
 
 // Tuning, sized for the 60 fps render cadence and a cell's 2:1 aspect.
@@ -68,9 +68,26 @@ const (
 	falloff  = 1.4  // the |field| that fills a cell to full block
 )
 
-// intChars is the glyph per style tier, weight order: air, then the three
-// block densities the field's |amplitude| maps onto.
-var intChars = []rune{' ', '▒', '▓', '█'}
+// intChars is the glyph per tier, in weight order: the air, then a smooth
+// density ramp from the faintest dot to the full block. The step below
+// the dead zone stays air (the nodal lines are blank space, not a faint
+// line); the steps above it are light enough that the field's quiet
+// between the wave crests reads as a dusting of dots, and only the crests
+// themselves reach the heavy blocks — the old four-step set opened at
+// ▒, a half-dark block, so the whole fan tiled like a wallpaper.
+var intChars = []rune{' ', '.', '·', '░', '▒', '▓', '█'}
+
+// intCuts is the normalised |field| (0 at the dead zone, 1 at the
+// falloff) at which each lit tier begins, in weight order. The widths are
+// deliberately uneven, and placed against the field's true range — the
+// two sources largely cancel at each other, so the normalised field tops
+// out around 0.7 rather than 1.0: the dot tiers are narrow, so the field
+// fades gradually out of the air; the block tiers are wide, so the wave
+// crests reach the heavy glyphs. (Measured across ten seconds of
+// rendering: a resting pulse peaks at 0.12, a mid-level mix at 0.51, a
+// full-scale passage at 0.73 — so the full-block tier, the scheme's
+// warm end, is a loud-passage feature, never a resting one.)
+var intCuts = []float64{0, 0.08, 0.20, 0.34, 0.48, 0.62}
 
 // newInterference builds an interference visualizer.
 func newInterference() *interference { return &interference{} }
@@ -171,11 +188,17 @@ func (v *interference) Render(f frame) string {
 			a := math.Sin(k*r1-phi)/math.Sqrt(1+2*r1/lam) +
 				math.Sin(k*r2-phi)/math.Sqrt(1+2*r2/lam)
 			m := math.Abs(a) * gain / coherent
+			// The normalised field over the dead zone to the falloff,
+			// stepped onto the glyph ramp by the (uneven) cuts above.
+			q := (m - deadZone) / (falloff - deadZone)
 			t := 0
-			if m >= deadZone {
-				t = 1 + int((m-deadZone)/(falloff-deadZone)*3)
-				if t > 3 {
-					t = 3
+			if q >= 0 {
+				t = 1
+				for _, c := range intCuts[1:] {
+					if q < c {
+						break
+					}
+					t++
 				}
 			}
 			// The mirrored cell gets the identical field (the sources are
@@ -200,7 +223,7 @@ func (v *interference) Render(f frame) string {
 	for _, sx := range [2]float64{s1x, s2x} {
 		c := int(sx)
 		set(c-1, '(', 1)
-		set(c, '●', 3)
+		set(c, '●', len(intChars)-1) // the emitting source: the hottest tier
 		set(c+1, ')', 1)
 	}
 
@@ -218,13 +241,18 @@ func (v *interference) Render(f frame) string {
 				end++
 			}
 			var style lipgloss.Style
-			switch t {
-			case 0:
+			// The heat ramp: the field's faint tail is dim, its body the
+			// visual colour, and only its full-block crests (and the
+			// source cores) reach the scheme's warm end.
+			switch {
+			case t == 0:
 				style = plain
-			case 1:
+			case t <= 2:
 				style = styleDim
-			default:
+			case t <= len(intChars)-2:
 				style = styleVisual
+			default:
+				style = styleHot
 			}
 			out.WriteString(style.Render(string(v.grid[y*w+x : y*w+end])))
 			x = end
