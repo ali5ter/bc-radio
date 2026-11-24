@@ -21,8 +21,9 @@ import (
 //     so the field's shape is the spectrum's shape, the particles'
 //     "the pattern the eye reads is the shape of the music" re-expressed
 //     as liquid;
-//   - at rest the field is one small mote per band — sixteen faint dots,
-//     the same resting population as the particles.
+//   - at rest the field is one small mote per band — sixteen quiet
+//     motes, each ringed in the aura, the same resting population as
+//     the particles.
 //
 // Like interference it holds a phase clock (one Render advances it one
 // frame; a paused Render holds it, so the frame is byte-identical — the
@@ -33,17 +34,19 @@ import (
 //
 // The blobs are the classic metaball field: the sum, over every blob, of
 // r^2 / (dx^2 + dy^2 + 0.5), in a space where a cell is one unit wide and
-// two tall. The field reads in three scheme colours — the dim halo, the
-// visual (teal) body, and the scheme's warm spectrumHigh end for the hot
-// core, the same warm-on-dark logic as the accent but for the field
-// instead of user action — so a full-scale passage is a mass of teal
-// liquid with a copper heart, and nothing ever reads as a rainbow.
+// two tall. The field reads in a four-step heat ramp of scheme colours,
+// cool to warm from the edge in: the dim aura, the scheme's cool
+// spectrumLow end for the rim, the visual (teal) body, and the scheme's
+// warm spectrumHigh end for the hot core — the same two ends of the
+// spectrum gradient the bars run between, so a blob's temperature is its
+// field strength. A full-scale passage is a mass of teal liquid with a
+// copper heart ringed in blue; nothing ever reads as a rainbow.
 type metaballs struct {
 	rng  *rand.Rand
 	ball []blob
 	t    float64 // phase clock, seconds: one Render call advances it one frame
 	grid []rune  // the field's glyphs, w*h, reused between frames
-	tier []int   // the style tier per cell, w*h: 0 plain, 1 dim, 2 visual, 3 hot
+	tier []int   // the style tier per cell, w*h: 0 plain, 1 dim aura, 2 cool rim, 3 visual body, 4 hot core
 }
 
 // blob is one band's blob: its fixed drift (frequency and phase, drawn
@@ -84,15 +87,17 @@ const (
 
 	// Field tiers. The body and core are *sum* thresholds: where two
 	// blobs overlap, the sum of their fields exceeds them and the
-	// bodies merge — the liquid. The mid and halo are *per-blob*: a
-	// tier's reach is sqrt(r^2 / t - 0.5), which scales with the
-	// blob's own radius, so a dot stays a dot at any panel size — and
-	// a distant blob's 1/d^2 tail can never sum into a wallpaper (the
+	// bodies merge — the liquid. The rim and halo are *per-blob*
+	// margins beyond the body edge: the field falls as r^2 / d^2, so
+	// the threshold at d = r + margin is r^2 / ((r+margin)^2 + 0.5)
+	// — a fixed-width ring, scale-free, the rim always contained in
+	// the halo, and a distant blob's tail below both beyond its own
+	// halo, so it can never reach a cell near another blob (the
 	// upstream piece's faint background is deliberate there; in a dim
 	// terminal it is static noise, so it is dropped).
 	metaballCore = 1.50 // the hot core: the scheme's warm end (sum)
 	metaballBody = 1.00 // the blob's body (sum: overlapping blobs merge)
-	metaballMid  = 0.70 // the falloff ring, a fraction of each blob's field
+	metaballRim  = 1.00 // the rim's margin beyond the body edge, half-cells
 	metaballHalo = 1.50 // the halo's margin beyond the body edge, half-cells
 )
 
@@ -153,7 +158,8 @@ func (m *metaballs) Render(f frame) string {
 	bx := make([]float64, n)
 	by := make([]float64, n)
 	br2 := make([]float64, n)
-	tha := make([]float64, n) // each blob's halo threshold, below
+	tha := make([]float64, n)   // each blob's halo threshold, below
+	thrim := make([]float64, n) // each blob's rim threshold, below
 	panelH := 2 * float64(h)
 	for i := 0; i < n; i++ {
 		b := m.ball[i]
@@ -163,10 +169,12 @@ func (m *metaballs) Render(f frame) string {
 		bx[i] = float64(w)*0.5 + float64(w)*metaballDriftX*math.Sin(b.fx*m.t+b.px)
 		by[i] = panelH * (b.home + metaballDriftY*math.Sin(b.fy*m.t+b.py+float64(i)*1.3))
 		br2[i] = r * r
-		// The halo is a fixed margin beyond the body edge: the field
-		// falls as r^2 / d^2, so the threshold at d = r + margin is
-		// this — a margin that is scale-free, the body edge included.
+		// The rim and halo are fixed margins beyond the body edge:
+		// the field falls as r^2 / d^2, so the threshold at
+		// d = r + margin is this — scale-free, the body edge
+		// included, the rim always inside the halo.
 		tha[i] = br2[i] / ((r+metaballHalo)*(r+metaballHalo) + 0.5)
+		thrim[i] = br2[i] / ((r+metaballRim)*(r+metaballRim) + 0.5)
 	}
 
 	for y := 0; y < h; y++ {
@@ -174,28 +182,28 @@ func (m *metaballs) Render(f frame) string {
 		for x := 0; x < w; x++ {
 			px := float64(x) + 0.5
 			var field float64
-			mid, halo := false, false
+			rim, halo := false, false
 			for i := 0; i < n; i++ {
 				dx := px - bx[i]
 				dy := dyBase - by[i]
 				c := br2[i] / (dx*dx + dy*dy + 0.5)
 				field += c
-				if c >= metaballMid {
-					mid = true
+				if c >= thrim[i] {
+					rim = true
 				}
 				if c >= tha[i] {
 					halo = true
 				}
 			}
-			// The tier encodes the style run; the glyph encodes the
-			// weight within it.
+			// The tier encodes the style run (a step of the heat ramp,
+			// above); the glyph encodes the weight within it.
 			t, g := 0, rune(' ')
 			switch {
 			case field >= metaballCore:
-				t, g = 3, '█'
+				t, g = 4, '█'
 			case field >= metaballBody:
-				t, g = 2, '▓'
-			case mid:
+				t, g = 3, '▓'
+			case rim:
 				t, g = 2, '▒'
 			case halo:
 				t, g = 1, '░'
@@ -226,6 +234,8 @@ func (m *metaballs) Render(f frame) string {
 			case 1:
 				style = styleDim
 			case 2:
+				style = styleCool
+			case 3:
 				style = styleVisual
 			default:
 				style = styleHot

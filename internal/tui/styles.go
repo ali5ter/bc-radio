@@ -132,6 +132,13 @@ var (
 	// warm-on-dark logic as the accent, but for the field's heat rather
 	// than user action; in mono it is bold, keeping its weight step.
 	styleHot lipgloss.Style
+	// styleCool is the cool step of the metaballs' rim: the scheme's
+	// spectrumLow (the blue bass end of the spectrum gradient), sitting
+	// between the dim aura and the visual body. In mono it is plain —
+	// the weight ladder has no step between faint and plain, so the rim
+	// holds its place by glyph weight (▒ between the ░ aura and the ▓
+	// body) while bold stays reserved for the core.
+	styleCool lipgloss.Style
 	styleDim, styleDimB, styleWarn, styleBad,
 	styleText, styleHighlight, styleTransientBg lipgloss.Style
 	styleBands  []lipgloss.Style
@@ -164,6 +171,7 @@ func applyTheme(s scheme) {
 		styleAccent, styleAccentB = lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true)
 		styleVisual = lipgloss.NewStyle()
 		styleHot = lipgloss.NewStyle().Bold(true)
+		styleCool = lipgloss.NewStyle()
 		styleDim, styleDimB =
 			lipgloss.NewStyle().Faint(true), lipgloss.NewStyle().Bold(true)
 		styleWarn = lipgloss.NewStyle()
@@ -175,6 +183,7 @@ func applyTheme(s scheme) {
 		styleAccentB = styleAccent.Bold(true)
 		styleVisual = lipgloss.NewStyle().Foreground(s.visual)
 		styleHot = lipgloss.NewStyle().Foreground(s.spectrumHigh)
+		styleCool = lipgloss.NewStyle().Foreground(s.spectrumLow)
 		styleDim = lipgloss.NewStyle().Foreground(s.dim)
 		styleDimB = styleDim.Bold(true)
 		styleWarn = lipgloss.NewStyle().Foreground(s.warn)

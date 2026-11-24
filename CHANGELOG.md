@@ -12,8 +12,10 @@ All notable changes to bc-radio are recorded here. Each release follows
   metaballs piece on ascii-magic.com. The blobs are the music — one per
   analyser band, the band's energy its size, its frequency its home
   altitude (bass low, treble high) — so the field's shape is the spectrum's
-  shape: quiet passages hold sixteen faint motes, a loud one is a mass of
-  teal liquid with a warm heart.
+  shape. The field reads in a four-colour heat ramp, cool to warm from the
+  edge in: a dim aura, a cool blue rim, a teal body, and a warm core at the
+  scheme's spectrum end — so quiet passages hold sixteen small motes ringed
+  in the aura, and a loud one is a mass of teal liquid with a copper heart.
 
 ### Changed
 

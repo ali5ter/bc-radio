@@ -36,8 +36,8 @@ Sleep 2s
 Type " "
 Sleep 1s
 
-# Cycle the visualizers: spectrum → particles → scope → interference
-# (the 4th v wraps back to spectrum, which the fullscreen then shows).
+# Cycle the visualizers: spectrum → particles → scope → interference →
+# metaballs (the 5th in the cycle; the fullscreen then shows it).
 Type "v"
 Sleep 2s
 Type "v"
