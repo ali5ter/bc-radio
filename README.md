@@ -99,7 +99,7 @@ page) or point `-cache-dir` at an empty directory.
 | `s` | Shuffle on / off | Player |
 | `r` | Repeat on / off | Player |
 | `d` | Radio on / off (random tracks from your follows) | Player |
-| `v` | Next visualizer (spectrum → particles → scope) | Player |
+| `v` | Next visualizer (spectrum → particles → scope → interference) | Player |
 | `f` | Fullscreen visualizer | Player |
 | `l` | Library | Player |
 | `+` / `-` | Volume up / down | Player |

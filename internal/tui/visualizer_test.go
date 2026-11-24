@@ -38,8 +38,8 @@ func bandFrame(bands []float64, w, h int) frame {
 
 func TestMakeVisualizers(t *testing.T) {
 	vs := makeVisualizers()
-	if len(vs) != 3 {
-		t.Fatalf("makeVisualizers = %d; want 3 (spectrum, particles, scope)", len(vs))
+	if len(vs) != 4 {
+		t.Fatalf("makeVisualizers = %d; want 4 (spectrum, particles, scope, interference)", len(vs))
 	}
 	seen := map[string]bool{}
 	for _, v := range vs {
@@ -319,8 +319,122 @@ func TestParticlesLaneMapping(t *testing.T) {
 	}
 }
 
+// TestInterferencePauseFreeze pins the pause cue against the interference
+// clock, like the particles' does against their field: a paused Render
+// holds the phase clock, so the frame is byte-identical to the last
+// playing one, and a resumed one moves again.
+func TestInterferencePauseFreeze(t *testing.T) {
+	v := newInterference()
+	b := frameBands(1.0, 0.8, 0.6, 0.4, 0.2, 0.5, 0.3, 0.5, 0.3, 0.5, 0.4, 0.3, 0.4, 0.2, 0.4, 0.2)
+	// Let the clock run through a loud passage.
+	var playing string
+	for i := 0; i < 120; i++ {
+		playing = v.Render(bandFrame(b, 80, 24))
+	}
+	f := bandFrame(b, 80, 24)
+	f.paused = true
+	frozen := v.Render(f)
+	if frozen != playing {
+		t.Fatal("a paused frame must hold the clock, byte for byte")
+	}
+	if got := v.Render(f); got != frozen {
+		t.Fatal("repeated paused frames must be identical")
+	}
+	if got := v.Render(bandFrame(b, 80, 24)); got == frozen {
+		t.Fatal("the resumed clock must advance the pattern")
+	}
+}
+
+// nonBlank counts the field's non-space cells (newlines excluded).
+func nonBlank(render string) int {
+	n := 0
+	for _, r := range stripANSI(render) {
+		if r != ' ' && r != '\n' {
+			n++
+		}
+	}
+	return n
+}
+
+// At rest the field is the quiet end of the mapping: a faint, near-
+// concentric pulse — the sources sit close, the gain is at its floor. It
+// must be neither a dead panel nor a full one.
+func TestInterferenceRest(t *testing.T) {
+	v := newInterference()
+	var got string
+	for i := 0; i < 120; i++ {
+		got = v.Render(bandFrame(zeroBands(), 80, 24))
+	}
+	cells := 80 * 24
+	n := nonBlank(got)
+	if n == 0 {
+		t.Fatal("at rest the field should hold its faint pulse")
+	}
+	if n > cells/4 {
+		t.Fatalf("at rest the field fills %d/%d cells; want a sparse pulse (<= %d)", n, cells, cells/4)
+	}
+}
+
+// A full-scale passage is the loud end: dense rings, full gain — the field
+// should mostly fill the panel and reach its brightest glyph.
+func TestInterferenceLoud(t *testing.T) {
+	v := newInterference()
+	b := zeroBands()
+	for k := range b {
+		b[k] = 1.0
+	}
+	var got string
+	for i := 0; i < 120; i++ {
+		got = v.Render(bandFrame(b, 80, 24))
+	}
+	cells := 80 * 24
+	if n := nonBlank(got); n < cells/2 {
+		t.Fatalf("a full-scale passage should fill most of the panel, got %d/%d", n, cells)
+	}
+	if !strings.Contains(got, "█") {
+		t.Fatal("a full-scale passage should reach the full-block glyph")
+	}
+}
+
+// The point of the audio wiring: each band region must change what a frame
+// draws, with the phase clock frozen (a paused Render is a pure function of
+// the bands alone, at a fixed t).
+func TestInterferenceAudioMapping(t *testing.T) {
+	v := newInterference()
+	v.Render(bandFrame(zeroBands(), 80, 24)) // give the clock a nonzero value
+	base := zeroBands()
+	for k := 6; k < 11; k++ {
+		base[k] = 0.5 // a fixed mid, so only the region under test moves
+	}
+	frozen := func(mutate func(b []float64)) string {
+		b := append([]float64(nil), base...)
+		mutate(b)
+		f := bandFrame(b, 80, 24)
+		f.paused = true
+		return v.Render(f)
+	}
+	set := func(lo, hi int, val float64) func(b []float64) {
+		return func(b []float64) {
+			for k := lo; k < hi; k++ {
+				b[k] = val
+			}
+		}
+	}
+	reference := frozen(func(b []float64) {})
+	for name, mutate := range map[string]func(b []float64){
+		"bass (wavelength)":   set(0, 6, 1.0),
+		"mid (emission rate)": set(6, 11, 1.0),
+		"treble (separation)": set(11, 16, 1.0),
+		"level (amplitude)":   set(0, 16, 1.0),
+	} {
+		if got := frozen(mutate); got == reference {
+			t.Errorf("%s at full scale drew the reference frame; the region does not reach the pattern", name)
+		}
+	}
+}
+
 // Renders must be a pure function of the input frames: two fresh instances
-// fed the same sequence draw identical frames.
+// fed the same sequence draw identical frames, for every visualizer.
 func TestVisualizersDeterministic(t *testing.T) {
 	vs1, vs2 := makeVisualizers(), makeVisualizers()
 	run := func(vs []visualizer, w, h int) string {
@@ -330,11 +444,13 @@ func TestVisualizersDeterministic(t *testing.T) {
 			for k := range b {
 				b[k] = 0.5 + 0.5*math.Sin(float64(i)/10.0+float64(k))
 			}
-			out.WriteString(vs[0].Render(bandFrame(b, w, h)))
+			for _, v := range vs {
+				out.WriteString(v.Render(bandFrame(b, w, h)))
+			}
 		}
 		return out.String()
 	}
-	for i, name := range []string{"spectrum", "particles", "scope"} {
+	for i, name := range []string{"spectrum", "particles", "scope", "interference"} {
 		if vs1[i].Name() != name {
 			t.Fatalf("makeVisualizers()[%d] = %s; the test expects %s", i, vs1[i].Name(), name)
 		}

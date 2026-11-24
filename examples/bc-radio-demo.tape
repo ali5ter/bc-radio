@@ -36,7 +36,10 @@ Sleep 2s
 Type " "
 Sleep 1s
 
-# Cycle the visualizers: spectrum → particles → scope.
+# Cycle the visualizers: spectrum → particles → scope → interference
+# (the 4th v wraps back to spectrum, which the fullscreen then shows).
+Type "v"
+Sleep 2s
 Type "v"
 Sleep 2s
 Type "v"

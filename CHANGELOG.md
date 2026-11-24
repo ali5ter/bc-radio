@@ -5,6 +5,18 @@ All notable changes to bc-radio are recorded here. Each release follows
 
 ## [Unreleased]
 
+### Added
+
+- A fourth visualizer, **interference** (`v` cycles to it after scope): two
+  point sources send out circular waves that reinforce and cancel, carving
+  the classic fan of nodal lines as the sources drift apart. The pattern is
+  after the MIT-licensed wave-interference piece on ascii-magic.com,
+  reversed out of its animation and wired to the analyser instead of the
+  wall clock — the bass sets the ring density, the mid the emission rate,
+  the treble how far the sources drift apart, and the overall level the
+  field's amplitude, so a quiet passage reads as a faint concentric pulse
+  and a loud one as a full interference fan.
+
 ## [v1.3.2] - 2026-11-23
 
 ### Fixed

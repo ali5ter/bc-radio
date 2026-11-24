@@ -11,7 +11,8 @@ package tui
 // the scope need no special handling — the analyser's anchor pins while
 // the device's buffer fills, so their inputs freeze and the visuals hold
 // their last frame. A stateful visualizer must act on the flag itself:
-// the particle field would otherwise keep simulating through the silence.
+// the particle field and the interference clock would otherwise keep
+// simulating through the silence.
 //
 // Render must return a string of exactly that width and height: the layout
 // does no further sizing, so a visualizer that overflows or shrinks a frame
@@ -38,14 +39,15 @@ type visualizer interface {
 }
 
 // makeVisualizers builds the set in cycle order: v steps through them.
-// spectrum and particles hold state (the peak caps, the particle field);
-// the scope is a pure function of the frame. The radial meter left the
-// set in the 2026-11-19 polish round: it read too quiet next to the
-// spectrum to earn its slot in the cycle.
+// spectrum, particles and interference hold state (the peak caps, the
+// particle field, the phase clock); the scope is a pure function of the
+// frame. The radial meter left the set in the 2026-11-19 polish round: it
+// read too quiet next to the spectrum to earn its slot in the cycle.
 func makeVisualizers() []visualizer {
 	return []visualizer{
 		newSpectrum(),
 		newParticles(),
 		newScope(),
+		newInterference(),
 	}
 }
