@@ -5,6 +5,26 @@ All notable changes to bc-radio are recorded here. Each release follows
 
 ## [Unreleased]
 
+### Added
+
+- A fifth visualizer, **metaballs** (`v` cycles to it after interference):
+  blobs that drift, merge and split like hot liquid, after the MIT-licensed
+  metaballs piece on ascii-magic.com. The blobs are the music — one per
+  analyser band, the band's energy its size, its frequency its home
+  altitude (bass low, treble high) — so the field's shape is the spectrum's
+  shape: quiet passages hold sixteen faint motes, a loud one is a mass of
+  teal liquid with a warm heart.
+
+### Changed
+
+- The **interference** visualizer now renders on a seven-step density ramp
+  (space, dot, middle-dot, and the four block weights) with a warm colour
+  ramp from dim through the visual colour to the scheme's hot end, instead
+  of the old four-step set that opened at a half-dark block. The quiet
+  between the wave crests reads as a dusting of dots that fades into the
+  dark, and only the crests reach the heavy blocks — the fan no longer
+  tiles the panel like a wallpaper.
+
 ## [v1.4.0] - 2026-11-24
 
 ### Added

@@ -127,6 +127,11 @@ func resolveScheme(kind themeKind, profile colorprofile.Profile, bgDark bool) sc
 var (
 	colorAccent, colorVisual, colorDim, colorBad color.Color
 	styleAccent, styleAccentB, styleVisual       lipgloss.Style
+	// styleHot is the warm step of the visualizer field: the metaballs'
+	// blob cores. It reuses the scheme's spectrumHigh — the same
+	// warm-on-dark logic as the accent, but for the field's heat rather
+	// than user action; in mono it is bold, keeping its weight step.
+	styleHot lipgloss.Style
 	styleDim, styleDimB, styleWarn, styleBad,
 	styleText, styleHighlight, styleTransientBg lipgloss.Style
 	styleBands  []lipgloss.Style
@@ -158,6 +163,7 @@ func applyTheme(s scheme) {
 		// bar's work).
 		styleAccent, styleAccentB = lipgloss.NewStyle().Bold(true), lipgloss.NewStyle().Bold(true)
 		styleVisual = lipgloss.NewStyle()
+		styleHot = lipgloss.NewStyle().Bold(true)
 		styleDim, styleDimB =
 			lipgloss.NewStyle().Faint(true), lipgloss.NewStyle().Bold(true)
 		styleWarn = lipgloss.NewStyle()
@@ -168,6 +174,7 @@ func applyTheme(s scheme) {
 		styleAccent = lipgloss.NewStyle().Foreground(s.accent)
 		styleAccentB = styleAccent.Bold(true)
 		styleVisual = lipgloss.NewStyle().Foreground(s.visual)
+		styleHot = lipgloss.NewStyle().Foreground(s.spectrumHigh)
 		styleDim = lipgloss.NewStyle().Foreground(s.dim)
 		styleDimB = styleDim.Bold(true)
 		styleWarn = lipgloss.NewStyle().Foreground(s.warn)

@@ -40,7 +40,7 @@ type visualizer interface {
 
 // makeVisualizers builds the set in cycle order: v steps through them.
 // spectrum, particles and interference hold state (the peak caps, the
-// particle field, the phase clock); the scope is a pure function of the
+// particle field, the phase clocks); the scope is a pure function of the
 // frame. The radial meter left the set in the 2026-11-19 polish round: it
 // read too quiet next to the spectrum to earn its slot in the cycle.
 func makeVisualizers() []visualizer {
@@ -49,5 +49,6 @@ func makeVisualizers() []visualizer {
 		newParticles(),
 		newScope(),
 		newInterference(),
+		newMetaballs(),
 	}
 }

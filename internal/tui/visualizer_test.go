@@ -38,8 +38,8 @@ func bandFrame(bands []float64, w, h int) frame {
 
 func TestMakeVisualizers(t *testing.T) {
 	vs := makeVisualizers()
-	if len(vs) != 4 {
-		t.Fatalf("makeVisualizers = %d; want 4 (spectrum, particles, scope, interference)", len(vs))
+	if len(vs) != 5 {
+		t.Fatalf("makeVisualizers = %d; want 5 (spectrum, particles, scope, interference, metaballs)", len(vs))
 	}
 	seen := map[string]bool{}
 	for _, v := range vs {
@@ -433,6 +433,93 @@ func TestInterferenceAudioMapping(t *testing.T) {
 	}
 }
 
+// TestMetaballsPauseFreeze pins the pause cue against the metaballs clock,
+// like the particles' and interference' do: a paused Render holds the
+// clock, so the field is byte-identical to the last playing one.
+func TestMetaballsPauseFreeze(t *testing.T) {
+	m := newMetaballs()
+	b := frameBands(1.0, 0.8, 0.6, 0.4, 0.5, 0.3, 0.5, 0.4, 0.5, 0.3, 0.4, 0.3, 0.4, 0.2, 0.4, 0.2)
+	var playing string
+	for i := 0; i < 120; i++ {
+		playing = m.Render(bandFrame(b, 80, 24))
+	}
+	f := bandFrame(b, 80, 24)
+	f.paused = true
+	frozen := m.Render(f)
+	if frozen != playing {
+		t.Fatal("a paused frame must hold the clock, byte for byte")
+	}
+	if got := m.Render(f); got != frozen {
+		t.Fatal("repeated paused frames must be identical")
+	}
+	if got := m.Render(bandFrame(b, 80, 24)); got == frozen {
+		t.Fatal("the resumed clock must move the blobs")
+	}
+}
+
+// At rest the field is one small mote per band — sixteen faint dots, the
+// same resting population as the particles.
+func TestMetaballsRest(t *testing.T) {
+	m := newMetaballs()
+	var got string
+	for i := 0; i < 120; i++ {
+		got = m.Render(bandFrame(zeroBands(), 80, 24))
+	}
+	cells := 80 * 24
+	n := nonBlank(got)
+	if n == 0 {
+		t.Fatal("at rest the field should hold one mote per band")
+	}
+	if n > cells/5 {
+		t.Fatalf("at rest the field fills %d/%d cells; want sparse motes (<= %d)", n, cells, cells/5)
+	}
+}
+
+// A full-scale passage is a mass of merged liquid: the field should mostly
+// fill the panel and reach the full-block glyph.
+func TestMetaballsLoud(t *testing.T) {
+	m := newMetaballs()
+	b := zeroBands()
+	for k := range b {
+		b[k] = 1.0
+	}
+	var got string
+	for i := 0; i < 120; i++ {
+		got = m.Render(bandFrame(b, 80, 24))
+	}
+	cells := 80 * 24
+	if n := nonBlank(got); n < cells/2 {
+		t.Fatalf("a full-scale passage should fill most of the panel, got %d/%d", n, cells)
+	}
+	if !strings.Contains(got, "█") {
+		t.Fatal("a full-scale passage should reach the full-block glyph")
+	}
+}
+
+// The point of the audio wiring: a band's energy is its blob's size, so a
+// single loud band must grow its blob (at a frozen clock, a paused Render
+// is a pure function of the bands).
+func TestMetaballsAudioMapping(t *testing.T) {
+	m := newMetaballs()
+	m.Render(bandFrame(zeroBands(), 80, 24)) // give the clock a nonzero value
+	base := zeroBands()
+	reference := func() string {
+		f := bandFrame(append([]float64(nil), base...), 80, 24)
+		f.paused = true
+		return m.Render(f)
+	}
+	ref := reference()
+	for _, k := range []int{0, 7, 15} { // a bass, a mid and a treble band
+		b := append([]float64(nil), base...)
+		b[k] = 1.0
+		f := bandFrame(b, 80, 24)
+		f.paused = true
+		if got := m.Render(f); got == ref {
+			t.Errorf("band %d at full scale drew the reference frame; the band does not reach its blob", k)
+		}
+	}
+}
+
 // Renders must be a pure function of the input frames: two fresh instances
 // fed the same sequence draw identical frames, for every visualizer.
 func TestVisualizersDeterministic(t *testing.T) {
@@ -450,7 +537,7 @@ func TestVisualizersDeterministic(t *testing.T) {
 		}
 		return out.String()
 	}
-	for i, name := range []string{"spectrum", "particles", "scope", "interference"} {
+	for i, name := range []string{"spectrum", "particles", "scope", "interference", "metaballs"} {
 		if vs1[i].Name() != name {
 			t.Fatalf("makeVisualizers()[%d] = %s; the test expects %s", i, vs1[i].Name(), name)
 		}
