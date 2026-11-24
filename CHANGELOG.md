@@ -5,6 +5,8 @@ All notable changes to bc-radio are recorded here. Each release follows
 
 ## [Unreleased]
 
+## [v1.4.0] - 2026-11-24
+
 ### Added
 
 - A fourth visualizer, **interference** (`v` cycles to it after scope): two
@@ -16,6 +18,7 @@ All notable changes to bc-radio are recorded here. Each release follows
   the treble how far the sources drift apart, and the overall level the
   field's amplitude, so a quiet passage reads as a faint concentric pulse
   and a loud one as a full interference fan.
+- The demo reel is re-rendered and shows the new visualizer.
 
 ## [v1.3.2] - 2026-11-23
 
