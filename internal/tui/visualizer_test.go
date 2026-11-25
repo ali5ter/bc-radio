@@ -38,8 +38,8 @@ func bandFrame(bands []float64, w, h int) frame {
 
 func TestMakeVisualizers(t *testing.T) {
 	vs := makeVisualizers()
-	if len(vs) != 5 {
-		t.Fatalf("makeVisualizers = %d; want 5 (spectrum, particles, scope, interference, metaballs)", len(vs))
+	if len(vs) != 6 {
+		t.Fatalf("makeVisualizers = %d; want 6 (spectrum, particles, scope, interference, metaballs, kaleidoscope)", len(vs))
 	}
 	seen := map[string]bool{}
 	for _, v := range vs {
@@ -520,6 +520,151 @@ func TestMetaballsAudioMapping(t *testing.T) {
 	}
 }
 
+// TestKaleidoscopePauseFreeze pins the pause cue against the kaleidoscope
+// clocks, like the particles', interference' and metaballs' do: a paused
+// Render holds the phase clocks, so the frame is byte-identical to the last
+// playing one, and a resumed one moves again.
+func TestKaleidoscopePauseFreeze(t *testing.T) {
+	k := newKaleidoscope()
+	b := frameBands(1.0, 0.8, 0.6, 0.4, 0.5, 0.3, 0.5, 0.4, 0.5, 0.3, 0.4, 0.3, 0.4, 0.2, 0.4, 0.2)
+	var playing string
+	for i := 0; i < 120; i++ {
+		playing = k.Render(bandFrame(b, 80, 24))
+	}
+	f := bandFrame(b, 80, 24)
+	f.paused = true
+	frozen := k.Render(f)
+	if frozen != playing {
+		t.Fatal("a paused frame must hold the clocks, byte for byte")
+	}
+	if got := k.Render(f); got != frozen {
+		t.Fatal("repeated paused frames must be identical")
+	}
+	if got := k.Render(bandFrame(b, 80, 24)); got == frozen {
+		t.Fatal("the resumed clocks must move the field")
+	}
+}
+
+// At rest the field is a sparse dusting: the gain is at its floor, so most
+// cells sit under the dead zone. It must be neither a dead panel nor a
+// wallpaper.
+func TestKaleidoscopeRest(t *testing.T) {
+	k := newKaleidoscope()
+	var got string
+	for i := 0; i < 120; i++ {
+		got = k.Render(bandFrame(zeroBands(), 80, 24))
+	}
+	cells := 80 * 24
+	n := nonBlank(got)
+	if n == 0 {
+		t.Fatal("at rest the field should hold its faint dusting")
+	}
+	if n > cells/4 {
+		t.Fatalf("at rest the field fills %d/%d cells; want a sparse dusting (<= %d)", n, cells, cells/4)
+	}
+}
+
+// A full-scale passage is the loud end: full gain — the field should mostly
+// fill the panel and reach the full-block glyph.
+func TestKaleidoscopeLoud(t *testing.T) {
+	k := newKaleidoscope()
+	b := zeroBands()
+	for i := range b {
+		b[i] = 1.0
+	}
+	var got string
+	for i := 0; i < 120; i++ {
+		got = k.Render(bandFrame(b, 80, 24))
+	}
+	cells := 80 * 24
+	if n := nonBlank(got); n < cells/2 {
+		t.Fatalf("a full-scale passage should fill most of the panel, got %d/%d", n, cells)
+	}
+	if !strings.Contains(got, "█") {
+		t.Fatal("a full-scale passage should reach the full-block glyph")
+	}
+}
+
+// The point of the audio wiring: each band region must change what a frame
+// draws, with the phase clocks frozen (a paused Render is a pure function of
+// the bands alone, at a fixed t): the level gates the density, the bass
+// coarsens the shapes, the mid cuts the detail, the treble tightens the rings.
+func TestKaleidoscopeAudioMapping(t *testing.T) {
+	k := newKaleidoscope()
+	k.Render(bandFrame(zeroBands(), 80, 24)) // give the clocks a nonzero value
+	base := zeroBands()
+	for i := range base {
+		base[i] = 0.5 // a mid-level mix, so only the region under test moves
+	}
+	frozen := func(mutate func(b []float64)) string {
+		b := append([]float64(nil), base...)
+		mutate(b)
+		f := bandFrame(b, 80, 24)
+		f.paused = true
+		return k.Render(f)
+	}
+	set := func(lo, hi int, val float64) func(b []float64) {
+		return func(b []float64) {
+			for i := lo; i < hi; i++ {
+				b[i] = val
+			}
+		}
+	}
+	reference := frozen(func(b []float64) {})
+	for name, mutate := range map[string]func(b []float64){
+		"bass (shape scale)":    set(0, 6, 1.0),
+		"mid (detail)":          set(6, 11, 1.0),
+		"treble (ring spacing)": set(11, 16, 1.0),
+		"level (density)":       set(0, 16, 1.0),
+	} {
+		if got := frozen(mutate); got == reference {
+			t.Errorf("%s at full scale drew the reference frame; the region does not reach the pattern", name)
+		}
+	}
+}
+
+// The level gates the density, so a louder frame lights at least as much
+// field: the full-block count must not fall as the level rises (a paused
+// frame at the clocks' fixed values, so only the level moves).
+func TestKaleidoscopeLevelMonotone(t *testing.T) {
+	k := newKaleidoscope()
+	k.rotT, k.churnT, k.rippleT = 0.5, 2.0, 1.0 // fixed clocks, so the level is the only moving part
+	lit := func(level float64) int {
+		b := zeroBands()
+		for i := range b {
+			b[i] = level
+		}
+		f := bandFrame(b, 80, 24)
+		f.paused = true
+		return strings.Count(stripANSI(k.Render(f)), "█")
+	}
+	if got, rest := lit(1.0), lit(0.0); got < rest {
+		t.Fatalf("a full level lit %d full blocks; silence lit %d — the gain must not shrink the field", got, rest)
+	}
+}
+
+// The piece is a kaleidoscope: its defining property is the eightfold
+// mirror. At zero rotation the horizontal centre line is a mirror line, so
+// on an odd-height panel the centre row must read its own mirror — cell x
+// and cell w-1-x carry the same glyph.
+func TestKaleidoscopeEightfoldMirror(t *testing.T) {
+	k := newKaleidoscope()
+	k.rotT, k.churnT, k.rippleT = 0.0, 2.0, 1.0 // zero rotation: the centre line is a mirror line
+	b := zeroBands()
+	for i := range b {
+		b[i] = 1.0 // a full-scale field, so the row is lit, not trivially blank
+	}
+	f := bandFrame(b, 80, 25) // odd height: the centre row sits exactly on the line
+	f.paused = true
+	lines := strings.Split(stripANSI(k.Render(f)), "\n")
+	rs := []rune(lines[12]) // the centre row: y + 0.5 == h/2
+	for x := 0; x < 80; x++ {
+		if rs[x] != rs[79-x] {
+			t.Fatalf("centre row cell %d = %q, its mirror = %q; the field must be mirror-symmetric", x, rs[x], rs[79-x])
+		}
+	}
+}
+
 // Renders must be a pure function of the input frames: two fresh instances
 // fed the same sequence draw identical frames, for every visualizer.
 func TestVisualizersDeterministic(t *testing.T) {
@@ -537,7 +682,7 @@ func TestVisualizersDeterministic(t *testing.T) {
 		}
 		return out.String()
 	}
-	for i, name := range []string{"spectrum", "particles", "scope", "interference", "metaballs"} {
+	for i, name := range []string{"spectrum", "particles", "scope", "interference", "metaballs", "kaleidoscope"} {
 		if vs1[i].Name() != name {
 			t.Fatalf("makeVisualizers()[%d] = %s; the test expects %s", i, vs1[i].Name(), name)
 		}

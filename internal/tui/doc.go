@@ -10,8 +10,9 @@
 //   - the two screens — the player (wordmark header, visualizer, status
 //     and footer rows, controls) and the three-column library browser
 //     (layout.go, library.go);
-//   - the three visualizers — the band-driven spectrum and particles, and
-//     the sample-driven scope (visualizer.go and the visual_*.go files);
+//   - the visualizers — the band-driven spectrum, particles, interference,
+//     metaballs, and kaleidoscope, and the sample-driven scope
+//     (visualizer.go and the visual_*.go files);
 //   - the keybindings (keys.go) and the colour and style palette
 //     (styles.go).
 //

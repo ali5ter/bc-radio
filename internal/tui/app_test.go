@@ -240,8 +240,8 @@ func TestNew(t *testing.T) {
 	if got := len(app.bands); got != contract.BandCount {
 		t.Fatalf("bands = %d; want %d", got, contract.BandCount)
 	}
-	if got := len(app.visualizers); got != 5 {
-		t.Fatalf("visualizers = %d; want 5 (spectrum, particles, scope, interference, metaballs)", got)
+	if got := len(app.visualizers); got != 6 {
+		t.Fatalf("visualizers = %d; want 6 (spectrum, particles, scope, interference, metaballs, kaleidoscope)", got)
 	}
 	if app.theme != themeDark {
 		t.Fatalf("theme = %q; want dark", app.theme)

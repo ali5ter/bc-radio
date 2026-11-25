@@ -822,7 +822,6 @@ func (a *App) viewHelp() string {
 			"  l          library",
 			"  + / -      volume",
 			"  ← / →      seek 10 s back / forward",
-			styleDim.Render(fmt.Sprintf("  v cycles: %s", strings.Join(nameList(a.visualizers), " / "))),
 		)
 	}
 	body := lipgloss.JoinVertical(lipgloss.Left, lines...)
@@ -966,13 +965,4 @@ func mergeRows(base, over string, left, boxW int) string {
 		b.WriteRune(r)
 	}
 	return b.String()
-}
-
-// nameList returns the display names of the visualizers.
-func nameList(vs []visualizer) []string {
-	out := make([]string, len(vs))
-	for i, v := range vs {
-		out[i] = v.Name()
-	}
-	return out
 }

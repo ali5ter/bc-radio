@@ -16,6 +16,15 @@ All notable changes to bc-radio are recorded here. Each release follows
   edge in: a dim aura, a cool blue rim, a teal body, and a warm core at the
   scheme's spectrum end — so quiet passages hold sixteen small motes ringed
   in the aura, and a loud one is a mass of teal liquid with a copper heart.
+- A sixth visualizer, **kaleidoscope** (`v` cycles to it after metaballs): an
+  eightfold mirrored field of fractal noise that turns and churns like a
+  kaleidoscope, after the MIT-licensed kaleidoscope piece on ascii-magic.com,
+  reversed out and wired to the analyser. The bass spins the piece and
+  coarsens its shapes, the mid churns the liquid and cuts its detail, the
+  treble tightens the radial rings, and the overall level is the field's
+  density — so a quiet passage is a sparse eightfold dusting of dots and a
+  loud one fills the panel to the heavy blocks, read in the scheme's
+  four-colour heat ramp from the faint end to the bright.
 
 ### Changed
 
