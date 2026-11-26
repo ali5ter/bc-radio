@@ -23,11 +23,11 @@ Type "./bc-radio -username ali5ter"
 Sleep 600ms
 Enter
 
-# Wait for the walk: on a quiet machine a fresh-cache walk lands in a few
-# seconds and the radio is already playing by the first space; the margin
-# covers a loaded machine, where the build screen (spinner + per-band
-# counter) is the content in the meantime.
-Sleep 10s
+# Wait for the walk: a fresh-cache walk lands in about ten seconds and the
+# radio auto-starts when it completes, so a 12 s margin means the radio is
+# already playing by the first space; on a loaded machine the build screen
+# (spinner + per-band counter) is the content in the meantime.
+Sleep 12s
 
 # Space pauses — the bars hold exactly where the pause found them — then
 # resumes.
@@ -37,7 +37,9 @@ Type " "
 Sleep 1s
 
 # Cycle the visualizers: spectrum → particles → scope → interference →
-# metaballs (the 5th in the cycle; the fullscreen then shows it).
+# metaballs → kaleidoscope (the 6th in the cycle; the fullscreen then shows it).
+Type "v"
+Sleep 2s
 Type "v"
 Sleep 2s
 Type "v"
